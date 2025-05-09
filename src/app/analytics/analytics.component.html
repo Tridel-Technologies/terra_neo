@@ -1,5 +1,57 @@
-<div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+<div class="chartsContainer">
+    <div class="view">
+        <label>Single View</label>
+        <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
+        <label>Compare View</label>
+    </div>
+    <div class="chartContainer" *ngIf="!isCompareView">
+        <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    </div>
 
-<div class="chartContainer">
-    <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    <div class="chartContainer" *ngIf="!isCompareView">
+        <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    </div>
+
+    <div class="chartContainer" *ngIf="!isCompareView">
+        <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    </div>
+
+    <div class="chartContainer" *ngIf="isCompareView">
+        <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    </div>
 </div>
+
+
+<p-dialog [(visible)]="visible" [style]="{width: '30vw', height: '100%', maxHeight: '100%'}" [draggable]="false"
+    [resizable]="false" position="right" [modal]="true" [closeOnEscape]="true" [closable]="true"
+    (onShow)="onDialogShow()" (onHide)="onDialogHide()">
+    <ng-template pTemplate="header">
+        <div class="header">
+            <span style="font-size: 1.5rem; font-weight: bold;">ADCP Data</span>
+        </div>
+    </ng-template>
+    <div #tableWrapper>
+        <p-table [value]="sampleDataAdcp" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
+            [scrollHeight]="'calc(100vh - 150px)'" [showGridlines]="true">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Timestamp</th>
+                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Speed
+                        (m/s)</th>
+                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Direction
+                        (°)</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-item>
+                <tr [ngClass]="{'selected-row': item.id === selectedPointId}">
+                    <td>{{item.timestamp}}</td>
+                    <td><input type="text" pInputText [(ngModel)]="item.current_speed" /></td>
+                    <td><input type="text" pInputText [(ngModel)]="item.current_direction" /></td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+    <div class="footer" style="text-align: center; margin-top: 15px;">
+        <p-button label="Update" icon="pi pi-check" [loading]="loading" />
+    </div>
+</p-dialog>

@@ -1,280 +1,276 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  ViewChild,
+  ElementRef,
+  AfterViewInit,
+  HostBinding,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as echarts from 'echarts';
+import { EChartsOption, EChartsType } from 'echarts';
+import { DialogModule } from 'primeng/dialog';
+import { TableModule } from 'primeng/table';
+import { trigger, transition, style, animate } from '@angular/animations';
+import { InputTextModule } from 'primeng/inputtext';
+import { ButtonModule } from 'primeng/button';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 @Component({
   selector: 'app-analytics',
-  imports: [CommonModule, FormsModule],
+  imports: [
+    CommonModule,
+    FormsModule,
+    ToggleSwitchModule,
+    DialogModule,
+    TableModule,
+    InputTextModule,
+    ButtonModule,
+  ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
+  animations: [
+    trigger('dialogAnimation', [
+      transition(':enter', [
+        style({ transform: 'translateX(100%)' }),
+        animate('300ms ease-out', style({ transform: 'translateX(0)' })),
+      ]),
+      transition(':leave', [
+        animate('300ms ease-in', style({ transform: 'translateX(100%)' })),
+      ]),
+    ]),
+  ],
 })
-export class AnalyticsComponent implements OnInit {
+export class AnalyticsComponent implements OnInit, AfterViewInit {
+  @ViewChild('tableWrapper') tableWrapper!: ElementRef;
+  @ViewChild('tideChart') tideChart!: ElementRef;
+  @ViewChild('midChart') midChart!: ElementRef;
+  @HostBinding('class.modal-open') get isModalOpen() {
+    return this.visible;
+  }
+
   loading: boolean = false;
-  isSpeedChecked: boolean = true;
-  isCurrentChecked: boolean = true;
   chartOption: any;
   selectedChart: string = 'line';
+  isCompareView: boolean = true;
+
+  visible: boolean = false;
+  selectedPointId: number | null = null;
+  private tideChartInstance!: EChartsType;
+  private midChartInstance!: EChartsType;
 
   sampleDataAdcp = [
     {
+      id: 1,
       timestamp: '2024-10-01T00:00:00Z',
       current_speed: 1.2,
       current_direction: 30,
+      tide: 0.71,
     },
     {
+      id: 2,
       timestamp: '2024-10-01T01:00:00Z',
       current_speed: 1.5,
       current_direction: 45,
+      tide: 1.06,
     },
     {
+      id: 3,
       timestamp: '2024-10-01T02:00:00Z',
       current_speed: 0.8,
       current_direction: 60,
+      tide: 1.44,
     },
     {
+      id: 4,
       timestamp: '2024-10-01T03:00:00Z',
       current_speed: 2.1,
       current_direction: 90,
+      tide: 0.79,
     },
     {
+      id: 5,
       timestamp: '2024-10-01T04:00:00Z',
       current_speed: 1.9,
       current_direction: 120,
+      tide: 0.9,
     },
     {
+      id: 6,
       timestamp: '2024-10-01T05:00:00Z',
       current_speed: 1.6,
       current_direction: 150,
+      tide: 1.66,
     },
     {
+      id: 7,
       timestamp: '2024-10-01T06:00:00Z',
       current_speed: 0.5,
       current_direction: 180,
+      tide: 0.5,
     },
     {
+      id: 8,
       timestamp: '2024-10-01T07:00:00Z',
       current_speed: 1.3,
       current_direction: 210,
+      tide: 0.79,
     },
     {
+      id: 9,
       timestamp: '2024-10-01T08:00:00Z',
       current_speed: 1.4,
       current_direction: 240,
+      tide: 0.86,
     },
     {
+      id: 10,
       timestamp: '2024-10-01T09:00:00Z',
       current_speed: 0.9,
       current_direction: 270,
+      tide: 1.13,
     },
     {
+      id: 11,
       timestamp: '2024-10-01T10:00:00Z',
       current_speed: 1.1,
       current_direction: 300,
+      tide: 1.02,
     },
     {
+      id: 12,
       timestamp: '2024-10-01T11:00:00Z',
       current_speed: 1.0,
       current_direction: 330,
+      tide: 0.94,
     },
     {
+      id: 13,
       timestamp: '2024-10-01T12:00:00Z',
       current_speed: 1.4,
       current_direction: 360,
+      tide: 0.86,
     },
     {
+      id: 14,
       timestamp: '2024-10-01T13:00:00Z',
       current_speed: 2.0,
       current_direction: 15,
+      tide: 1.29,
     },
     {
+      id: 15,
       timestamp: '2024-10-01T14:00:00Z',
       current_speed: 1.7,
       current_direction: 30,
+      tide: 0.91,
     },
     {
+      id: 16,
       timestamp: '2024-10-01T15:00:00Z',
       current_speed: 1.8,
       current_direction: 45,
+      tide: 0.72,
     },
     {
+      id: 17,
       timestamp: '2024-10-01T16:00:00Z',
       current_speed: 1.2,
       current_direction: 60,
+      tide: 1.29,
     },
     {
+      id: 18,
       timestamp: '2024-10-01T17:00:00Z',
       current_speed: 0.7,
       current_direction: 90,
+      tide: 1.61,
     },
     {
+      id: 19,
       timestamp: '2024-10-01T18:00:00Z',
       current_speed: 1.4,
       current_direction: 120,
+      tide: 0.79,
     },
     {
+      id: 20,
       timestamp: '2024-10-01T19:00:00Z',
       current_speed: 1.6,
       current_direction: 150,
-    },
-    {
-      timestamp: '2024-10-01T20:00:00Z',
-      current_speed: 0.4,
-      current_direction: 180,
-    },
-    {
-      timestamp: '2024-10-01T21:00:00Z',
-      current_speed: 1.1,
-      current_direction: 210,
-    },
-    {
-      timestamp: '2024-10-01T22:00:00Z',
-      current_speed: 1.5,
-      current_direction: 240,
-    },
-    {
-      timestamp: '2024-10-01T23:00:00Z',
-      current_speed: 0.9,
-      current_direction: 270,
-    },
-    {
-      timestamp: '2024-10-02T00:00:00Z',
-      current_speed: 1.0,
-      current_direction: 300,
-    },
-    {
-      timestamp: '2024-10-02T01:00:00Z',
-      current_speed: 1.2,
-      current_direction: 330,
-    },
-    {
-      timestamp: '2024-10-02T02:00:00Z',
-      current_speed: 1.5,
-      current_direction: 360,
-    },
-    {
-      timestamp: '2024-10-02T03:00:00Z',
-      current_speed: 1.8,
-      current_direction: 15,
-    },
-    {
-      timestamp: '2024-10-02T04:00:00Z',
-      current_speed: 1.6,
-      current_direction: 30,
-    },
-    {
-      timestamp: '2024-10-02T05:00:00Z',
-      current_speed: 1.4,
-      current_direction: 45,
-    },
-    {
-      timestamp: '2024-10-02T06:00:00Z',
-      current_speed: 0.9,
-      current_direction: 60,
-    },
-    {
-      timestamp: '2024-10-02T07:00:00Z',
-      current_speed: 1.1,
-      current_direction: 90,
-    },
-    {
-      timestamp: '2024-10-02T08:00:00Z',
-      current_speed: 1.3,
-      current_direction: 120,
-    },
-    {
-      timestamp: '2024-10-02T09:00:00Z',
-      current_speed: 1.2,
-      current_direction: 150,
-    },
-    {
-      timestamp: '2024-10-02T10:00:00Z',
-      current_speed: 1.5,
-      current_direction: 180,
-    },
-    {
-      timestamp: '2024-10-02T11:00:00Z',
-      current_speed: 1.7,
-      current_direction: 210,
-    },
-    {
-      timestamp: '2024-10-02T12:00:00Z',
-      current_speed: 1.4,
-      current_direction: 240,
-    },
-    {
-      timestamp: '2024-10-02T13:00:00Z',
-      current_speed: 1.8,
-      current_direction: 270,
-    },
-    {
-      timestamp: '2024-10-02T14:00:00Z',
-      current_speed: 1.0,
-      current_direction: 300,
-    },
-    {
-      timestamp: '2024-10-02T15:00:00Z',
-      current_speed: 1.2,
-      current_direction: 330,
-    },
-    {
-      timestamp: '2024-10-02T16:00:00Z',
-      current_speed: 1.5,
-      current_direction: 360,
-    },
-    {
-      timestamp: '2024-10-02T17:00:00Z',
-      current_speed: 1.3,
-      current_direction: 15,
-    },
-    {
-      timestamp: '2024-10-02T18:00:00Z',
-      current_speed: 0.6,
-      current_direction: 30,
-    },
-    {
-      timestamp: '2024-10-02T19:00:00Z',
-      current_speed: 1.2,
-      current_direction: 45,
-    },
-    {
-      timestamp: '2024-10-02T20:00:00Z',
-      current_speed: 1.1,
-      current_direction: 60,
-    },
-    {
-      timestamp: '2024-10-02T21:00:00Z',
-      current_speed: 0.8,
-      current_direction: 90,
-    },
-    {
-      timestamp: '2024-10-02T22:00:00Z',
-      current_speed: 1.4,
-      current_direction: 120,
-    },
-    {
-      timestamp: '2024-10-02T23:00:00Z',
-      current_speed: 1.6,
-      current_direction: 150,
+      tide: 1.05,
     },
   ];
 
   ngOnInit(): void {
-    this.Tide();
-    this.midSpeedDirection();
+    // this.Tide();
+    // this.midSpeedDirection();
+    // this.currentSpeed();
+    // this.currentDirection();
+    this.loadChart();
+    this.onDialogShow();
+  }
+
+  ngAfterViewInit(): void {
+    this.loadChart();
+  }
+
+  loadChart() {
+    setTimeout(() => {
+      if (this.isCompareView) {
+        this.midSpeedDirection();
+      } else {
+        this.Tide();
+        this.currentSpeed();
+        this.currentDirection();
+      }
+    }, 100);
+  }
+
+  onDialogShow() {
+    console.log('Dialog shown');
+    setTimeout(() => {
+      const selectedRow = document.querySelector('.selected-row');
+      if (selectedRow) {
+        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      this.updateChartWidths(70);
+    }, 100);
+  }
+
+  onDialogHide() {
+    this.updateChartWidths(100);
+  }
+
+  private updateChartWidths(width: number) {
+    const charts = document.querySelectorAll('.chart-diagram');
+    charts.forEach((chart) => {
+      (chart as HTMLElement).style.width = `${width}%`;
+    });
+
+    // Resize charts after width change
+    if (this.tideChartInstance) {
+      this.tideChartInstance.resize();
+    }
+    if (this.midChartInstance) {
+      this.midChartInstance.resize();
+    }
   }
 
   Tide(): void {
-    // const chartType = this.selectedChart;
-    // this.loading = true;
     const tide = document.getElementById('tide');
 
-    const computedStyle = getComputedStyle(document.body);
-    const bgColor = computedStyle
-      .getPropertyValue('--secbackground-color')
-      .trim();
-    const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    const subText = computedStyle.getPropertyValue('--main-text').trim();
+    // const computedStyle = getComputedStyle(document.body);
+    // const bgColor = computedStyle
+    //   .getPropertyValue('--secbackground-color')
+    //   .trim();
+    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
+    // const subText = computedStyle.getPropertyValue('--main-text').trim();
+
+    const bgColor = '#ffffff'; // White background for image export
+    const mainText = '#000000'; // Black for titles/labels
+    const subText = '#666666'; // Grey for axis labels and legend
 
     const sampleData = [
       ['2000-06-05', 116],
@@ -393,57 +389,86 @@ export class AnalyticsComponent implements OnInit {
           trigger: 'axis',
         },
         grid: {
-          // top: '50%',
           left: '7%',
-          // right: '10%',
-          bottom: '30%',
-          // containLabel: true
+          // bottom: '30%',
+          right: '5%',
         },
-        xAxis: {
-          type: 'time',
-          name: 'Date', // X-axis legend (title)
-          nameLocation: 'middle',
-          nameTextStyle: {
-            color: mainText,
-            padding: [35, 0, 0, 0],
-            fontSize: 16,
-          },
-          // data: dates,
-          axisLabel: {
-            color: subText, // Set x-axis label color to white
-            rotate: 45,
-          },
-          axisLine: {
-            show: true,
-          },
-          splitLine: {
-            show: false, // Hide x-axis grid lines
-          },
-        },
-
-        yAxis: {
-          name: `Water Level (m/s)`, // Y-axis legend (title)
-          nameLocation: 'middle',
-          nameTextStyle: {
-            color: mainText,
-            padding: [0, 0, 30, 0],
-            fontSize: 16,
-          },
-          // type: 'value'
-          axisLabel: {
-            color: subText, // Set y-axis label color to white
-          },
-          axisLine: {
-            show: true,
-          },
-          splitLine: {
-            show: true, // Hide x-axis grid lines
-            lineStyle: {
+        xAxis: [
+          {
+            type: 'time',
+            name: 'Date',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: mainText,
+              padding: [40, 0, 0, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
               color: subText,
-              type: 'dashed',
+              rotate: 45,
+            },
+            axisLine: {
+              show: true,
+            },
+            // splitLine: {
+            //   show: true,
+            // },
+          },
+          {
+            type: 'time',
+            position: 'top',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
             },
           },
-        },
+        ],
+
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Water Level (m/s)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: '#1f77b4',
+              padding: [0, 0, 30, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+            },
+            splitLine: {
+              show: true,
+            },
+          },
+          {
+            type: 'value',
+            position: 'right',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
 
         legend: {
           // type: 'scroll',
@@ -452,7 +477,7 @@ export class AnalyticsComponent implements OnInit {
           top: '2%',
           // top: 'middle',
           textStyle: {
-            color: subText, // Set legend text color to white
+            color: '#1f77b4', // Set legend text color to white
             fontSize: 14,
           },
         },
@@ -481,8 +506,8 @@ export class AnalyticsComponent implements OnInit {
         dataZoom: [
           {
             type: 'slider',
-            // bottom: 15,
-            height: 20,
+            bottom: 20,
+            height: 15,
             start: 0, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
@@ -505,16 +530,31 @@ export class AnalyticsComponent implements OnInit {
             //  data: sampleData.map(item => [item[0], item[1]]),
             type: 'line',
             smooth: 'line',
-            lineStyle: 'line',
-            barWidth: 'line',
+            // lineStyle: 'line',
+            // barWidth: 'line',
 
             itemStyle: {
-              color: '#1ee1ff',
+              color: '#1f77b4',
             },
             showSymbol: false,
             label: {
-              show: false,
+              show: true,
               fontSize: 12, // Optional: Set font size for the data points (if labels are enabled)
+            },
+          },
+
+          {
+            // Invisible dummy series to trigger rendering of top and right axes
+            type: 'line',
+            xAxisIndex: 1,
+            // yAxisIndex: 1,
+            data: [],
+            lineStyle: {
+              opacity: 0,
+            },
+            showSymbol: false,
+            tooltip: {
+              show: false,
             },
           },
         ],
@@ -529,53 +569,389 @@ export class AnalyticsComponent implements OnInit {
     }
   }
 
+  currentSpeed(): void {
+    const chartType = this.selectedChart;
+    const speed = document.getElementById('currentSpeed');
+
+    // const computedStyle = getComputedStyle(document.body);
+    // const bgColor = computedStyle
+    //   .getPropertyValue('--secbackground-color')
+    //   .trim();
+    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
+    // const subText = computedStyle.getPropertyValue('--main-text').trim();
+
+    const bgColor = '#ffffff'; // White background for image export
+    const mainText = '#000000'; // Black for titles/labels
+    const subText = '#666666'; // Grey for axis labels and legend
+
+    if (speed) {
+      const existingInstance = echarts.getInstanceByDom(speed);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      const currentSpeed = echarts.init(speed);
+
+      const option = {
+        title: {
+          text: 'Current Speed',
+          left: '1%',
+          textStyle: {
+            color: mainText,
+            fontSize: 20,
+          },
+        },
+        tooltip: { trigger: 'axis' },
+        grid: { left: '7%', right: '5%' },
+        xAxis: [
+          {
+            type: 'time',
+            name: 'Date',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: mainText,
+              padding: [40, 0, 0, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+              rotate: 45,
+            },
+            axisLine: {
+              show: true,
+            },
+            // splitLine: {
+            //   show: true,
+            // },
+          },
+          {
+            type: 'time',
+            position: 'top',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
+
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Current speed (m/s)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'red',
+              padding: [0, 0, 30, 0],
+              fontSize: 16,
+            },
+            axisLabel: { color: subText },
+            axisLine: {
+              show: true,
+              // lineStyle: { color: '#00ff00' },
+            },
+            splitLine: {
+              show: true,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+          },
+          {
+            type: 'value',
+            position: 'right',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
+
+        legend: {
+          // data: ['Current Speed'],
+          orient: 'vertical',
+          right: '15%',
+          top: '2%',
+          textStyle: {
+            color: 'red',
+            fontSize: 14,
+          },
+        },
+        toolbox: {
+          feature: {
+            dataZoom: { yAxisIndex: 'none' },
+            restore: {},
+            saveAsImage: {
+              backgroundColor: bgColor,
+              pixelRatio: 2,
+            },
+          },
+          iconStyle: {
+            borderColor: mainText,
+          },
+        },
+
+        dataZoom: [
+          {
+            type: 'slider',
+            bottom: 20,
+            height: 15,
+            start: 0, // You can adjust to define how much of the chart is visible initially
+            end: 100, // Set the percentage of the range initially visible
+          },
+          {
+            type: 'inside',
+            start: 0,
+            end: 100, // Can be modified based on your dataset's initial view preference
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
+          },
+        ],
+
+        series: [
+          {
+            name: 'Current Speed',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.current_speed,
+            ]),
+            type: chartType,
+            // smooth: 'line',
+            // lineStyle: { color: '#00ff00' },
+            itemStyle: { color: 'red' },
+            showSymbol: false,
+            label: { show: true, fontSize: 12 },
+            // yAxisIndex: 0,
+          },
+        ],
+      };
+
+      currentSpeed.setOption(option);
+      this.loading = false;
+      window.addEventListener('resize', () => {
+        currentSpeed.resize();
+      });
+    } else {
+      this.loading = false;
+    }
+  }
+
+  currentDirection(): void {
+    const chartType = this.selectedChart;
+    const direction = document.getElementById('currentDirection');
+
+    // const computedStyle = getComputedStyle(document.body);
+    // const bgColor = computedStyle
+    //   .getPropertyValue('--secbackground-color')
+    //   .trim();
+    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
+    // const subText = computedStyle.getPropertyValue('--main-text').trim();
+
+    const bgColor = '#ffffff'; // White background for image export
+    const mainText = '#000000'; // Black for titles/labels
+    const subText = '#666666'; // Grey for axis labels and legend
+
+    if (direction) {
+      const existingInstance = echarts.getInstanceByDom(direction);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      const currentDirection = echarts.init(direction);
+
+      const option = {
+        title: {
+          text: 'Current Direction',
+          left: '1%',
+          textStyle: {
+            color: mainText,
+            fontSize: 20,
+          },
+        },
+        tooltip: { trigger: 'axis' },
+        grid: { left: '7%', right: '5%' },
+        xAxis: [
+          {
+            type: 'time',
+            name: 'Date',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: mainText,
+              padding: [40, 0, 0, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+              rotate: 45,
+            },
+            axisLine: {
+              show: true,
+            },
+            // splitLine: {
+            //   show: true,
+            // },
+          },
+          {
+            type: 'time',
+            position: 'top',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
+
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Current Direction (°)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'green',
+              padding: [0, 0, 30, 0],
+              fontSize: 16,
+            },
+            axisLabel: { color: subText },
+            axisLine: {
+              show: true,
+              // lineStyle: { color: '#00ff00' },
+            },
+            splitLine: {
+              show: true,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+          },
+          {
+            type: 'value',
+            position: 'right',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
+
+        legend: {
+          // data: ['Current Speed'],
+          orient: 'vertical',
+          right: '15%',
+          top: '2%',
+          textStyle: {
+            color: 'green',
+            fontSize: 14,
+          },
+        },
+        toolbox: {
+          feature: {
+            dataZoom: { yAxisIndex: 'none' },
+            restore: {},
+            saveAsImage: {
+              backgroundColor: bgColor,
+              pixelRatio: 2,
+            },
+          },
+          iconStyle: {
+            borderColor: mainText,
+          },
+        },
+
+        dataZoom: [
+          {
+            type: 'slider',
+            bottom: 20,
+            height: 15,
+            start: 0, // You can adjust to define how much of the chart is visible initially
+            end: 100, // Set the percentage of the range initially visible
+          },
+          {
+            type: 'inside',
+            start: 0,
+            end: 100, // Can be modified based on your dataset's initial view preference
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
+          },
+        ],
+
+        series: [
+          {
+            name: 'Current Direction',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.current_direction,
+            ]),
+            type: chartType,
+            // smooth: 'line',
+            // lineStyle: { color: '#00ff00' },
+            itemStyle: { color: 'green' },
+            showSymbol: true,
+            symbol:
+              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            symbolSize: 14,
+            symbolOffset: [0, -7],
+            symbolRotate: (value: any) => value[1],
+            label: { show: false, fontSize: 12 },
+            // yAxisIndex: 0,
+          },
+        ],
+      };
+
+      currentDirection.setOption(option);
+      this.loading = false;
+      window.addEventListener('resize', () => {
+        currentDirection.resize();
+      });
+    } else {
+      this.loading = false;
+    }
+  }
+
   midSpeedDirection(): void {
     const chartType = this.selectedChart;
-    //       this.loading = true;
     const mid = document.getElementById('midSpeedDirection');
 
-    const computedStyle = getComputedStyle(document.body);
-    const bgColor = computedStyle
-      .getPropertyValue('--secbackground-color')
-      .trim();
-    const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    const subText = computedStyle.getPropertyValue('--main-text').trim();
+    // const computedStyle = getComputedStyle(document.body);
+    // const bgColor = computedStyle
+    //   .getPropertyValue('--secbackground-color')
+    //   .trim();
+    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
+    // const subText = computedStyle.getPropertyValue('--main-text').trim();
 
-    // if(this.selectedStation.toLowerCase() == "cwprs01"){
-    //   for(let i in this.cwprs01 ){
-    //     const [speedStr, directionStr] = this.cwprs01[i].Middle_CurrentSpeedDirection.split(';');
-
-    //     // Convert the string parts to numbers
-    //     const speed = parseFloat(speedStr);
-    //     const direction = parseFloat(directionStr);
-    //     this.sampleData2.push(
-    //      {time: this.cwprs01[i].Date,       // Assuming 'Date' holds the time value
-    //       speed: speed,     // Assuming 'speed' is available in 'cwprs01'
-    //       direction: direction}
-    //     );
-    //   }
-    // }else if(this.selectedStation.toLowerCase() == "cwprs02"){
-    //   for(let i in this.cwprs02 ){
-    //     const [speedStr, directionStr] = this.cwprs02[i].Middle_CurrentSpeedDirection.split(';');
-
-    //     // Convert the string parts to numbers
-    //     const speed = parseFloat(speedStr);
-    //     const direction = parseFloat(directionStr);
-    //     this.sampleData2.push(
-    //      {time: this.cwprs02[i].Date,       // Assuming 'Date' holds the time value
-    //       speed: speed,     // Assuming 'speed' is available in 'cwprs01'
-    //       direction: direction}
-    //     );
-    //   }
-    // }
-
-    // const midCurrent = this.updateInit(this.midbin, false);
-    // = this.selectedStation === 'cwprs01' ? this.cwprs01.map(item => item.Middle_CurrentSpeedDirection) :
-    // this.selectedStation === 'cwprs02' ? this.cwprs02.map(item => item.Middle_CurrentSpeedDirection) : []
-
-    // const dates =  this.selectedStation === 'cwprs01' ? this.cwprs01.map(item =>`${item.Date?.split('T')[0]} ${item.Time?.split('T')[1]?.split('.')[0]}`) :
-    // this.selectedStation === 'cwprs02' ? this.cwprs02.map(item =>`${item.Date?.split('T')[0]} ${item.Time?.split('T')[1]?.split('.')[0]}`) : []
-    // const dates = this.cwprs01.map(item =>`${item.Date?.split('T')[0]}`);
+    const bgColor = '#ffffff'; // White background for image export
+    const mainText = '#000000'; // Black for titles/labels
+    const subText = '#666666'; // Grey for axis labels and legend
 
     if (mid) {
       const existingInstance = echarts.getInstanceByDom(mid);
@@ -584,11 +960,11 @@ export class AnalyticsComponent implements OnInit {
       }
       const midspeedanddirection = echarts.init(mid);
 
-      // Prepare chart options
       const option = {
         title: {
-          text: 'Mid', // Changed title to 'Mid'
+          text: 'Mid',
           left: '1%',
+          // top: '0%',
           textStyle: {
             color: mainText,
             fontSize: 20,
@@ -598,115 +974,141 @@ export class AnalyticsComponent implements OnInit {
           trigger: 'axis',
         },
         grid: {
-          left: '7%',
-          // right: '10%',
-          bottom: '22%',
+          left: '9%',
+          // bottom: '30%',
+          right: '5%',
         },
-        xAxis: {
-          type: 'time', // Set x-axis type to time
-          name: 'Time',
-          nameLocation: 'middle',
-          nameTextStyle: {
-            color: mainText,
-            padding: [15, 0, 0, 0],
-            fontSize: 16,
+        xAxis: [
+          {
+            type: 'time',
+            name: 'Date',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: mainText,
+              padding: [40, 0, 0, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+              rotate: 45,
+            },
+            axisLine: {
+              show: true,
+            },
           },
-          axisLabel: {
-            color: subText, // Set x-axis label color to white
+          {
+            type: 'time',
+            position: 'top',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
           },
-          axisLine: {
-            show: true,
-          },
-          splitLine: {
-            show: false, // Hide x-axis grid lines
-          },
-        },
-
-        yAxis: [
-          ...(this.isSpeedChecked
-            ? [
-                {
-                  type: 'value',
-                  name: `Current speed (m/s)`, // Left Y-axis title
-                  nameLocation: 'middle',
-                  nameTextStyle: {
-                    color: mainText,
-                    padding: [0, 0, 30, 0], // Adjust spacing
-                    fontSize: 16,
-                    // margin: 20
-                  },
-                  axisLabel: {
-                    color: subText, // Set y-axis label color to white
-                  },
-                  axisLine: {
-                    show: true,
-                    lineStyle: {
-                      color: '#00ff00', // Updated color to green
-                    },
-                  },
-                  splitLine: {
-                    show: true, // Show grid lines
-                    lineStyle: {
-                      type: 'solid', // Solid gridlines for yAxis 0 (left axis)
-                      color: '#00ff00', // Updated to green
-                    },
-                  },
-                },
-              ]
-            : []),
-
-          ...(this.isCurrentChecked
-            ? [
-                {
-                  type: 'value',
-                  name: 'Current Direction (°)',
-                  nameLocation: 'middle',
-                  nameTextStyle: {
-                    color: mainText,
-                    padding: 25, // Adjust spacing
-                    fontSize: 16,
-                  },
-                  axisLabel: {
-                    color: subText, // Set y-axis label color to white
-                  },
-                  axisLine: {
-                    show: true,
-                    lineStyle: {
-                      color: '#0000ff', // Updated color to blue
-                    },
-                  },
-                  splitLine: {
-                    show: true, // Show grid lines
-                    lineStyle: {
-                      type: 'dashed', // Dashed gridlines for yAxis 1 (right axis)
-                      color: '#0000ff', // Updated to blue
-                    },
-                  },
-                  position:
-                    this.isSpeedChecked && this.isCurrentChecked ? 'right' : '', // Position the axis on the right
-                  min: 0, // Set minimum value
-                  max: 360, // Set maximum value
-                  interval: 90, // Set interval between tick marks
-                },
-              ]
-            : []),
         ],
-
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Current Speed (m/s)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'red',
+              padding: [0, 0, 10, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+              lineStyle: {
+                color: 'red',
+              },
+            },
+            splitLine: {
+              show: false,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+          },
+          {
+            type: 'value',
+            name: 'Tide (m)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: '#1f77b4',
+              padding: [0, 0, 10, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+              lineStyle: {
+                color: '#1f77b4', // orange
+              },
+            },
+            splitLine: {
+              show: false,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+            position: 'left',
+            offset: 70, // to avoid overlap with third y-axis
+          },
+          {
+            type: 'value',
+            name: 'Current Direction (°)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'green',
+              padding: 25,
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+              lineStyle: {
+                color: 'green',
+              },
+            },
+            splitLine: {
+              show: false,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+            position: 'right',
+            min: 0,
+            max: 360,
+            interval: 90,
+          },
+        ],
         legend: {
-          data: [
-            ...(this.isSpeedChecked ? ['Current Speed'] : []),
-            ...(this.isCurrentChecked ? ['Current Direction'] : []),
-          ], // Make sure this matches series names
-          orient: 'vertical',
+          data: ['Current Speed', 'Tide', 'Current Direction'],
+          orient: 'horizontal',
           right: '15%',
           textStyle: {
             color: subText,
             fontSize: 14,
           },
         },
-
         toolbox: {
-          // right: 10,s
           feature: {
             dataZoom: {
               yAxisIndex: 'none',
@@ -721,129 +1123,129 @@ export class AnalyticsComponent implements OnInit {
             borderColor: mainText,
           },
         },
-
-        // dataZoom: [
-        //     {
-        //         type: 'slider',
-        //         start: 0,
-        //         end: 100
-        //     },
-        //     {
-        //         type: 'inside'
-        //     }
-        // ],
-
         dataZoom: [
           {
-            type: 'inside', // Enable interactive zooming
-            xAxisIndex: 0, // Apply zooming to the x-axis (time axis)
-            filterMode: 'filter', // Filter out of view data
-            start: 0, // Start position for zooming (0%)
-            end: 100, // End position for zooming (100%)
-          },
-          {
-            type: 'slider', // Enable zooming via a slider below the x-axis
-            height: 20,
-            xAxisIndex: 0, // Apply slider to the x-axis
-            filterMode: 'filter',
-            start: 0, // Start position for zooming
-            end: 100, // End position for zooming
-          },
-          {
-            type: 'inside', // Enable vertical zooming for y-axis 0 (speed)
-            yAxisIndex: 0, // Bind zoom to the left y-axis (speed)
+            type: 'inside',
+            xAxisIndex: 0,
             filterMode: 'filter',
             start: 0,
             end: 100,
           },
-          ...(this.isSpeedChecked && this.isCurrentChecked
-            ? [
-                {
-                  type: 'inside', // Enable vertical zooming for y-axis 1 (direction)
-                  yAxisIndex: 1, // Bind zoom to the right y-axis (direction)
-                  filterMode: 'filter',
-                  start: 0,
-                  end: 100,
-                },
-              ]
-            : []),
+          {
+            type: 'slider',
+            bottom: 20,
+            height: 15,
+            xAxisIndex: 0,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            yAxisIndex: 0,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            yAxisIndex: 1,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            yAxisIndex: 2,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
         ],
-
         series: [
-          ...(this.isSpeedChecked
-            ? [
-                {
-                  name: 'Current Speed',
-                  // data: this.sampleData2.map(item => [item.time, item.speed]),
-                  data: this.sampleDataAdcp.map((item) => [
-                    item.timestamp,
-                    item.current_speed,
-                  ]),
-                  // data: dates.map((date, index) => ({
-                  //   value: [date, midCurrent[index]?.split(';')[0]],
-                  // })),
-                  type: chartType,
-                  lineStyle: {
-                    normal: {
-                      color: '#00ff00', // Updated line color to green
-                    },
-                  },
-                  itemStyle: {
-                    color: '#00ff00', // Updated item color to green
-                  },
-                  showSymbol: false,
-                  label: {
-                    show: false,
-                    fontSize: 12,
-                  },
-                  yAxisIndex: 0, // Bind to left y-axis
-                },
-              ]
-            : []),
-
-          ...(this.isCurrentChecked
-            ? [
-                {
-                  name: 'Current Direction',
-                  // data: this.sampleData.map(item => [item.time, item.direction]),
-                  data: this.sampleDataAdcp.map((item) => [
-                    item.timestamp,
-                    item.current_direction,
-                  ]),
-                  // data: dates.map((date, index) => ({
-                  //   value: [date, midCurrent[index]?.split(';')[1]],
-                  // })),
-                  type: chartType,
-                  lineStyle: {
-                    normal: {
-                      color: '#0000ff', // Updated line color to blue
-                      type: 'dashed',
-                    },
-                  },
-                  itemStyle: {
-                    color: '#0000ff', // Updated item color to blue
-                  },
-                  showSymbol: true,
-                  label: {
-                    show: false,
-                    fontSize: 12,
-                  },
-                  yAxisIndex:
-                    this.isSpeedChecked && this.isCurrentChecked ? 1 : 0, // Bind to right y-axis
-                },
-              ]
-            : []),
+          {
+            name: 'Current Speed',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.current_speed,
+            ]),
+            type: chartType,
+            // lineStyle: {
+            //   color: '#00ff00',
+            // },
+            itemStyle: {
+              color: 'red',
+            },
+            showSymbol: false,
+            label: {
+              show: false,
+              fontSize: 12,
+            },
+            yAxisIndex: 0,
+          },
+          {
+            name: 'Tide',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.tide,
+            ]),
+            type: chartType,
+            // lineStyle: {
+            //   color: '#1f77b4',
+            // },
+            itemStyle: {
+              color: '#1f77b4',
+            },
+            showSymbol: false,
+            label: {
+              show: false,
+              fontSize: 12,
+            },
+            yAxisIndex: 1,
+          },
+          {
+            name: 'Current Direction',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.current_direction,
+            ]),
+            type: chartType,
+            // lineStyle: {
+            //   color: '#0000ff',
+            //   type: 'dashed',
+            // },
+            itemStyle: {
+              color: 'green',
+            },
+            showSymbol: true,
+            symbol:
+              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            symbolSize: 14,
+            symbolOffset: [0, -7],
+            symbolRotate: (value: any) => value[1],
+            label: {
+              show: false,
+              fontSize: 12,
+            },
+            yAxisIndex: 2,
+          },
         ],
       };
 
-      // Set options for the chart
       midspeedanddirection.setOption(option);
+      this.midChartInstance.on('click', (params: echarts.ECElementEvent) => {
+        const data = params.data as [string, number, number];
+        if (data && data[2]) {
+          this.selectedPointId = data[2];
+          this.visible = true;
+        }
+      });
+
       this.loading = false;
       window.addEventListener('resize', () => {
-        midspeedanddirection.resize();
+        this.midChartInstance.resize();
       });
     } else {
-      //console.error("Element with id 'midspeedanddirection' not found");
       this.loading = false;
     }
   }
