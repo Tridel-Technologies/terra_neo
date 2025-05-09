@@ -16,8 +16,8 @@
         <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
     </div>
 
-    <div class="chartContainer" *ngIf="isCompareView">
-        <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    <div class="chartCompare" *ngIf="isCompareView">
+        <div id="midSpeedDirection" class="compare-diagram" style="width: 100%; height: 600px;"></div>
     </div>
 </div>
 
@@ -40,13 +40,16 @@
                         (m/s)</th>
                     <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Direction
                         (°)</th>
+                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Tide
+                        (m)</th>
                 </tr>
             </ng-template>
             <ng-template pTemplate="body" let-item>
                 <tr [ngClass]="{'selected-row': item.id === selectedPointId}">
-                    <td>{{item.timestamp}}</td>
+                    <td>{{item.timestamp | date:'yyyy/MM/dd HH:mm:ss'}}</td>
                     <td><input type="text" pInputText [(ngModel)]="item.current_speed" /></td>
                     <td><input type="text" pInputText [(ngModel)]="item.current_direction" /></td>
+                    <td><input type="text" pInputText [(ngModel)]="item.tide" /></td>
                 </tr>
             </ng-template>
         </p-table>

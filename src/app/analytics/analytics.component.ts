@@ -53,7 +53,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   loading: boolean = false;
   chartOption: any;
   selectedChart: string = 'line';
-  isCompareView: boolean = true;
+  isCompareView: boolean = false;
 
   visible: boolean = false;
   selectedPointId: number | null = null;
@@ -208,8 +208,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     // this.midSpeedDirection();
     // this.currentSpeed();
     // this.currentDirection();
-    this.loadChart();
-    this.onDialogShow();
+    // this.loadChart();
+    // this.onDialogShow();
   }
 
   ngAfterViewInit(): void {
@@ -244,7 +244,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   }
 
   private updateChartWidths(width: number) {
-    const charts = document.querySelectorAll('.chart-diagram');
+    const charts = document.querySelectorAll('.compare-diagram');
     charts.forEach((chart) => {
       (chart as HTMLElement).style.width = `${width}%`;
     });
@@ -378,7 +378,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: 'Tide',
+          text: '🌊 Tide',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -593,7 +593,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: 'Current Speed',
+          text: '🌀 Current Speed',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -775,7 +775,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: 'Current Direction',
+          text: '🧭 Current Direction',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -784,6 +784,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         },
         tooltip: { trigger: 'axis' },
         grid: { left: '7%', right: '5%' },
+        
         xAxis: [
           {
             type: 'time',
@@ -959,10 +960,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         existingInstance.dispose();
       }
       const midspeedanddirection = echarts.init(mid);
+      this.midChartInstance = midspeedanddirection;  // Store the instance before setting options
 
       const option = {
         title: {
-          text: 'Mid',
+          text: 'Compare View (🌊 Tide, 🌀 Current Speed, 🧭 Current Direction)',
           left: '1%',
           // top: '0%',
           textStyle: {
@@ -1233,17 +1235,19 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       };
 
       midspeedanddirection.setOption(option);
-      this.midChartInstance.on('click', (params: echarts.ECElementEvent) => {
-        const data = params.data as [string, number, number];
-        if (data && data[2]) {
-          this.selectedPointId = data[2];
+      
+      // Add click event after setting options
+      midspeedanddirection.on('click', (params: echarts.ECElementEvent) => {
+        const dataIndex = params.dataIndex;
+        if (dataIndex !== undefined) {
+          this.selectedPointId = this.sampleDataAdcp[dataIndex].id;
           this.visible = true;
         }
       });
 
       this.loading = false;
       window.addEventListener('resize', () => {
-        this.midChartInstance.resize();
+        midspeedanddirection.resize();
       });
     } else {
       this.loading = false;
