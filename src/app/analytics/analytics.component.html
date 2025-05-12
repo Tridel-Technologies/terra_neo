@@ -1,64 +1,97 @@
-<div class="chartsContainer">
-    <div class="view">
-        <label>Single View</label>
-        <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
-        <label>Compare View</label>
-    </div>
-    <div class="chartContainer" *ngIf="!isCompareView">
-        <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+<div class="analytics_main">
+    <div class="files_container">
+        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+
+        <div class="folder" *ngFor="let folder of files_list; let i = index">
+            <div class="folder-header" (click)="toggleFolder(i, folder.id)">
+                <img [src]="expandedFolders[i] ? '../../assets/file_opened.png' : '../../assets/file_closed.png'"
+                    alt="folder" />
+                <div class="folder-info">
+                    <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
+                </div>
+                <span class="arrow">{{ expandedFolders[i] ? '▾' : '▸' }}</span>
+            </div>
+
+            <div class="file-list" *ngIf="expandedFolders[i]">
+                <div [ngClass]="getFileClass(f, folder.id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f, $event, folder.id, folder.folder_name)">
+                    <img [src]="getFileImage(f)" alt="file" />
+                    <p>{{ f }}</p>
+                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                </div>
+            </div>
+        </div>
     </div>
 
-    <div class="chartContainer" *ngIf="!isCompareView">
+
+    <div class="chartsContainer">
+        <div class="view">
+            <label>Single View</label>
+            <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
+            <label>Compare View</label>
+        </div>
+        <div class="chartContainer" *ngIf="!isCompareView">
+            <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+        </div>
+
+        <!-- <div class="chartContainer" *ngIf="!isCompareView">
         <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
     </div>
 
     <div class="chartContainer" *ngIf="!isCompareView">
         <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-    </div>
+    </div> -->
 
-    <div class="chartContainer" *ngIf="!isCompareView">
-        <div id="currentSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-    </div>
-
-    <div class="chartCompare" *ngIf="isCompareView">
-        <div id="midSpeedDirection" class="compare-diagram" style="width: 100%; height: 600px;"></div>
-    </div>
-</div>
-
-
-<p-dialog [(visible)]="visible" [style]="{width: '30vw', height: '100%', maxHeight: '100%'}" [draggable]="false"
-    [resizable]="false" position="right" [modal]="true" [closeOnEscape]="true" [closable]="true"
-    (onShow)="onDialogShow()" (onHide)="onDialogHide()">
-    <ng-template pTemplate="header">
-        <div class="header">
-            <span style="font-size: 1.5rem; font-weight: bold;">ADCP Data</span>
+        <div class="chartContainer" *ngIf="!isCompareView">
+            <div id="currentSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
-    </ng-template>
-    <div #tableWrapper>
-        <p-table [value]="sampleDataAdcp" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
-            [scrollHeight]="'calc(100vh - 150px)'" [showGridlines]="true">
-            <ng-template pTemplate="header">
-                <tr>
-                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Timestamp</th>
-                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Speed
-                        (m/s)</th>
-                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Direction
-                        (°)</th>
-                    <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Tide
-                        (m)</th>
-                </tr>
-            </ng-template>
-            <ng-template pTemplate="body" let-item>
-                <tr [ngClass]="{'selected-row': item.id === selectedPointId}">
-                    <td>{{item.timestamp | date:'yyyy/MM/dd HH:mm:ss'}}</td>
-                    <td><input type="text" pInputText [(ngModel)]="item.current_speed" /></td>
-                    <td><input type="text" pInputText [(ngModel)]="item.current_direction" /></td>
-                    <td><input type="text" pInputText [(ngModel)]="item.tide" /></td>
-                </tr>
-            </ng-template>
-        </p-table>
+
+        <div class="chartContainer" *ngIf="!isCompareView">
+            <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+        </div>
+
+        <div class="chartCompare" *ngIf="isCompareView">
+            <div id="midSpeedDirection" class="compare-diagram" style="width: 100%; height: 600px;"></div>
+        </div>
     </div>
-    <div class="footer" style="text-align: center; margin-top: 15px;">
-        <p-button label="Update" icon="pi pi-check" [loading]="loading" />
-    </div>
-</p-dialog>
+
+
+    <p-dialog [(visible)]="visible" [style]="{width: '30vw', height: '100%', maxHeight: '100%'}" [draggable]="false"
+        [resizable]="false" position="right" [modal]="true" [closeOnEscape]="true" [closable]="true"
+        (onShow)="onDialogShow()" (onHide)="onDialogHide()">
+        <ng-template pTemplate="header">
+            <div class="header">
+                <span style="font-size: 1.5rem; font-weight: bold;">ADCP Data</span>
+            </div>
+        </ng-template>
+        <div #tableWrapper>
+            <p-table [value]="sampleDataAdcp" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
+                [scrollHeight]="'calc(100vh - 150px)'" [showGridlines]="true">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Timestamp
+                        </th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Speed
+                            (m/s)</th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current
+                            Direction
+                            (°)</th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Tide
+                            (m)</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-item>
+                    <tr [ngClass]="{'selected-row': item.id === selectedPointId}">
+                        <td>{{item.timestamp | date:'yyyy/MM/dd HH:mm:ss'}}</td>
+                        <td><input type="text" pInputText [(ngModel)]="item.current_speed" /></td>
+                        <td><input type="text" pInputText [(ngModel)]="item.current_direction" /></td>
+                        <td><input type="text" pInputText [(ngModel)]="item.tide" /></td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        </div>
+        <div class="footer" style="text-align: center; margin-top: 15px;">
+            <p-button label="Update" icon="pi pi-check" [loading]="loading" />
+        </div>
+    </p-dialog>
+</div>
