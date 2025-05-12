@@ -16,6 +16,10 @@
         <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
     </div>
 
+    <div class="chartContainer" *ngIf="!isCompareView">
+        <div id="currentSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+    </div>
+
     <div class="chartCompare" *ngIf="isCompareView">
         <div id="midSpeedDirection" class="compare-diagram" style="width: 100%; height: 600px;"></div>
     </div>

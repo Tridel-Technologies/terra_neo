@@ -224,6 +224,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         this.Tide();
         this.currentSpeed();
         this.currentDirection();
+        this.currentSpeedAndDirection();
       }
     }, 100);
   }
@@ -529,6 +530,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             // data: this.sampleDataTide.map(item => [item.date, item.level]),
             //  data: sampleData.map(item => [item[0], item[1]]),
             type: 'line',
+            areaStyle: {},
             smooth: 'line',
             // lineStyle: 'line',
             // barWidth: 'line',
@@ -784,7 +786,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         },
         tooltip: { trigger: 'axis' },
         grid: { left: '7%', right: '5%' },
-        
+
         xAxis: [
           {
             type: 'time',
@@ -939,6 +941,162 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     }
   }
 
+  currentSpeedAndDirection(): void {
+    const chartType = this.selectedChart;
+    const chartContainer = document.getElementById('currentSpeedDirection');
+
+    const bgColor = '#ffffff';
+    const mainText = '#000000';
+    const subText = '#666666';
+
+    if (chartContainer) {
+      const existingInstance = echarts.getInstanceByDom(chartContainer);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+
+      const chart = echarts.init(chartContainer);
+
+      const option = {
+        title: {
+          text: '🌊 Current Speed & 🧭 Direction',
+          left: '1%',
+          textStyle: {
+            color: mainText,
+            fontSize: 20,
+          },
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'cross',
+          },
+        },
+        grid: { left: '7%', right: '7%' },
+        legend: {
+          data: ['Current Speed', 'Current Direction'],
+          top: '5%',
+          right: '5%',
+          textStyle: {
+            color: subText,
+          },
+        },
+        toolbox: {
+          feature: {
+            dataZoom: { yAxisIndex: 'none' },
+            restore: {},
+            saveAsImage: {
+              backgroundColor: bgColor,
+              pixelRatio: 2,
+            },
+          },
+          iconStyle: {
+            borderColor: mainText,
+          },
+        },
+        xAxis: {
+          type: 'time',
+          name: 'Date',
+          nameLocation: 'middle',
+          nameTextStyle: {
+            color: mainText,
+            padding: [40, 0, 0, 0],
+            fontSize: 16,
+          },
+          axisLabel: {
+            color: subText,
+            rotate: 45,
+          },
+          axisLine: { show: true },
+        },
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Speed (m/s)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'red',
+              padding: [0, 0, 30, 0],
+              fontSize: 16,
+            },
+            axisLabel: { color: subText },
+            axisLine: { show: true },
+            splitLine: { show: true },
+          },
+          {
+            type: 'value',
+            name: 'Direction (°)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'green',
+              padding: [0, 0, 30, 0],
+              fontSize: 16,
+            },
+            axisLabel: { color: subText },
+            axisLine: { show: true },
+            splitLine: { show: false },
+          },
+        ],
+        dataZoom: [
+          {
+            type: 'slider',
+            bottom: 20,
+            height: 15,
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            start: 0,
+            end: 100,
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
+          },
+        ],
+        series: [
+          {
+            name: 'Current Speed',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.current_speed,
+            ]),
+            type: chartType,
+            itemStyle: { color: 'red' },
+            showSymbol: false,
+            label: { show: true, fontSize: 12 },
+            yAxisIndex: 0,
+          },
+          {
+            name: 'Current Direction',
+            data: this.sampleDataAdcp.map((item) => [
+              item.timestamp,
+              item.current_direction,
+            ]),
+            type: chartType,
+            itemStyle: { color: 'green' },
+            showSymbol: true,
+            symbol:
+              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            symbolSize: 14,
+            symbolOffset: [0, -7],
+            symbolRotate: (value: any) => value[1],
+            label: { show: false },
+            yAxisIndex: 1,
+          },
+        ],
+      };
+
+      chart.setOption(option);
+      this.loading = false;
+
+      window.addEventListener('resize', () => {
+        chart.resize();
+      });
+    } else {
+      this.loading = false;
+    }
+  }
+
   midSpeedDirection(): void {
     const chartType = this.selectedChart;
     const mid = document.getElementById('midSpeedDirection');
@@ -960,7 +1118,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         existingInstance.dispose();
       }
       const midspeedanddirection = echarts.init(mid);
-      this.midChartInstance = midspeedanddirection;  // Store the instance before setting options
+      this.midChartInstance = midspeedanddirection; // Store the instance before setting options
 
       const option = {
         title: {
@@ -1235,7 +1393,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       };
 
       midspeedanddirection.setOption(option);
-      
+
       // Add click event after setting options
       midspeedanddirection.on('click', (params: echarts.ECElementEvent) => {
         const dataIndex = params.dataIndex;

@@ -1,11 +1,16 @@
 import { Routes } from '@angular/router';
 import { AnalyticsComponent } from './analytics/analytics.component';
+import { ReportsComponent } from './reports/reports.component';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: 'analytics',
+    redirectTo: 'reports',
+  },
+  {
+    path: 'reports',
+    component: ReportsComponent,
   },
   {
     path: 'analytics',
@@ -13,6 +18,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'analytics',
+    redirectTo: 'reports',
   },
 ];

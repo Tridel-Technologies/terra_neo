@@ -1,0 +1,55 @@
+<div class="reportmain">
+    <div class="tablecontainer">
+        <p-table #dt [value]="sampleDataAdcp" [columns]="selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
+            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="13" responsiveLayout="scroll"
+            [rowsPerPageOptions]="[13,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
+            [exportHeader]="'customExportHeader'" selectionMode="multiple"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [filterDelay]="0"
+            [tableStyle]="{'min-width': '50rem'}" responsiveLayout="stack" [breakpoint]="'960px'" stripedRows="tr"
+            rowHover="true" showCurrentPageReport="true">
+
+            <ng-template #caption>
+                <div class="caption">
+                    <div class="captionrow">
+                        <div class="captionrowinrow">
+                            <div id="search">
+                                <input type="search" placeholder="Search"
+                                    (input)="onSearch($any($event).target.value, dt)" />
+                            </div>
+                        </div>
+                        <div class="filter">
+                            <p-multiselect display="chip" [options]="cols" [(ngModel)]="selectedColumns"
+                                optionLabel="header" selectedItemsLabel="{0} columns selected"
+                                [style]="{ 'min-width': '200px' }" placeholder="Choose Columns" [filter]="false"
+                                [showToggleAll]="false" [maxSelectedLabels]="9" />
+                        </div>
+                    </div>
+                </div>
+            </ng-template>
+
+
+            <ng-template #header let-columns>
+                <tr>
+                    <th class="centered-cell">ID <p-sortIcon></p-sortIcon></th>
+                    <th *ngFor="let col of columns" [pSortableColumn]="col.field" class="centered-cell">
+                        {{ col.header }} <p-sortIcon [field]="col.field"></p-sortIcon>
+                    </th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-row let-columns="columns" let-i="rowIndex">
+                <tr [ngClass]="{ 'highlight-row': rowMatchesSearch(row, columns) }">
+                    <td class="centered-cell">{{ i + 1 }}</td>
+                    <td *ngFor="let col of columns" class="centered-cell">
+                        <ng-container [ngSwitch]="col.type">
+                            <span *ngSwitchCase="'shortDate'">{{ row[col.field] | date:'dd-MM-yyyy HH:mm:ss' }}</span>
+                            <span *ngSwitchCase="'date'">{{ row[col.field] | date }}</span>
+                            <span *ngSwitchDefault [innerHTML]="highlightSearchText(row[col.field])">
+                            </span>
+                        </ng-container>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>
