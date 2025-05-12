@@ -1,0 +1,46 @@
+.stat-circle {
+    display: block;
+  }
+  
+  circle.bg {
+    fill: none;
+    stroke: #f1f1f1;
+    stroke-width: 2;
+  }
+  
+  circle.progress {
+    fill: none;
+    stroke: #2ecc71;
+    stroke-width: 2;
+    stroke-dasharray: 51 51;
+    stroke-linecap: round;
+    transition: stroke 0.3s ease-in-out, stroke-dashoffset 0.5s ease-in-out; /* Smooth animation */
+  }
+  
+  text {
+    font-size: 3px;
+    text-anchor: middle;
+    fill: #555;
+  }
+  
+
+  .stat-circle svg{
+    height: 20px !important;
+    width: 20px !important;
+  }
+
+  .batt{
+    position: relative;
+    display: flex;
+    height: 300px;
+    width: 300px;
+    justify-content: center;
+    align-items: center;
+  }
+  .icon{
+    height: 40px;
+    width: 40px;
+    position: absolute;
+    top: 45%;
+    left: 45%;
+  }

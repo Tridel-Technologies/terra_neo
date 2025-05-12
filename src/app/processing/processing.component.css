@@ -1,0 +1,97 @@
+.process_main{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+
+}
+
+.files_container{
+height: 100%;
+width: 20%;
+display: flex;
+flex-direction: column;
+justify-content: start;
+align-items: center;
+
+}
+
+.files{
+    height: 40px;
+    width: 90%;
+    /* background-color: aqua; */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: row;
+    justify-content: start;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+    background-color: var(--background-secondary);
+}
+.files img{
+    height: 30px;
+    width: 30px;
+    margin-left: 10px;
+
+}
+.files p{
+    margin-left: 10px;
+    font-size: 15px;
+    margin: 0px;
+    padding: 5px;
+    color: var(--font-color);
+}
+.files span{
+    font-size: 12px;
+    margin: 0px;
+    font-weight: 400;
+    color: var(--font-secondary-color);
+}
+.main_section{
+    height: 100%;
+width: 80%;
+display: flex;
+flex-direction: column;
+justify-content: start;
+align-items: center;
+}
+
+
+
+
+
+.parent {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 8px;
+}
+    
+.div1 {
+    grid-row: span 4 / span 4;
+}
+
+.div2 {
+    grid-row: span 4 / span 4;
+}
+
+.div4 {
+    grid-row: span 4 / span 4;
+}
+
+.div5 {
+    grid-row: span 4 / span 4;
+}
+
+.div6 {
+    grid-column-start: 4;
+    grid-row-start: 5;
+}
+
+.div8 {
+    grid-column: span 3 / span 3;
+    grid-column-start: 1;
+    grid-row-start: 5;
+}
+        
