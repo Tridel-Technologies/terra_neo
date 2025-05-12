@@ -1,0 +1,143 @@
+<div class="dash_main">
+    <div class="files_container">
+        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+
+        <div class="folder" *ngFor="let folder of files_list; let i = index">
+            <div class="folder-header" (click)="toggleFolder(i, folder.id)">
+                <img [src]="expandedFolders[i] ? '../../assets/file_opened.png' : '../../assets/file_closed.png'"
+                    alt="folder" />
+                <div class="folder-info">
+                    <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
+                </div>
+                <span class="arrow">{{ expandedFolders[i] ? '▾' : '▸' }}</span>
+            </div>
+
+            <div class="file-list" *ngIf="expandedFolders[i]">
+                <div [ngClass]="getFileClass(f, folder.id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f, $event, folder.id, folder.folder_name)">
+                    <img [src]="getFileImage(f)" alt="file" />
+                    <p>{{ f }}</p>
+                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="parent">
+        <div class="toggle">
+            <p>+/- 6 hours</p>
+            <div class="tog" [ngStyle]="{'justify-content':isLive?'end':'start'}" (click)="toggle_tap()">
+                <div class="toggle_button"></div>
+            </div>
+            <p>Live</p>
+        </div>
+        <div class="left" *ngIf="isLive">
+            <h4>{{selected_folder_name}} -> {{selectedFiles[0].file_name}}</h4>
+            <div class="content">
+                <p *ngFor="let dates of main_table" (click)="tap_date(dates.date, dates.time)" [ngStyle]="{
+                            'background-color': 
+                            selected_data.date === dates.date && selected_data.time === dates.time 
+                            ? '#d1e7dd' : 'transparent'
+                        }">
+                    {{ dates.date | date :'yyyy-MM-dd' }} {{ dates.time }}
+                </p>
+
+            </div>
+
+        </div>
+        <div class="right" [ngStyle]="{'width':!isLive ?'98.5%':'76%'}">
+            <div class="ids">
+                <div class="station-id">
+                    <h5 class="title">Station ID</h5>
+                    <p class="sub-title">{{selected_data.id}}</p>
+                </div>
+                <div class="date-time">
+                    <h5 class="title">Date</h5>
+                    <p class="sub-title">{{selected_data.date |date: 'yyyy-MM-dd'}} {{selected_data.time}}</p>
+                </div>
+                <div class="lat">
+                    <h5 class="title">Latitude</h5>
+                    <p class="sub-title">{{selected_data.lat}}</p>
+                </div>
+                <div class="lon">
+                    <h5 class="title">Longitude</h5>
+                    <p class="sub-title">{{selected_data.lon}}</p>
+                </div>
+            </div>
+            <div class="centers">
+                <div class="tide">
+                    <h5 class="title-tide">Tide</h5>
+                    <img src="../../assets/tide.png" alt="">
+                    <p style="align-self: center;">{{selected_data.tide}}</p>
+                </div>
+                <div class="battery">
+                    <h5 class="title-tide">Battery</h5>
+                    <div class="bat">
+                        <app-battery [percentage]="12"></app-battery>
+                    </div>
+                    <p style="align-self: center;">{{selected_data.battery}}</p>
+                </div>
+            </div>
+            <div class="currents">
+                <div class="current_speed" *ngIf="isLive">
+                    <h5 class="title-tide">Current Speed</h5>
+                    <img src="../../assets/speed.png" alt="">
+                    <p style="align-self: center;">{{selected_data.current_speed}}</p>
+                </div>
+                <div class="current_direction" *ngIf="isLive">
+                    <h5 class="title-tide">Current Direction</h5>
+                    <img src="../../assets/dire.png" alt="">
+                    <p style="align-self: center;">{{selected_data.current_direction}}</p>
+                </div>
+                <div class="current1" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours before</h5>
+
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{selected_data.current_speed_b_6}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{selected_data.current_dir_b_6}}</p>
+                        </div>
+                    </div>
+
+                </div>
+                <div class="current2" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current </h5>
+
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{selected_data.current_direction}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{selected_data.current_speed}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="current3" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours After</h5>
+
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{selected_data.current_speed_after_6}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{selected_data.current_dir_after_6}}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

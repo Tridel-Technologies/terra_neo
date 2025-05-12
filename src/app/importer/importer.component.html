@@ -1,0 +1,204 @@
+<div class="importer_base">
+
+    <button class="import_button" (click)="on_openImport()">import</button>
+
+    <div class="files_container">
+        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+
+        <div class="folder" *ngFor="let folder of files_list; let i = index">
+            <div class="folder-header" (click)="toggleFolder(i, folder.id)">
+                <img [src]="expandedFolders[i] ? '../../assets/file_opened.png' : '../../assets/file_closed.png'"
+                    alt="folder" />
+                <div class="folder-info">
+                    <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
+                </div>
+                <span class="arrow">{{ expandedFolders[i] ? '▾' : '▸' }}</span>
+            </div>
+
+            <div class="file-list" *ngIf="expandedFolders[i]">
+                <div [ngClass]="getFileClass(f, folder.id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f, $event, folder.id)">
+                    <img [src]="getFileImage(f)" alt="file" />
+                    <p>{{ f }}</p>
+                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="main_section">
+
+        <div class="coordinates">
+            <h4>Latitude</h4>
+            <input type="number" [(ngModel)]="lat">
+
+            <h4>Longitude</h4>
+            <input type="number" [(ngModel)]="lon">
+
+
+            <h4 *ngIf="!isMulti">Select High Water Level</h4>
+            <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti">
+            <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
+                <option value="1">-- Please Select High Water Level from Table - -></option>
+                <option value="2">one</option>
+                <option value="3">two</option>
+            </select> -->
+            <div class="spacer"></div>
+            <button class="update" style="align-self: flex-end; margin-right: 15px;"
+                (click)="update_Values()">Update</button>
+        </div>
+        <!-- <div class="dashboard">
+            <div class="widget">
+                <h3>Station ID</h3>
+                <p>0123A</p>
+            </div>
+            <div class="widget">
+                <h3>Latitude</h3>
+                <p>34.05° N</p>
+            </div>
+            <div class="widget">
+                <h3>Longitude</h3>
+                <p>118.25° W</p>
+            </div>
+            <div class="widget">
+                <h3>Battery</h3>
+                <div class="battery-icon"></div>
+            </div>
+
+            <div class="widget wide">
+                <h3>Tide</h3>
+                <div class="line-chart"></div>
+            </div>
+            <div class="widget">
+                <h3>Current Speed</h3>
+                <div class="gauge"></div>
+            </div>
+            <div class="widget">
+                <h3>Current Direction</h3>
+                <div class="arrow-icon"></div>
+            </div>
+            <div class="widget">
+                <h3>Depth</h3>
+                <div class="line-chart"></div>
+            </div>
+
+            <div class="widget" style="grid-column: span 4;">
+                <h3>Current Profiles</h3>
+            </div>
+
+            <div class="profiles">
+                <div class="widget center">
+                    <h3>Current Speed</h3>
+                    <div class="gauge"></div>
+                </div>
+                <div class="widget center">
+                    <h3>Current Direction</h3>
+                    <div class="gauge"></div>
+                </div>
+                <div class="widget center">
+                    <h3>Current Speed</h3>
+                    <div class="gauge"></div>
+                </div>
+                <div class="widget center">
+                    <h3>Current Direction</h3>
+                    <div class="gauge"></div>
+                </div>
+                <div class="widget center">
+                    <h3>Current Speed</h3>
+                    <div class="gauge"></div>
+                </div>
+                <div class="widget center">
+                    <h3>Depth</h3>
+                    <div class="drop-icon"></div>
+                </div>
+            </div>
+        </div> -->
+        <div class="table_container" *ngIf="!isMulti">
+            <p *ngIf="main_table.length === 0">No Files Selected</p>
+            <div class="bod" *ngIf="main_table.length > 0">
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th *ngFor="let column of main_table_headers">{{ column }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let row of main_table; let i=index" (click)="onRowClick(row, i)"
+                            [class.selected]="selectedRowIndex === i">
+                            <td>{{ row.station_id }}</td>
+                            <td>{{ row.date | date: 'yyyy-MM-dd' }}</td>
+                            <td>{{ row.time }}</td>
+                            <td>{{ row.speed }}</td>
+                            <td>{{ row.direction }}</td>
+                            <td>{{ row.dept }}</td>
+                            <td>{{ row.battery }}</td>
+                            <td>{{ row.pressure }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="home_main" *ngIf="is_show_import">
+        <div class="table_container">
+            <p *ngIf="historyData.length === 0">No Files Selected</p>
+            <div class="bod" *ngIf="historyData.length > 0">
+                <table class="styled-table">
+                    <thead>
+                        <tr>
+                            <th *ngFor="let column of displayedColumns">{{ column }}</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let row of historyData; let i=index">
+                            <td>{{ row.station_id }}</td>
+                            <td>{{ row.Date }}</td>
+                            <td>{{ row.Time }}</td>
+                            <td>{{ row.speed }}</td>
+                            <td>{{ row.direction }}</td>
+                            <td>{{ row.depth }}</td>
+                            <td>{{ row.battery }}</td>
+                            <td>{{ row.pressure }}</td>
+                            <td>
+                                <!-- <button cli>Delete</button>-->
+                                <i id="trash" class="fa-solid fa-trash" (click)="deleteRow(i)" style="color: red;"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="file_upload_container">
+            <h1 (click)="on_openImport()">X</h1>
+
+            <!-- Toggle for allowing folder upload -->
+            <div class="checkbox-container">
+                <label>
+                    <input type="checkbox" [(ngModel)]="allowFolderUpload" />
+                    Allow Folder Upload
+                </label>
+            </div>
+
+            <div class="file-upload">
+                <input type="file" id="fileUpload" accept=".xlsx, .csv" (change)="onFilesSelected($event)" multiple
+                    [attr.webkitdirectory]="allowFolderUpload ? '' : null" />
+                <label for="fileUpload">📁 Upload File (.xlsx, .csv)</label>
+
+                <div *ngIf="FileName !== ''" class="file-name">{{ FileName }}</div>
+            </div>
+            <div class="uploaded_files">
+                <p *ngFor="let file of uploaded_files">{{file}}</p>
+            </div>
+            <input class="nameField" type="text" placeholder="File Name" [(ngModel)]="FileName" />
+
+            <button type="submit" (click)="import()">Submit</button>
+        </div>
+
+
+
+
+    </div>
+</div>
