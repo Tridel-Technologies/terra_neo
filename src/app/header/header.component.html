@@ -1,0 +1,18 @@
+<div class="topbar">
+    <h1>TERRA - NUO</h1>
+    <div class="pages_item">
+        <p [ngClass]="index ===0?'page_active':'page'" (click)="onpageChange(0)">Home</p>
+        <p [ngClass]="index ===1?'page_active':'page'" (click)="onpageChange(1)">Dashboard</p>
+        <p [ngClass]="index ===2?'page_active':'page'" (click)="onpageChange(2)">Analysis</p>
+        <p [ngClass]="index ===3?'page_active':'page'" (click)="onpageChange(3)">Reports</p>
+        <p [ngClass]="index ===4?'page_active':'page'" (click)="onpageChange(4)">Settings</p>
+    </div>
+    <div class="theme">
+        <i class="fa-regular fa-moon" *ngIf="theme === 'light'" (click)="onChangeTheme('dark')"></i>
+        <i class="fa-regular fa-sun" *ngIf="theme === 'dark'" (click)="onChangeTheme('light')"></i>
+    </div>
+    <div class="user">
+        <img src="../../assets/user.jpeg" alt="">
+        <!-- <h5>Admin</h5> -->
+    </div>
+</div>

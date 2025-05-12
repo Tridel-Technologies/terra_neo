@@ -1,0 +1,15 @@
+<div class="process_main">
+
+    <div class="files_container">
+        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+        <div class="files" *ngFor="let file of files_list">
+            <img src="../../assets/file.png" alt="">
+            <p>{{file.file_name}} <br><span>{{file.timestamp}}</span></p>
+            <p style="color: blue;" (click)="fetch_file_data(file.id)">view</p>
+        </div>
+    </div>
+    <div class="main_section">
+
+    </div>
+
+</div>
