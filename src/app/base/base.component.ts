@@ -23,5 +23,5 @@ import { AnalyticsComponent } from '../analytics/analytics.component';
   styleUrl: './base.component.css',
 })
 export class BaseComponent {
-  index: number = 1;
+  index: number = 2;
 }

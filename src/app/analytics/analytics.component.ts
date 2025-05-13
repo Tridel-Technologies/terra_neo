@@ -6,6 +6,9 @@ import {
   ElementRef,
   AfterViewInit,
   HostBinding,
+  ChangeDetectorRef,
+  OnDestroy,
+  NgZone,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import * as echarts from 'echarts';
@@ -18,6 +21,8 @@ import { ButtonModule } from 'primeng/button';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
+import { SelectModule } from 'primeng/select';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 interface Files {
   id: number;
@@ -41,6 +46,31 @@ interface dashdata {
   lon: string;
 }
 
+interface ApiData {
+  id: number;
+  battery: string;
+  date: string;
+  dept: string;
+  direction: string;
+  file_id: number;
+  file_name: string;
+  high_water_level: number;
+  lat: string;
+  lon: string;
+  pressure: string;
+  speed: string;
+  station_id: string;
+  time: string;
+}
+
+interface SelectedData {
+  id: number;
+  tide: string;
+  datetime: string;
+  current_speed: string;
+  current_direction: string;
+}
+
 @Component({
   selector: 'app-analytics',
   imports: [
@@ -52,6 +82,8 @@ interface dashdata {
     InputTextModule,
     ButtonModule,
     HttpClientModule,
+    SelectModule,
+    ProgressSpinnerModule,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
@@ -73,10 +105,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   openedFolder!: number;
   selectedFiles: any[] = []; // Array to track selected files
   isMulti: boolean = true;
-  main_table: any[] = [];
+  main_table: ApiData[] = [];
   files_list: Files[] = [];
   selected_folder_name!: string;
-  selected_data!: dashdata;
+  selected_data!: SelectedData;
   isLive: boolean = true;
 
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
@@ -85,10 +117,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   @HostBinding('class.modal-open') get isModalOpen() {
     return this.visible;
   }
-
+  number: number = 4;
   loading: boolean = false;
-  chartOption: any;
-  isCompareView: boolean = false;
+  // chartOption: any;
+  // isCompareView: boolean = false;
 
   visible: boolean = false;
   selectedPointId: number | null = null;
@@ -96,157 +128,491 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   private midChartInstance!: EChartsType;
 
   selectedChart: string = 'line';
-  chartOptions = [
-    { label: 'Line Plot', value: 'line' },
-    { label: 'Scatter Series', value: 'scatter' },
-    { label: 'Bar Plot', value: 'bar' },
-    { label: 'Polar plot', value: 'currentSpeed' },
+  // chartOptions = [
+  //   { label: 'Line Plot', value: 'line' },
+  //   { label: 'Scatter Series', value: 'scatter' },
+  //   { label: 'Bar Plot', value: 'bar' },
+  // ];
+
+  viewMode: string = 'Tri Axis';
+  viewModes = [
+    { label: 'Single Axis', value: 'Single Axis' },
+    { label: 'Dual Axis', value: 'Dual Axis' },
+    { label: 'Tri Axis', value: 'Tri Axis' },
+    { label: 'Polar', value: 'Polar' },
   ];
+
+  totalRecords: number = 0;
+  lazyParams: any = {
+    first: 0,
+    rows: 20,
+  };
+  private fullData: ApiData[] = []; // Store the complete dataset
 
   sampleDataAdcp = [
     {
       id: 1,
+
       timestamp: '2024-10-01T00:00:00Z',
-      current_speed: 1.2,
-      current_direction: 30,
-      tide: 0.71,
+
+      current_speed: 2,
+
+      current_direction: 245,
+
+      tide: 3.66,
     },
+
     {
       id: 2,
+
       timestamp: '2024-10-01T01:00:00Z',
-      current_speed: 1.5,
-      current_direction: 45,
-      tide: 1.06,
+
+      current_speed: 1,
+
+      current_direction: 91,
+
+      tide: 3.56,
     },
+
     {
       id: 3,
+
       timestamp: '2024-10-01T02:00:00Z',
-      current_speed: 0.8,
-      current_direction: 60,
-      tide: 1.44,
+
+      current_speed: 2,
+
+      current_direction: 247,
+
+      tide: 3.45,
     },
+
     {
       id: 4,
+
       timestamp: '2024-10-01T03:00:00Z',
-      current_speed: 2.1,
-      current_direction: 90,
-      tide: 0.79,
+
+      current_speed: 3,
+
+      current_direction: 342,
+
+      tide: 3.31,
     },
+
     {
       id: 5,
+
       timestamp: '2024-10-01T04:00:00Z',
-      current_speed: 1.9,
-      current_direction: 120,
-      tide: 0.9,
+
+      current_speed: 2,
+
+      current_direction: 165,
+
+      tide: 3.12,
     },
+
     {
       id: 6,
+
       timestamp: '2024-10-01T05:00:00Z',
-      current_speed: 1.6,
-      current_direction: 150,
-      tide: 1.66,
+
+      current_speed: 0,
+
+      current_direction: 304,
+
+      tide: 2.86,
     },
+
     {
       id: 7,
+
       timestamp: '2024-10-01T06:00:00Z',
-      current_speed: 0.5,
-      current_direction: 180,
-      tide: 0.5,
+
+      current_speed: 1,
+
+      current_direction: 111,
+
+      tide: 2.7,
     },
+
     {
       id: 8,
+
       timestamp: '2024-10-01T07:00:00Z',
-      current_speed: 1.3,
-      current_direction: 210,
-      tide: 0.79,
+
+      current_speed: 1,
+
+      current_direction: 268,
+
+      tide: 2.51,
     },
+
     {
       id: 9,
+
       timestamp: '2024-10-01T08:00:00Z',
-      current_speed: 1.4,
-      current_direction: 240,
-      tide: 0.86,
+
+      current_speed: 3,
+
+      current_direction: 258,
+
+      tide: 2.24,
     },
+
     {
       id: 10,
+
       timestamp: '2024-10-01T09:00:00Z',
-      current_speed: 0.9,
-      current_direction: 270,
-      tide: 1.13,
+
+      current_speed: 2,
+
+      current_direction: 335,
+
+      tide: 2,
     },
+
     {
       id: 11,
+
       timestamp: '2024-10-01T10:00:00Z',
-      current_speed: 1.1,
-      current_direction: 300,
-      tide: 1.02,
+
+      current_speed: 0,
+
+      current_direction: 205,
+
+      tide: 1.82,
     },
+
     {
       id: 12,
+
       timestamp: '2024-10-01T11:00:00Z',
-      current_speed: 1.0,
-      current_direction: 330,
-      tide: 0.94,
+
+      current_speed: 1,
+
+      current_direction: 83,
+
+      tide: 1.62,
     },
+
     {
       id: 13,
+
       timestamp: '2024-10-01T12:00:00Z',
-      current_speed: 1.4,
-      current_direction: 360,
-      tide: 0.86,
+
+      current_speed: 1,
+
+      current_direction: 315,
+
+      tide: 1.43,
     },
+
     {
       id: 14,
+
       timestamp: '2024-10-01T13:00:00Z',
-      current_speed: 2.0,
-      current_direction: 15,
-      tide: 1.29,
+
+      current_speed: 3,
+
+      current_direction: 114,
+
+      tide: 1.23,
     },
+
     {
       id: 15,
+
       timestamp: '2024-10-01T14:00:00Z',
-      current_speed: 1.7,
-      current_direction: 30,
-      tide: 0.91,
+
+      current_speed: 3,
+
+      current_direction: 268,
+
+      tide: 1.11,
     },
+
     {
       id: 16,
+
       timestamp: '2024-10-01T15:00:00Z',
-      current_speed: 1.8,
-      current_direction: 45,
-      tide: 0.72,
+
+      current_speed: 0,
+
+      current_direction: 357,
+
+      tide: 1,
     },
+
     {
       id: 17,
+
       timestamp: '2024-10-01T16:00:00Z',
-      current_speed: 1.2,
-      current_direction: 60,
-      tide: 1.29,
+
+      current_speed: 2,
+
+      current_direction: 203,
+
+      tide: 0.91,
     },
+
     {
       id: 18,
+
       timestamp: '2024-10-01T17:00:00Z',
-      current_speed: 0.7,
-      current_direction: 90,
-      tide: 1.61,
+
+      current_speed: 3,
+
+      current_direction: 143,
+
+      tide: 0.86,
     },
+
     {
       id: 19,
+
       timestamp: '2024-10-01T18:00:00Z',
-      current_speed: 1.4,
-      current_direction: 120,
-      tide: 0.79,
+
+      current_speed: 1,
+
+      current_direction: 99,
+
+      tide: 0.83,
     },
+
     {
       id: 20,
+
       timestamp: '2024-10-01T19:00:00Z',
-      current_speed: 1.6,
-      current_direction: 150,
-      tide: 1.05,
+
+      current_speed: 1,
+
+      current_direction: 161,
+
+      tide: 0.84,
+    },
+
+    {
+      id: 21,
+
+      timestamp: '2024-10-01T20:00:00Z',
+
+      current_speed: 0,
+
+      current_direction: 123,
+
+      tide: 0.88,
+    },
+
+    {
+      id: 22,
+
+      timestamp: '2024-10-01T21:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 175,
+
+      tide: 0.94,
+    },
+
+    {
+      id: 23,
+
+      timestamp: '2024-10-01T22:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 252,
+
+      tide: 1.08,
+    },
+
+    {
+      id: 24,
+
+      timestamp: '2024-10-01T23:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 73,
+
+      tide: 1.18,
+    },
+
+    {
+      id: 25,
+
+      timestamp: '2024-10-02T00:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 122,
+
+      tide: 1.35,
+    },
+
+    {
+      id: 26,
+
+      timestamp: '2024-10-02T01:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 39,
+
+      tide: 1.5,
+    },
+
+    {
+      id: 27,
+
+      timestamp: '2024-10-02T02:00:00Z',
+
+      current_speed: 0,
+
+      current_direction: 97,
+
+      tide: 1.64,
+    },
+
+    {
+      id: 28,
+
+      timestamp: '2024-10-02T03:00:00Z',
+
+      current_speed: 2,
+
+      current_direction: 324,
+
+      tide: 1.86,
+    },
+
+    {
+      id: 29,
+
+      timestamp: '2024-10-02T04:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 206,
+
+      tide: 2.01,
+    },
+
+    {
+      id: 30,
+
+      timestamp: '2024-10-02T05:00:00Z',
+
+      current_speed: 2,
+
+      current_direction: 184,
+
+      tide: 2.16,
+    },
+
+    {
+      id: 31,
+
+      timestamp: '2024-10-02T06:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 177,
+
+      tide: 2.4,
+    },
+
+    {
+      id: 32,
+
+      timestamp: '2024-10-02T07:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 332,
+
+      tide: 2.67,
+    },
+
+    {
+      id: 33,
+
+      timestamp: '2024-10-02T08:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 249,
+
+      tide: 2.79,
+    },
+
+    {
+      id: 34,
+
+      timestamp: '2024-10-02T09:00:00Z',
+
+      current_speed: 2,
+
+      current_direction: 77,
+
+      tide: 3.04,
+    },
+
+    {
+      id: 35,
+
+      timestamp: '2024-10-02T10:00:00Z',
+
+      current_speed: 1,
+
+      current_direction: 219,
+
+      tide: 3.28,
+    },
+
+    {
+      id: 36,
+
+      timestamp: '2024-10-02T11:00:00Z',
+
+      current_speed: 3,
+
+      current_direction: 148,
+
+      tide: 3.46,
+    },
+
+    {
+      id: 37,
+
+      timestamp: '2024-10-02T12:00:00Z',
+
+      current_speed: 2,
+
+      current_direction: 287,
+
+      tide: 3.61,
+    },
+
+    {
+      id: 38,
+
+      timestamp: '2024-10-02T13:00:00Z',
+
+      current_speed: 0,
+
+      current_direction: 224,
+
+      tide: 3.86,
     },
   ];
 
-  constructor(private http: HttpClient, private toast: ToastrService) {}
+  constructor(
+    private http: HttpClient,
+    private toast: ToastrService,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
+  ) {}
   ngOnInit(): void {
     this.files_list = [];
     this.http
@@ -278,6 +644,17 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         }
       });
   }
+
+  updateField(item: any, field: string, event: Event) {
+    const value = (event.target as HTMLInputElement).value;
+    setTimeout(() => {
+      item[field] = value;
+      this.cdr.markForCheck();
+    });
+  }
+
+  private chartInstances: EChartsType[] = [];
+  private resizeObservers: ResizeObserver[] = [];
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
@@ -290,34 +667,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   ) {
     console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
-    // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
-
-    // if (isCtrlPressed) {
-    //   this.isMulti = true;
-    //   // If Ctrl/Cmd is pressed, toggle file selection
-    //   const index = this.selectedFiles.indexOf(fileName);
-    //   if (index === -1) {
-    //     this.selectedFiles.push({
-    //       file_name: fileName,
-    //       file_id:file_id
-    //     });  // Add file to selection
-    //     console.log(this.selectedFiles)
-    //     this.open_file(fileName, file_id)
-    //   } else {
-    //     this.selectedFiles.splice(index, 1);  // Remove file from selection
-    //   }
-    // } else {
     this.isMulti = false;
-    // If Ctrl/Cmd is not pressed, select this file and deselect all others
     this.selectedFiles = [
       {
         file_name: fileName,
         file_id: file_id,
       },
-    ]; // Only keep the clicked file selected
+    ];
     this.open_file(fileName, file_id);
-
-    // }
   }
 
   getFileImage(fileName: string): string {
@@ -334,60 +691,71 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   }
   open_file(file_name: string, file_id: number) {
     this.opened_file = file_name;
-    const data = {
-      folder_id: file_id,
-      file_name: file_name,
-    };
-    console.log(data);
+    this.loading = true;
+
     this.http
       .get(
         `http://localhost:3000/api/fetch_data_by_file/${this.openedFolder}/${file_name}`
       )
-      .subscribe((response: any) => {
-        console.log('response', response);
-        if (this.isMulti) {
-          let data = this.main_table;
-          this.main_table = [];
-          setTimeout(() => {
-            this.main_table = data;
-            for (let index = 0; index < response.length; index++) {
-              this.main_table.push(response[index]);
-            }
-            console.log(this.main_table);
-            this.tap_date(this.main_table[0].date, this.main_table[0].time);
-          }, 100);
-        } else {
-          this.main_table = [];
-          setTimeout(() => {
-            this.main_table = response;
-          }, 100);
-        }
+      .subscribe({
+        next: (response: any) => {
+          if (this.isMulti) {
+            let data = this.fullData;
+            this.fullData = [];
+            setTimeout(() => {
+              this.fullData = data;
+              for (let index = 0; index < response.length; index++) {
+                this.fullData.push(response[index]);
+              }
+              this.totalRecords = this.fullData.length;
+              // Load initial page of data
+              this.loadData({ first: 0, rows: 20 });
+              if (this.fullData.length > 0) {
+                this.tap_date(this.fullData[0].date);
+                this.loadChart();
+              }
+            }, 100);
+          } else {
+            this.fullData = [];
+            setTimeout(() => {
+              this.fullData = response;
+              this.totalRecords = this.fullData.length;
+              // Load initial page of data
+              this.loadData({ first: 0, rows: 20 });
+              if (this.fullData.length > 0) {
+                this.tap_date(this.fullData[0].date);
+                this.loadChart();
+              }
+            }, 100);
+          }
+        },
+        error: (error) => {
+          console.error('Error fetching data:', error);
+          this.toast.error('Failed to load data');
+          this.loading = false;
+        },
       });
   }
 
-  tap_date(date: string, time: string) {
-    console.log('started ', date, time);
-    const filter = this.main_table.filter(
-      (item) => item.date === date && item.time === time
-    );
-    console.log(filter);
-    const data = {
-      id: filter[0].station_id,
-      tide: filter[0].pressure,
-      date: filter[0].date,
-      time: filter[0].time,
-      battery: filter[0].battery,
-      current_speed: filter[0].speed,
-      current_direction: filter[0].direction,
-      lat: filter[0].lat,
-      lon: filter[0].lon,
-      current_speed_b_6: '',
-      current_dir_b_6: '',
-      current_speed_after_6: '',
-      current_dir_after_6: '',
-    };
-    this.selected_data = data;
-    console.log('selected', this.selected_data);
+  tap_date(dateTime: string) {
+    console.log('tapped datetime:', dateTime);
+
+    // Find the matching item in main_table
+    const selectedItem = this.main_table.find((item) => item.date === dateTime);
+
+    if (selectedItem) {
+      const data: SelectedData = {
+        id: selectedItem.id,
+        tide: selectedItem.pressure,
+        datetime: selectedItem.date, // Use the full datetime string directly
+        current_speed: selectedItem.speed,
+        current_direction: selectedItem.direction,
+      };
+      this.selected_data = data;
+      console.log('Selected data:', this.selected_data);
+    } else {
+      console.warn('No matching record found for datetime:', dateTime);
+    }
   }
   getFileClass(fileName: string, file_id: number): string {
     // Check if file is selected based on both file_name and file_id
@@ -402,48 +770,138 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     this.loadChart();
   }
 
+  // onChartTypeChange() {
+  //   this.loadChart();
+  // }
+
+  // loadChart() {
+  //   setTimeout(() => {
+  //     if (this.isCompareView) {
+  //       this.Tide();
+  //       this.currentSpeed();
+  //       this.currentDirection();
+  //       this.midSpeedDirection();
+  //       this.midSpeedDirection2();
+  //       this.midpolar();
+  //     } else {
+  //       this.Tide();
+  //       this.currentSpeed();
+  //       this.currentDirection();
+  //       this.currentSpeedAndDirection();
+  //       this.midSpeedDirection();
+  //       this.midpolar();
+  //     }
+  //   }, 100);
+  // }
+
   loadChart() {
-    setTimeout(() => {
-      if (this.isCompareView) {
-        this.midSpeedDirection();
-      } else {
-        this.Tide();
-        this.currentSpeed();
-        this.currentDirection();
-        this.currentSpeedAndDirection();
-        this.midSpeedDirection();
+    this.cleanupCharts();
+    this.ngZone.runOutsideAngular(() => {
+      setTimeout(() => {
+        switch (this.viewMode) {
+          case 'Single Axis':
+            this.Tide();
+            this.currentSpeed();
+            this.currentDirection();
+            break;
+          case 'Dual Axis':
+            this.currentSpeedAndDirection();
+            break;
+          case 'Tri Axis':
+            this.midSpeedDirection();
+            break;
+          case 'Polar':
+            this.midpolar();
+            break;
+        }
+      }, 100);
+    });
+  }
+
+  private cleanupCharts() {
+    // Dispose of all chart instances
+    this.chartInstances.forEach((chart) => {
+      if (chart && !chart.isDisposed()) {
+        chart.dispose();
       }
-    }, 100);
+    });
+    this.chartInstances = [];
+
+    // Disconnect all resize observers
+    this.resizeObservers.forEach((observer) => observer.disconnect());
+    this.resizeObservers = [];
+  }
+
+  private setupResizeObserver(element: HTMLElement, chart: EChartsType) {
+    const observer = new ResizeObserver(() => {
+      if (!chart.isDisposed()) {
+        chart.resize();
+      }
+    });
+    observer.observe(element);
+    this.resizeObservers.push(observer);
+  }
+
+  private addChartInstance(chart: EChartsType, element: HTMLElement) {
+    this.chartInstances.push(chart);
+    this.setupResizeObserver(element, chart);
+    return chart;
+  }
+
+  updateValue(item: any, field: string, value: string) {
+    item[field] = value;
+  }
+
+  onUpdateClick() {
+    this.loading = true;
+    this.ngZone.runOutsideAngular(() => {
+      this.loadChart();
+    });
+  }
+
+  ngOnDestroy() {
+    this.cleanupCharts();
   }
 
   onDialogShow() {
-    console.log('Dialog shown');
-    setTimeout(() => {
-      const selectedRow = document.querySelector('.selected-row');
-      if (selectedRow) {
-        selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-      this.updateChartWidths(70);
-    }, 100);
+    this.ngZone.runOutsideAngular(() => {
+      setTimeout(() => {
+        const selectedRow = document.querySelector('.selected-row');
+        if (selectedRow) {
+          selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        this.chartInstances.forEach((chart) => {
+          if (!chart.isDisposed()) {
+            chart.resize();
+          }
+        });
+      }, 100);
+    });
   }
 
   onDialogHide() {
-    this.updateChartWidths(100);
+    this.ngZone.runOutsideAngular(() => {
+      this.chartInstances.forEach((chart) => {
+        if (!chart.isDisposed()) {
+          chart.resize();
+        }
+      });
+    });
   }
 
-  private updateChartWidths(width: number) {
-    const charts = document.querySelectorAll('.compare-diagram');
-    charts.forEach((chart) => {
-      (chart as HTMLElement).style.width = `${width}%`;
-    });
+  loadData(event: any) {
+    this.lazyParams = event;
+    this.loading = true;
 
-    // Resize charts after width change
-    if (this.tideChartInstance) {
-      this.tideChartInstance.resize();
-    }
-    if (this.midChartInstance) {
-      this.midChartInstance.resize();
-    }
+    // Calculate the slice of data to show in the table
+    const start = event.first;
+    const end = start + event.rows;
+
+    // Update only the table data with the sliced portion
+    this.main_table = this.fullData.slice(start, end);
+
+    this.loading = false;
+    this.cdr.detectChanges();
   }
 
   Tide(): void {
@@ -462,103 +920,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     const mainText = '#000000'; // Black for titles/labels
     const subText = '#666666'; // Grey for axis labels and legend
 
-    const sampleData = [
-      ['2000-06-05', 116],
-      ['2000-06-06', 129],
-      ['2000-06-07', 135],
-      ['2000-06-08', 86],
-      ['2000-06-09', 73],
-      ['2000-06-10', 85],
-      ['2000-06-11', 73],
-      ['2000-06-12', 68],
-      ['2000-06-13', 92],
-      ['2000-06-14', 130],
-      ['2000-06-15', 245],
-      ['2000-06-16', 139],
-      ['2000-06-17', 115],
-      ['2000-06-18', 111],
-      ['2000-06-19', 309],
-      ['2000-06-20', 206],
-      ['2000-06-21', 137],
-      ['2000-06-22', 128],
-      ['2000-06-23', 85],
-      ['2000-06-24', 94],
-      ['2000-06-25', 71],
-      ['2000-06-26', 106],
-      ['2000-06-27', 84],
-      ['2000-06-28', 93],
-      ['2000-06-29', 85],
-      ['2000-06-30', 73],
-      ['2000-07-01', 83],
-      ['2000-07-02', 125],
-      ['2000-07-03', 107],
-      ['2000-07-04', 82],
-      ['2000-07-05', 44],
-      ['2000-07-06', 72],
-      ['2000-07-07', 106],
-      ['2000-07-08', 107],
-      ['2000-07-09', 66],
-      ['2000-07-10', 91],
-      ['2000-07-11', 92],
-      ['2000-07-12', 113],
-      ['2000-07-13', 107],
-      ['2000-07-14', 131],
-      ['2000-07-15', 111],
-      ['2000-07-16', 64],
-      ['2000-07-17', 69],
-      ['2000-07-18', 88],
-      ['2000-07-19', 77],
-      ['2000-07-20', 83],
-      ['2000-07-21', 111],
-      ['2000-07-22', 57],
-      ['2000-07-23', 55],
-      ['2000-07-24', 60],
-      ['2000-07-25', 44],
-      ['2000-07-26', 127],
-      ['2000-07-27', 114],
-      ['2000-07-28', 86],
-      ['2000-07-29', 73],
-      ['2000-07-30', 52],
-      ['2000-07-31', 69],
-      ['2000-08-01', 86],
-      ['2000-08-02', 118],
-      ['2000-08-03', 56],
-      ['2000-08-04', 91],
-      ['2000-08-05', 121],
-      ['2000-08-06', 127],
-      ['2000-08-07', 78],
-      ['2000-08-08', 79],
-      ['2000-08-09', 46],
-      ['2000-08-10', 108],
-      ['2000-08-11', 80],
-      ['2000-08-12', 79],
-      ['2000-08-13', 69],
-      ['2000-08-14', 80],
-      ['2000-08-15', 105],
-      ['2000-08-16', 119],
-      ['2000-08-17', 105],
-      ['2000-08-18', 55],
-      ['2000-08-19', 74],
-      ['2000-08-20', 41],
-      ['2000-08-21', 62],
-      ['2000-08-22', 104],
-      ['2000-08-23', 118],
-      ['2000-08-24', 121],
-      ['2000-08-25', 126],
-      ['2000-08-26', 99],
-      ['2000-08-27', 92],
-      ['2000-08-28', 75],
-      ['2000-08-29', 91],
-      ['2000-08-30', 94],
-      ['2000-08-31', 69],
-      ['2000-09-01', 93],
-      ['2000-09-02', 124],
-      ['2000-09-03', 120],
-      ['2000-09-04', 93],
-      ['2000-09-05', 26],
-      ['2000-09-06', 32],
-    ];
-
     if (tide) {
       const existingInstance = echarts.getInstanceByDom(tide);
       if (existingInstance) {
@@ -568,7 +929,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: '🌊 Tide',
+          text: 'Water Level',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -578,20 +939,20 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         tooltip: {
           trigger: 'axis',
         },
-        grid: {
-          left: '7%',
-          // bottom: '30%',
-          right: '5%',
-        },
+        // grid: {
+        //   left: '7%',
+        //   // bottom: '30%',
+        //   right: '5%',
+        // },
         xAxis: [
           {
             type: 'time',
-            name: 'Date',
+            name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
               color: mainText,
-              padding: [40, 0, 0, 0],
-              fontSize: 16,
+              padding: [44, 0, 0, 0],
+              fontSize: 14,
             },
             axisLabel: {
               color: subText,
@@ -621,6 +982,18 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
           },
         ],
+        // graphic: [
+        //   {
+        //     type: 'text',
+        //     left: 500, // adjust X
+        //     top: 390, // adjust Y
+        //     style: {
+        //       text: 'DateTime',
+        //       fill: mainText,
+        //       font: '14px sans-serif',
+        //     },
+        //   },
+        // ],
 
         yAxis: [
           {
@@ -664,7 +1037,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           // type: 'scroll',
           orient: 'vertical', // Orient the legend vertically
           right: '15%',
-          top: '2%',
+          // top: '2%',
           // top: 'middle',
           textStyle: {
             color: '#1f77b4', // Set legend text color to white
@@ -713,17 +1086,33 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         series: [
           {
             name: 'Water Level',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.tide,
-            ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.pressure)];
+            }),
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.tide,
+            // ]),
             // data: sampleData.map(([date, value]) => ({
             //   value: [date, value],
             // })),
             // data: this.sampleDataTide.map(item => [item.date, item.level]),
             //  data: sampleData.map(item => [item[0], item[1]]),
             type: chartType === 'bar' ? 'bar' : chartType,
-            areaStyle: {},
+            // areaStyle: {
+            //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            //     {
+            //       offset: 0,
+            //       color: 'rgba(31, 119, 180, 0.4)',
+            //     },
+            //     {
+            //       offset: 1,
+            //       color: 'rgba(31, 119, 180, 0.05)',
+            //     },
+            //   ]),
+            //   opacity: 1,
+            // },
+
             smooth: 'line',
             // lineStyle: 'line',
             barWidth: chartType === 'bar' ? '50%' : undefined,
@@ -733,8 +1122,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
             showSymbol: false,
             label: {
-              show: true,
-              fontSize: 12, // Optional: Set font size for the data points (if labels are enabled)
+              show: false,
+              fontSize: 12,
             },
           },
 
@@ -757,6 +1146,22 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       // Set options for the chart
       tideLevel.setOption(option);
+      tideLevel.off('click');
+      tideLevel.on('click', (params: any) => {
+        if (params.data && params.data[0]) {
+          const clickedDate = params.data[0];
+          const clickedItem = this.fullData.find(
+            (item) => item.date === clickedDate
+          );
+          if (clickedItem) {
+            this.ngZone.run(() => {
+              this.selectedPointId = clickedItem.id;
+              this.visible = true;
+              this.cdr.detectChanges();
+            });
+          }
+        }
+      });
       window.addEventListener('resize', () => {
         tideLevel.resize();
       });
@@ -788,7 +1193,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: '🌀 Current Speed',
+          text: 'Current Speed',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -796,16 +1201,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
         },
         tooltip: { trigger: 'axis' },
-        grid: { left: '7%', right: '5%' },
+        // grid: { left: '7%', right: '5%' },
         xAxis: [
           {
             type: 'time',
-            name: 'Date',
+            name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
               color: mainText,
-              padding: [40, 0, 0, 0],
-              fontSize: 16,
+              padding: [44, 0, 0, 0],
+              fontSize: 14,
             },
             axisLabel: {
               color: subText,
@@ -921,10 +1326,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         series: [
           {
             name: 'Current Speed',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.current_speed,
-            ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.speed)];
+            }),
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_speed,
+            // ]),
             type: chartType,
             // smooth: 'line',
             // lineStyle: { color: '#00ff00' },
@@ -937,6 +1345,20 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       };
 
       currentSpeed.setOption(option);
+      currentSpeed.off('click');
+      currentSpeed.on('click', (params: any) => {
+        if (params.data && params.data[0]) {
+          const clickedDate = params.data[0];
+          const clickedItem = this.fullData.find(
+            (item) => item.date === clickedDate
+          );
+          if (clickedItem) {
+            this.selectedPointId = clickedItem.id;
+            this.visible = true;
+            this.cdr.detectChanges();
+          }
+        }
+      });
       this.loading = false;
       window.addEventListener('resize', () => {
         currentSpeed.resize();
@@ -970,7 +1392,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: '🧭 Current Direction',
+          text: 'Current Direction',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -978,17 +1400,17 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
         },
         tooltip: { trigger: 'axis' },
-        grid: { left: '7%', right: '5%' },
+        // grid: { left: '7%', right: '5%' },
 
         xAxis: [
           {
             type: 'time',
-            name: 'Date',
+            name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
               color: mainText,
-              padding: [40, 0, 0, 0],
-              fontSize: 16,
+              padding: [44, 0, 0, 0],
+              fontSize: 14,
             },
             axisLabel: {
               color: subText,
@@ -1025,7 +1447,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Direction (°)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'green',
+              color: 'black',
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1066,7 +1488,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           right: '15%',
           top: '2%',
           textStyle: {
-            color: 'green',
+            color: 'black',
             fontSize: 14,
           },
         },
@@ -1104,27 +1526,44 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         series: [
           {
             name: 'Current Direction',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.current_direction,
-            ]),
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_direction,
+            // ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.direction)];
+            }),
             type: chartType,
             // smooth: 'line',
             // lineStyle: { color: '#00ff00' },
-            itemStyle: { color: 'green' },
-            showSymbol: true,
-            symbol:
-              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
-            symbolSize: 14,
-            symbolOffset: [0, -7],
-            symbolRotate: (value: any) => value[1],
-            label: { show: false, fontSize: 12 },
+            itemStyle: { color: 'black' },
+            // showSymbol: true,
+            // symbol:
+            //   'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            // symbolSize: 14,
+            // symbolOffset: [0, -7],
+            // symbolRotate: (value: any) => value[1],
+            // label: { show: false, fontSize: 12 },
             // yAxisIndex: 0,
           },
         ],
       };
 
       currentDirection.setOption(option);
+      currentDirection.off('click');
+      currentDirection.on('click', (params: any) => {
+        if (params.data && params.data[0]) {
+          const clickedDate = params.data[0];
+          const clickedItem = this.fullData.find(
+            (item) => item.date === clickedDate
+          );
+          if (clickedItem) {
+            this.selectedPointId = clickedItem.id;
+            this.visible = true;
+            this.cdr.detectChanges();
+          }
+        }
+      });
       this.loading = false;
       window.addEventListener('resize', () => {
         currentDirection.resize();
@@ -1152,7 +1591,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: '🌊 Current Speed & 🧭 Direction',
+          text: 'Dual Axis',
           left: '1%',
           textStyle: {
             color: mainText,
@@ -1165,36 +1604,24 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: 'cross',
           },
         },
-        grid: { left: '7%', right: '7%' },
-        legend: {
-          data: ['Current Speed', 'Current Direction'],
-          top: '5%',
-          right: '5%',
-          textStyle: {
-            color: subText,
-          },
-        },
-        toolbox: {
-          feature: {
-            dataZoom: { yAxisIndex: 'none' },
-            restore: {},
-            saveAsImage: {
-              backgroundColor: bgColor,
-              pixelRatio: 2,
-            },
-          },
-          iconStyle: {
-            borderColor: mainText,
-          },
-        },
+        // grid: { left: '7%', right: '7%' },
+        // legend: {
+        //   data: ['Current Speed', 'Current Direction'],
+        //   top: '5%',
+        //   right: '5%',
+        //   textStyle: {
+        //     color: subText,
+        //   },
+        // },
+
         xAxis: {
           type: 'time',
-          name: 'Date',
+          name: 'DateTime',
           nameLocation: 'middle',
           nameTextStyle: {
             color: mainText,
-            padding: [40, 0, 0, 0],
-            fontSize: 16,
+            padding: [44, 0, 0, 0],
+            fontSize: 14,
           },
           axisLabel: {
             color: subText,
@@ -1205,7 +1632,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         yAxis: [
           {
             type: 'value',
-            name: 'Speed (m/s)',
+            name: 'Current Speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
               color: 'red',
@@ -1218,11 +1645,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
           {
             type: 'value',
-            name: 'Direction (°)',
+            name: 'Current Direction (°)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'green',
-              padding: [0, 0, 30, 0],
+              color: 'black',
+              padding: [30, 0, 0, 0],
               fontSize: 16,
             },
             axisLabel: { color: subText },
@@ -1246,13 +1673,40 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             moveOnMouseMove: true,
           },
         ],
+        legend: {
+          // data: ['Current Speed'],
+          orient: 'vertical',
+          right: '15%',
+          top: '2%',
+          textStyle: {
+            color: 'black',
+            fontSize: 14,
+          },
+        },
+        toolbox: {
+          feature: {
+            dataZoom: { yAxisIndex: 'none' },
+            restore: {},
+            saveAsImage: {
+              backgroundColor: bgColor,
+              pixelRatio: 2,
+            },
+          },
+          iconStyle: {
+            borderColor: mainText,
+          },
+        },
+
         series: [
           {
             name: 'Current Speed',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.current_speed,
-            ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.speed)];
+            }),
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_speed,
+            // ]),
             type: chartType,
             itemStyle: { color: 'red' },
             showSymbol: false,
@@ -1261,25 +1715,42 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
           {
             name: 'Current Direction',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.current_direction,
-            ]),
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_direction,
+            // ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.direction)];
+            }),
             type: chartType,
-            itemStyle: { color: 'green' },
-            showSymbol: true,
-            symbol:
-              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
-            symbolSize: 14,
-            symbolOffset: [0, -7],
-            symbolRotate: (value: any) => value[1],
-            label: { show: false },
+            itemStyle: { color: 'black' },
+            // showSymbol: true,
+            // symbol:
+            //   'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            // symbolSize: 14,
+            // symbolOffset: [0, -7],
+            // symbolRotate: (value: any) => value[1],
+            // label: { show: false },
             yAxisIndex: 1,
           },
         ],
       };
 
       chart.setOption(option);
+      chart.off('click');
+      chart.on('click', (params: any) => {
+        if (params.data && params.data[0]) {
+          const clickedDate = params.data[0];
+          const clickedItem = this.fullData.find(
+            (item) => item.date === clickedDate
+          );
+          if (clickedItem) {
+            this.selectedPointId = clickedItem.id;
+            this.visible = true;
+            this.cdr.detectChanges();
+          }
+        }
+      });
       this.loading = false;
 
       window.addEventListener('resize', () => {
@@ -1315,7 +1786,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
       const option = {
         title: {
-          text: 'Compare View (🌊 Tide, 🌀 Current Speed, 🧭 Current Direction)',
+          text: 'Tri-axis',
+          // text: 'Tri-axis (🌊 Tide, 🌀 Current Speed, 🧭 Current Direction)',
           left: '1%',
           // top: '0%',
           textStyle: {
@@ -1326,11 +1798,344 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         tooltip: {
           trigger: 'axis',
         },
-        grid: {
-          left: '9%',
-          // bottom: '30%',
-          right: '5%',
+        // grid: {
+        //   left: '9%',
+        //   // bottom: '30%',
+        //   right: '5%',
+        // },
+        xAxis: [
+          {
+            type: 'time',
+            name: 'DateTime',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: mainText,
+              padding: [44, 0, 0, 0],
+              fontSize: 14,
+            },
+            axisLabel: {
+              color: subText,
+              rotate: 45,
+            },
+            axisLine: {
+              show: true,
+            },
+          },
+          {
+            type: 'time',
+            position: 'top',
+            axisLine: {
+              show: true,
+            },
+            axisTick: {
+              show: false,
+            },
+            axisLabel: {
+              show: false,
+            },
+            splitLine: {
+              show: false,
+            },
+          },
+        ],
+        yAxis: [
+          {
+            type: 'value',
+            name: 'Current Speed (m/s)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'red',
+              padding: [0, 0, 15, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+              lineStyle: {
+                color: 'red',
+              },
+            },
+            splitLine: {
+              show: false,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+          },
+          {
+            type: 'value',
+            name: 'Tide (m)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: '#1f77b4',
+              padding: [0, 0, 15, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+              lineStyle: {
+                color: '#1f77b4', // orange
+              },
+            },
+            splitLine: {
+              show: false,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+            position: 'left',
+            offset: 70, // to avoid overlap with third y-axis
+          },
+          {
+            type: 'value',
+            name: 'Current Direction (°)',
+            nameLocation: 'middle',
+            nameTextStyle: {
+              color: 'black',
+              padding: [30, 0, 0, 0],
+              fontSize: 16,
+            },
+            axisLabel: {
+              color: subText,
+            },
+            axisLine: {
+              show: true,
+              lineStyle: {
+                color: 'black',
+              },
+            },
+            splitLine: {
+              show: false,
+              // lineStyle: {
+              //   type: 'solid',
+              //   color: '#00ff00',
+              // },
+            },
+            position: 'right',
+            min: 0,
+            max: 360,
+            interval: 90,
+          },
+        ],
+        legend: {
+          data: ['Current Speed', 'Tide', 'Current Direction'],
+          orient: 'horizontal',
+          right: '15%',
+          textStyle: {
+            color: subText,
+            fontSize: 14,
+          },
         },
+        toolbox: {
+          feature: {
+            dataZoom: {
+              yAxisIndex: 'none',
+            },
+            restore: {},
+            saveAsImage: {
+              backgroundColor: bgColor,
+              pixelRatio: 2,
+            },
+          },
+          iconStyle: {
+            borderColor: mainText,
+          },
+        },
+        dataZoom: [
+          {
+            type: 'inside',
+            xAxisIndex: 0,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'slider',
+            bottom: 20,
+            height: 15,
+            xAxisIndex: 0,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            yAxisIndex: 0,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            yAxisIndex: 1,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+          {
+            type: 'inside',
+            yAxisIndex: 2,
+            filterMode: 'filter',
+            start: 0,
+            end: 100,
+          },
+        ],
+        series: [
+          {
+            name: 'Tide',
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.tide,
+            // ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.pressure)];
+            }),
+            type: chartType,
+            // lineStyle: {
+            //   color: '#1f77b4',
+            // },
+            itemStyle: {
+              color: '#1f77b4',
+            },
+            showSymbol: false,
+            label: {
+              show: false,
+              fontSize: 12,
+            },
+            yAxisIndex: 1,
+          },
+          {
+            name: 'Current Speed',
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_speed,
+            // ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.speed)];
+            }),
+            type: chartType,
+            // lineStyle: {
+            //   color: '#00ff00',
+            // },
+            itemStyle: {
+              color: 'red',
+            },
+            showSymbol: false,
+            label: {
+              show: false,
+              fontSize: 12,
+            },
+            yAxisIndex: 0,
+          },
+
+          {
+            name: 'Current Direction',
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_direction,
+            // ]),
+            data: this.fullData.map((item) => {
+              return [item.date, parseFloat(item.direction)];
+            }),
+            type: chartType,
+            // lineStyle: {
+            //   color: '#0000ff',
+            //   type: 'dashed',
+            // },
+            itemStyle: {
+              color: 'black',
+            },
+            // showSymbol: true,
+            // symbol:
+            //   'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            // symbolSize: 14,
+            // symbolOffset: [0, -7],
+            // symbolRotate: (value: any) => value[1],
+            // label: {
+            //   show: false,
+            //   fontSize: 12,
+            // },
+            yAxisIndex: 2,
+          },
+        ],
+      };
+
+      midspeedanddirection.setOption(option);
+
+      // Add click event after setting options
+      midspeedanddirection.off('click');
+      midspeedanddirection.on('click', (params: any) => {
+        if (params.data && params.data[0]) {
+          const clickedDate = params.data[0];
+          const clickedItem = this.fullData.find(
+            (item) => item.date === clickedDate
+          );
+          if (clickedItem) {
+            this.selectedPointId = clickedItem.id;
+            this.visible = true;
+            this.cdr.detectChanges();
+          }
+        }
+      });
+
+      this.loading = false;
+      window.addEventListener('resize', () => {
+        midspeedanddirection.resize();
+      });
+    } else {
+      this.loading = false;
+    }
+  }
+
+  midSpeedDirection2(): void {
+    const chartType = this.selectedChart;
+    const mid = document.getElementById('midSpeedDirection2');
+
+    // const computedStyle = getComputedStyle(document.body);
+    // const bgColor = computedStyle
+    //   .getPropertyValue('--secbackground-color')
+    //   .trim();
+    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
+    // const subText = computedStyle.getPropertyValue('--main-text').trim();
+
+    const bgColor = '#ffffff'; // White background for image export
+    const mainText = '#000000'; // Black for titles/labels
+    const subText = '#666666'; // Grey for axis labels and legend
+
+    if (mid) {
+      const existingInstance = echarts.getInstanceByDom(mid);
+      if (existingInstance) {
+        existingInstance.dispose();
+      }
+      const midspeedanddirection = echarts.init(mid);
+      this.midChartInstance = midspeedanddirection; // Store the instance before setting options
+
+      const option = {
+        title: {
+          text: 'Tri-axis',
+          // text: 'Tri-axis (🌊 Tide, 🌀 Current Speed, 🧭 Current Direction)',
+          left: '1%',
+          // top: '0%',
+          textStyle: {
+            color: mainText,
+            fontSize: 20,
+          },
+        },
+        tooltip: {
+          trigger: 'axis',
+        },
+        // grid: {
+        //   left: '9%',
+        //   // bottom: '30%',
+        //   right: '5%',
+        // },
         xAxis: [
           {
             type: 'time',
@@ -1518,11 +2323,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         series: [
           {
             name: 'Current Speed',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.current_speed,
-            ]),
-            type: chartType,
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_speed,
+            // ]),
+            data: this.main_table.map((item) => {
+              const dateStr = item.date.split('T')[0];
+              const combinedDateTime = new Date(`${dateStr}T${item.time}`);
+              return [combinedDateTime, parseFloat(item.speed)];
+            }),
+            type: 'scatter',
             // lineStyle: {
             //   color: '#00ff00',
             // },
@@ -1542,7 +2352,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               item.timestamp,
               item.tide,
             ]),
-            type: chartType,
+            // type: chartType,
+            type: 'scatter',
             // lineStyle: {
             //   color: '#1f77b4',
             // },
@@ -1558,11 +2369,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
           {
             name: 'Current Direction',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.current_direction,
-            ]),
-            type: chartType,
+            // data: this.sampleDataAdcp.map((item) => [
+            //   item.timestamp,
+            //   item.current_direction,
+            // ]),
+            data: this.main_table.map((item) => {
+              const dateStr = item.date.split('T')[0];
+              const combinedDateTime = new Date(`${dateStr}T${item.time}`);
+              return [combinedDateTime, parseFloat(item.direction)];
+            }),
+            type: 'scatter',
             // lineStyle: {
             //   color: '#0000ff',
             //   type: 'dashed',
@@ -1603,5 +2419,267 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     } else {
       this.loading = false;
     }
+  }
+
+  midpolar(): void {
+    // const chartType = this.selectedChart;
+    // this.loading = true;
+    let sampleDataPolar = [
+      { speed: 3.4, direction: 45 },
+      { speed: 1.6, direction: 120 },
+      { speed: 4.1, direction: 270 },
+      { speed: 2.4, direction: 90 },
+      { speed: 0.0, direction: 180 },
+      { speed: 4.4, direction: 200 },
+      { speed: 0.9, direction: 320 },
+      { speed: 2.8, direction: 135 },
+      { speed: 1.5, direction: 270 },
+      { speed: 1.2, direction: 15 },
+      { speed: 2.3, direction: 60 },
+      { speed: 5.1, direction: 330 },
+      { speed: 3.1, direction: 75 },
+      { speed: 2.0, direction: 150 },
+      { speed: 4.3, direction: 210 },
+      { speed: 0.7, direction: 300 },
+      { speed: 5.2, direction: 10 },
+      { speed: 0.8, direction: 80 },
+      { speed: 5.0, direction: 360 },
+      { speed: 2.5, direction: 240 },
+      { speed: 1.0, direction: 30 },
+      { speed: 3.7, direction: 190 },
+      { speed: 1.6, direction: 120 },
+      { speed: 4.0, direction: 210 },
+      { speed: 2.9, direction: 260 },
+      { speed: 2.3, direction: 350 },
+      { speed: 4.6, direction: 180 },
+      { speed: 1.3, direction: 70 },
+      { speed: 3.0, direction: 45 },
+      { speed: 0.9, direction: 300 },
+      { speed: 4.5, direction: 220 },
+      { speed: 0.6, direction: 110 },
+      { speed: 2.1, direction: 190 },
+      { speed: 3.8, direction: 350 },
+      { speed: 5.0, direction: 40 },
+      { speed: 2.6, direction: 80 },
+      { speed: 5.3, direction: 140 },
+      { speed: 3.2, direction: 300 },
+      { speed: 1.4, direction: 160 },
+      { speed: 5.7, direction: 270 },
+      { speed: 2.0, direction: 30 },
+      { speed: 1.1, direction: 50 },
+      { speed: 4.2, direction: 200 },
+      { speed: 0.8, direction: 360 },
+      { speed: 2.3, direction: 120 },
+      { speed: 3.0, direction: 90 },
+      { speed: 4.8, direction: 260 },
+      { speed: 0.5, direction: 300 },
+      { speed: 5.9, direction: 15 },
+      { speed: 3.5, direction: 170 },
+      { speed: 2.2, direction: 320 },
+      { speed: 2.8, direction: 240 },
+      { speed: 6.1, direction: 360 },
+    ];
+    const polar2 = document.getElementById('midpolar')!;
+
+    setTimeout(() => {
+      const bgColor = '#ffffff';
+      const mainText = '#000000';
+      const subText = '#333333';
+      const text = '#999999';
+
+      if (polar2) {
+        const existingInstance = echarts.getInstanceByDom(polar2);
+        if (existingInstance) {
+          existingInstance.dispose();
+        }
+        const windRoseChart1 = echarts.init(polar2);
+
+        const directionLabels = [
+          'N',
+          'NNE',
+          'NE',
+          'ENE',
+          'E',
+          'ESE',
+          'SE',
+          'SSE',
+          'S',
+          'SSW',
+          'SW',
+          'WSW',
+          'W',
+          'WNW',
+          'NW',
+          'NNW',
+        ];
+        const speedCategories = [
+          '<0.5 m/s',
+          '0.5-2 m/s',
+          '2-4 m/s',
+          '4-6 m/s',
+          '6-8 m/s',
+          '>8 m/s',
+        ] as const;
+
+        const speedColors = [
+          '#440154', // dark purple
+          '#3b528b', // blue
+          '#21918c', // teal-green
+          '#5ec962', // light green
+          '#fde725', // bright yellow
+          '#ffffe0', // lightest yellowish
+        ];
+
+        // Blue to red gradient
+
+        // Type for speed categories
+        type SpeedCategory = (typeof speedCategories)[number];
+
+        // Type for direction bins with each speed category as a key
+        type DirectionBin = Record<SpeedCategory, number>;
+
+        // Function to bin speeds
+        function categorizeSpeed(speed: number): SpeedCategory {
+          if (speed < 0.5) return '<0.5 m/s';
+          if (speed < 2) return '0.5-2 m/s';
+          if (speed < 4) return '2-4 m/s';
+          if (speed < 6) return '4-6 m/s';
+          if (speed < 8) return '6-8 m/s';
+          return '>8 m/s';
+        }
+
+        // Initialize bins
+        const dataBins: DirectionBin[] = directionLabels.map(() => ({
+          '<0.5 m/s': 0,
+          '0.5-2 m/s': 0,
+          '2-4 m/s': 0,
+          '4-6 m/s': 0,
+          '6-8 m/s': 0,
+          '>8 m/s': 0,
+        }));
+
+        // Map directions to labels and fill dataBins with counts
+        sampleDataPolar.forEach(({ speed, direction }) => {
+          const directionIndex = Math.round(direction / 22.5) % 16;
+          const speedCategory = categorizeSpeed(speed);
+          dataBins[directionIndex][speedCategory] += 1;
+        });
+
+        // Extract data for each speed category to use in series
+        const seriesData = speedCategories.map((speedCategory, index) => ({
+          name: speedCategory,
+          type: 'bar',
+          stack: 'wind-speed',
+          coordinateSystem: 'polar',
+          data: dataBins.map((bin) => bin[speedCategory]),
+          itemStyle: {
+            color: speedColors[index], // Assign color based on speed range
+          },
+        }));
+
+        // Set up the chart options
+        const option = {
+          title: {
+            text: 'Polar Binned', // Changed from 'Surface' to 'Low'
+            // left: '1%',
+            top: '18%',
+            textStyle: {
+              color: mainText,
+              fontSize: 20,
+            },
+          },
+          polar: {},
+          angleAxis: {
+            type: 'category',
+            data: directionLabels,
+            boundaryGap: true,
+            startAngle: 100,
+            axisLabel: {
+              color: subText, // White axis labels
+            },
+            splitArea: {
+              show: true,
+              areaStyle: {
+                color: ['rgba(255, 255, 255, 0.1)', 'rgba(200, 200, 200, 0.1)'],
+              },
+              axisLine: {
+                lineStyle: {
+                  color: subText,
+                },
+              },
+            },
+            splitLine: {
+              show: true,
+              lineStyle: {
+                color: '#cccccc',
+                width: 1,
+                type: 'dashed',
+              },
+            },
+          },
+          radiusAxis: {
+            min: 0,
+            axisLine: {
+              lineStyle: {
+                color: subText, // White radius axis line
+              },
+            },
+            axisLabel: {
+              color: subText,
+              formatter: '{value}',
+            },
+            splitLine: {
+              show: true,
+              lineStyle: {
+                color: text,
+                type: 'dashed',
+              },
+            },
+          },
+          tooltip: {
+            trigger: 'item',
+            formatter: '{a}: {c}',
+          },
+          //   toolbox: {
+          //     bottom: 0,
+          //     left: 0,
+          //     feature: {
+          //         dataZoom: {
+          //             yAxisIndex: 'none'
+          //         },
+          //         restore: {},
+          //          saveAsImage: {
+          //       backgroundColor: bgColor,
+          //       pixelRatio: 2,
+          //     }
+          //     },
+          //     iconStyle: {
+          //         borderColor: mainText
+          //     }
+          // },
+
+          dataZoom: [
+            {
+              type: 'inside',
+              start: 0,
+              end: 100,
+            },
+          ],
+          series: seriesData,
+          animationDuration: 1000,
+        };
+
+        // Render the chart and handle resizing
+        windRoseChart1.setOption(option);
+
+        //console.table(dataBins);
+
+        // this.loading = false;
+        window.addEventListener('resize', () => windRoseChart1.resize());
+      } else {
+        console.error("Element with id 'rose-plot' not found");
+        // this.loading = false;
+      }
+    }, 0);
   }
 }

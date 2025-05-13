@@ -24,34 +24,64 @@
     </div>
 
 
+
+
+
+
+
     <div class="chartsContainer">
         <div class="view">
-            <label>Single View</label>
+            <!-- <p-select class="dateDrop" [options]="chartOptions" [(ngModel)]="selectedChart" placeholder="Select a chart"
+                (onChange)="onChartTypeChange()"></p-select> -->
+            <p-select class="viewDrop" [options]="viewModes" [(ngModel)]="viewMode" placeholder="Select View Mode"
+                (onChange)="loadChart()">
+            </p-select>
+            <!-- <label>Single View</label>
             <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
-            <label>Compare View</label>
+            <label>Multi View</label> -->
         </div>
-        <div class="chartContainer" *ngIf="!isCompareView">
+        <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
             <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <!-- <div class="chartContainer" *ngIf="!isCompareView">
-        <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-    </div>
+        <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+            <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+        </div>
 
-    <div class="chartContainer" *ngIf="!isCompareView">
-        <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-    </div> -->
+        <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+            <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+        </div>
 
-        <div class="chartContainer" *ngIf="!isCompareView">
+        <div class="chartContainer" *ngIf="viewMode === 'Dual Axis'">
             <div id="currentSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="!isCompareView">
+        <div class="chartContainer" *ngIf="viewMode === 'Tri Axis'">
             <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartCompare" *ngIf="isCompareView">
-            <div id="midSpeedDirection" class="compare-diagram" style="width: 100%; height: 600px;"></div>
+        <!-- <div class="chartsContainers" *ngIf="isCompareView">
+
+            <div class="four_chart">
+                <div class="top_two">
+                    <div class="left_c">
+                        <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+                    </div>
+                    <div class="right_c">
+                        <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+                    </div>
+                </div>
+                <div class="bottom_two">
+                    <div class="left_c">
+                        <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
+                    </div>
+                    <div class="right_c"></div>
+                </div>
+            </div>
+        </div> -->
+
+        <div class="chartContainer" *ngIf="viewMode === 'Polar'">
+            <div id="midpolar" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
     </div>
 
@@ -65,8 +95,10 @@
             </div>
         </ng-template>
         <div #tableWrapper>
-            <p-table [value]="sampleDataAdcp" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
-                [scrollHeight]="'calc(100vh - 150px)'" [showGridlines]="true">
+            <p-table [value]="main_table" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
+                [scrollHeight]="'calc(100vh - 150px)'" [showGridlines]="true" [virtualScroll]="true"
+                [virtualScrollItemSize]="46" [lazy]="true" (onLazyLoad)="loadData($event)" [totalRecords]="totalRecords"
+                [loading]="loading" [paginator]="true" [rows]="20" [rowsPerPageOptions]="[10,20,50]">
                 <ng-template pTemplate="header">
                     <tr>
                         <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Timestamp
@@ -74,24 +106,41 @@
                         <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Speed
                             (m/s)</th>
                         <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current
-                            Direction
-                            (°)</th>
-                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Tide
-                            (m)</th>
+                            Direction (°)</th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Tide (m)</th>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-item>
-                    <tr [ngClass]="{'selected-row': item.id === selectedPointId}">
-                        <td>{{item.timestamp | date:'yyyy/MM/dd HH:mm:ss'}}</td>
-                        <td><input type="text" pInputText [(ngModel)]="item.current_speed" /></td>
-                        <td><input type="text" pInputText [(ngModel)]="item.current_direction" /></td>
-                        <td><input type="text" pInputText [(ngModel)]="item.tide" /></td>
+                    <tr [class.selected-row]="item.id === selectedPointId">
+                        <td>{{ item.date }}</td>
+                        <td>
+                            <input type="text" pInputText [value]="item.speed"
+                                (blur)="updateField(item, 'speed', $event)"
+                                (keyup.enter)="updateField(item, 'speed', $event)" />
+                        </td>
+                        <td>
+                            <input type="text" pInputText [value]="item.direction"
+                                (blur)="updateField(item, 'direction', $event)"
+                                (keyup.enter)="updateField(item, 'direction', $event)" />
+                        </td>
+                        <td>
+                            <input type="text" pInputText [value]="item.pressure"
+                                (blur)="updateField(item, 'pressure', $event)"
+                                (keyup.enter)="updateField(item, 'pressure', $event)" />
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="loadingbody">
+                    <tr>
+                        <td colspan="4" class="text-center">
+                            <p-progressSpinner></p-progressSpinner>
+                        </td>
                     </tr>
                 </ng-template>
             </p-table>
         </div>
         <div class="footer" style="text-align: center; margin-top: 15px;">
-            <p-button label="Update" icon="pi pi-check" [loading]="loading" />
+            <p-button label="Update" icon="pi pi-check" [loading]="loading" (onClick)="onUpdateClick()" />
         </div>
     </p-dialog>
 </div>
