@@ -22,7 +22,6 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { SelectModule } from 'primeng/select';
-import { ProgressSpinnerModule } from 'primeng/progressspinner';
 
 interface Files {
   id: number;
@@ -61,6 +60,7 @@ interface ApiData {
   speed: string;
   station_id: string;
   time: string;
+  isNewRow?: boolean;
 }
 
 interface SelectedData {
@@ -83,7 +83,6 @@ interface SelectedData {
     ButtonModule,
     HttpClientModule,
     SelectModule,
-    ProgressSpinnerModule,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
@@ -110,6 +109,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   selected_folder_name!: string;
   selected_data!: SelectedData;
   isLive: boolean = true;
+  changedRows: Set<number> = new Set(); // Track rows that have been modified
 
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
   @ViewChild('tideChart') tideChart!: ElementRef;
@@ -124,8 +124,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
   visible: boolean = false;
   selectedPointId: number | null = null;
-  private tideChartInstance!: EChartsType;
-  private midChartInstance!: EChartsType;
+  private tideChartInstance?: EChartsType;
+  private midChartInstance?: EChartsType;
 
   selectedChart: string = 'line';
   // chartOptions = [
@@ -134,7 +134,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   //   { label: 'Bar Plot', value: 'bar' },
   // ];
 
-  viewMode: string = 'Tri Axis';
+  viewMode: string = 'Single Axis';
   viewModes = [
     { label: 'Single Axis', value: 'Single Axis' },
     { label: 'Dual Axis', value: 'Dual Axis' },
@@ -649,6 +649,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     const value = (event.target as HTMLInputElement).value;
     setTimeout(() => {
       item[field] = value;
+      this.changedRows.add(item.id);
       this.cdr.markForCheck();
     });
   }
@@ -693,6 +694,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     this.opened_file = file_name;
     this.loading = true;
 
+    this.fullData = [];
+    this.main_table = [];
+    this.cleanupCharts();
+
+    // Reset chart instances
+    this.tideChartInstance = undefined;
+    this.midChartInstance = undefined;
+
     this.http
       .get(
         `http://localhost:3000/api/fetch_data_by_file/${this.openedFolder}/${file_name}`
@@ -707,24 +716,36 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               for (let index = 0; index < response.length; index++) {
                 this.fullData.push(response[index]);
               }
+              // Sort the data by date in ascending order
+              this.fullData.sort(
+                (a, b) =>
+                  new Date(a.date).getTime() - new Date(b.date).getTime()
+              );
               this.totalRecords = this.fullData.length;
               // Load initial page of data
               this.loadData({ first: 0, rows: 20 });
               if (this.fullData.length > 0) {
-                this.tap_date(this.fullData[0].date);
-                this.loadChart();
+                this.ngZone.runOutsideAngular(() => {
+                  this.loadChart();
+                });
               }
             }, 100);
           } else {
             this.fullData = [];
             setTimeout(() => {
               this.fullData = response;
+              // Sort the data by date in ascending order
+              this.fullData.sort(
+                (a, b) =>
+                  new Date(a.date).getTime() - new Date(b.date).getTime()
+              );
               this.totalRecords = this.fullData.length;
               // Load initial page of data
               this.loadData({ first: 0, rows: 20 });
               if (this.fullData.length > 0) {
-                this.tap_date(this.fullData[0].date);
-                this.loadChart();
+                this.ngZone.runOutsideAngular(() => {
+                  this.loadChart();
+                });
               }
             }, 100);
           }
@@ -737,26 +758,26 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       });
   }
 
-  tap_date(dateTime: string) {
-    console.log('tapped datetime:', dateTime);
+  // tap_date(dateTime: string) {
+  //   console.log('tapped datetime:', dateTime);
 
-    // Find the matching item in main_table
-    const selectedItem = this.main_table.find((item) => item.date === dateTime);
+  //   // Find the matching item in main_table
+  //   const selectedItem = this.main_table.find((item) => item.date === dateTime);
 
-    if (selectedItem) {
-      const data: SelectedData = {
-        id: selectedItem.id,
-        tide: selectedItem.pressure,
-        datetime: selectedItem.date, // Use the full datetime string directly
-        current_speed: selectedItem.speed,
-        current_direction: selectedItem.direction,
-      };
-      this.selected_data = data;
-      console.log('Selected data:', this.selected_data);
-    } else {
-      console.warn('No matching record found for datetime:', dateTime);
-    }
-  }
+  //   if (selectedItem) {
+  //     const data: SelectedData = {
+  //       id: selectedItem.id,
+  //       tide: selectedItem.pressure,
+  //       datetime: selectedItem.date, // Use the full datetime string directly
+  //       current_speed: selectedItem.speed,
+  //       current_direction: selectedItem.direction,
+  //     };
+  //     this.selected_data = data;
+  //     console.log('Selected data:', this.selected_data);
+  //   } else {
+  //     console.warn('No matching record found for datetime:', dateTime);
+  //   }
+  // }
   getFileClass(fileName: string, file_id: number): string {
     // Check if file is selected based on both file_name and file_id
     const isSelected = this.selectedFiles.some(
@@ -795,27 +816,29 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   // }
 
   loadChart() {
+    // Ensure cleanup of existing charts
     this.cleanupCharts();
-    this.ngZone.runOutsideAngular(() => {
-      setTimeout(() => {
-        switch (this.viewMode) {
-          case 'Single Axis':
-            this.Tide();
-            this.currentSpeed();
-            this.currentDirection();
-            break;
-          case 'Dual Axis':
-            this.currentSpeedAndDirection();
-            break;
-          case 'Tri Axis':
-            this.midSpeedDirection();
-            break;
-          case 'Polar':
-            this.midpolar();
-            break;
-        }
-      }, 100);
-    });
+
+    // Wait for DOM to be ready
+    setTimeout(() => {
+      switch (this.viewMode) {
+        case 'Single Axis':
+          this.Tide();
+          this.currentSpeed();
+          this.currentDirection();
+          break;
+        case 'Dual Axis':
+          this.currentSpeedAndDirection();
+          break;
+        case 'Tri Axis':
+          this.midSpeedDirection();
+          break;
+        case 'Polar':
+          this.midpolar();
+          break;
+      }
+      this.loading = false;
+    }, 100);
   }
 
   private cleanupCharts() {
@@ -826,6 +849,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       }
     });
     this.chartInstances = [];
+
+    // Dispose of specific chart instances
+    if (this.tideChartInstance && !this.tideChartInstance.isDisposed()) {
+      this.tideChartInstance.dispose();
+    }
+    if (this.midChartInstance && !this.midChartInstance.isDisposed()) {
+      this.midChartInstance.dispose();
+    }
 
     // Disconnect all resize observers
     this.resizeObservers.forEach((observer) => observer.disconnect());
@@ -853,10 +884,140 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   }
 
   onUpdateClick() {
+    // Check for empty values
+    const emptyRows = this.main_table.filter(
+      (row) => row.speed === '' || row.direction === '' || row.pressure === ''
+    );
+
+    if (emptyRows.length > 0) {
+      this.toast.error('Please fill all fields before updating');
+      return;
+    }
+
     this.loading = true;
-    this.ngZone.runOutsideAngular(() => {
-      this.loadChart();
-    });
+
+    // Find the newly added row using the isNewRow flag
+    const newRow = this.main_table.find((row) => row.isNewRow);
+    const changedRows = this.main_table.filter(
+      (row) => this.changedRows.has(row.id) && !row.isNewRow
+    );
+
+    // Create the payload
+    let promises: Promise<any>[] = [];
+
+    // Handle new rows
+    if (newRow) {
+      // Parse the date string to get hours and minutes
+      const date = new Date(newRow.date);
+      const hours = date.getHours().toString().padStart(2, '0');
+      const minutes = date.getMinutes().toString().padStart(2, '0');
+      const timeString = `${hours}:${minutes}`;
+
+      const newRowPayload = {
+        id: newRow.id,
+        timestamp: newRow.date,
+        speed: parseFloat(newRow.speed),
+        direction: parseFloat(newRow.direction),
+        tide: parseFloat(newRow.pressure),
+        time: timeString,
+      };
+
+      const newRowPromise = this.http
+        .post('http://localhost:3000/api/addNewRow', newRowPayload)
+        .toPromise();
+      promises.push(newRowPromise);
+    }
+
+    // Handle updated rows
+    if (changedRows.length > 0) {
+      const updatePayload = changedRows.map((row) => ({
+        id: row.id,
+        speed: parseFloat(row.speed),
+        direction: parseFloat(row.direction),
+        pressure: parseFloat(row.pressure),
+      }));
+
+      const updatePromise = this.http
+        .put('http://localhost:3000/api/updateData', updatePayload)
+        .toPromise();
+      promises.push(updatePromise);
+    }
+
+    // Process all promises
+    if (promises.length > 0) {
+      Promise.all(promises)
+        .then(() => {
+          this.toast.success('Data updated successfully');
+          this.changedRows.clear(); // Reset tracked changes
+          // Refresh the data
+          this.open_file(this.opened_file, this.openedFolder);
+          this.visible = false;
+        })
+        .catch((error) => {
+          console.error('Error updating data:', error);
+          this.toast.error('Failed to update data');
+        })
+        .finally(() => {
+          this.loading = false;
+        });
+    } else {
+      this.toast.info('No changes to update');
+      this.loading = false;
+    }
+  }
+
+  addRowBelow(item: any) {
+    const currentIndex = this.main_table.findIndex((row) => row.id === item.id);
+    if (currentIndex !== -1) {
+      // Parse the current date string directly
+      const currentDateStr = item.date;
+      const currentDate = new Date(currentDateStr);
+
+      // Calculate the new timestamp
+      let newDate: Date;
+      if (currentIndex < this.main_table.length - 1) {
+        // If there's a next row, calculate midpoint between current and next row
+        const nextDateStr = this.main_table[currentIndex + 1].date;
+        const nextDate = new Date(nextDateStr);
+        newDate = new Date((currentDate.getTime() + nextDate.getTime()) / 2);
+      } else {
+        // If it's the last row, add 1 hour to the current timestamp
+        newDate = new Date(currentDate.getTime() + 60 * 60 * 1000);
+      }
+
+      // Keep the ISO format with UTC timezone
+      const formattedDate = newDate.toISOString();
+
+      const newRow = {
+        id: item.id,
+        date: formattedDate,
+        speed: '',
+        direction: '',
+        pressure: '',
+        file_id: item.file_id,
+        file_name: item.file_name,
+        battery: '',
+        dept: '',
+        high_water_level: 0,
+        lat: '',
+        lon: '',
+        station_id: '',
+        time: formattedDate.split('T')[1].split('.')[0],
+        isNewRow: true,
+      };
+      this.main_table.splice(currentIndex + 1, 0, newRow);
+      this.fullData = [...this.main_table];
+
+      // Sort the arrays by date in ascending order
+      this.main_table.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      this.fullData.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+
+      this.cdr.detectChanges();
+    }
   }
 
   ngOnDestroy() {
@@ -864,42 +1025,77 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   }
 
   onDialogShow() {
-    this.ngZone.runOutsideAngular(() => {
-      setTimeout(() => {
-        const selectedRow = document.querySelector('.selected-row');
-        if (selectedRow) {
-          selectedRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }
-        this.chartInstances.forEach((chart) => {
-          if (!chart.isDisposed()) {
-            chart.resize();
-          }
-        });
-      }, 100);
-    });
-  }
+    // Ensure data is loaded
+    if (this.main_table.length === 0 && this.fullData.length > 0) {
+      this.main_table = this.fullData;
+    }
 
-  onDialogHide() {
-    this.ngZone.runOutsideAngular(() => {
+    // Wait for the dialog and table to be fully rendered
+    setTimeout(() => {
+      if (this.selectedPointId !== null) {
+        const tableWrapper = this.tableWrapper?.nativeElement;
+        if (tableWrapper) {
+          // Find the selected row element
+          const selectedRow = tableWrapper.querySelector(
+            `tr[data-id="${this.selectedPointId}"]`
+          );
+          if (selectedRow) {
+            // Get the position of the selected row relative to the table wrapper
+            const rowTop = selectedRow.offsetTop;
+            const wrapperHeight = tableWrapper.clientHeight;
+            const rowHeight = selectedRow.clientHeight;
+
+            // Calculate the scroll position to center the row
+            const scrollPosition = Math.max(
+              0,
+              rowTop - wrapperHeight / 2 + rowHeight / 2
+            );
+
+            // Scroll to the position with smooth behavior
+            tableWrapper.scrollTo({
+              top: scrollPosition,
+              behavior: 'smooth',
+            });
+          } else {
+            // If row not found, it might be because of virtual scrolling
+            // Find the index of the selected item
+            const selectedIndex = this.main_table.findIndex(
+              (item) => item.id === this.selectedPointId
+            );
+            if (selectedIndex !== -1) {
+              // Calculate approximate scroll position based on row height and index
+              const rowHeight = 46; // This should match virtualScrollItemSize
+              const scrollPosition = Math.max(
+                0,
+                selectedIndex * rowHeight - tableWrapper.clientHeight / 2
+              );
+
+              tableWrapper.scrollTo({
+                top: scrollPosition,
+                behavior: 'smooth',
+              });
+            }
+          }
+        }
+      }
+
+      // Resize charts
       this.chartInstances.forEach((chart) => {
         if (!chart.isDisposed()) {
           chart.resize();
         }
       });
-    });
+    }, 500); // Increased timeout to ensure dialog and table are fully rendered
+  }
+
+  closeDialog() {
+    this.visible = false;
+    this.selectedPointId = null;
   }
 
   loadData(event: any) {
-    this.lazyParams = event;
     this.loading = true;
-
-    // Calculate the slice of data to show in the table
-    const start = event.first;
-    const end = start + event.rows;
-
-    // Update only the table data with the sliced portion
-    this.main_table = this.fullData.slice(start, end);
-
+    this.main_table = this.fullData;
     this.loading = false;
     this.cdr.detectChanges();
   }
@@ -1001,7 +1197,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Water Level (m)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#1f77b4',
+              color: '#4900ff',
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1040,7 +1236,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           // top: '2%',
           // top: 'middle',
           textStyle: {
-            color: '#1f77b4', // Set legend text color to white
+            color: '#4900ff', // Set legend text color to white
             fontSize: 14,
           },
         },
@@ -1071,12 +1267,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 0, // You can adjust to define how much of the chart is visible initially
+            start: 90, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 0,
+            start: 90,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1118,7 +1314,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             barWidth: chartType === 'bar' ? '50%' : undefined,
 
             itemStyle: {
-              color: '#1f77b4',
+              // color: '#1f77b4',
+              color: '#4900ff',
             },
             showSymbol: false,
             label: {
@@ -1247,7 +1444,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'red',
+              color: '#cc00ff',
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1288,7 +1485,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           right: '15%',
           top: '2%',
           textStyle: {
-            color: 'red',
+            color: '#cc00ff',
             fontSize: 14,
           },
         },
@@ -1311,12 +1508,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 0, // You can adjust to define how much of the chart is visible initially
+            start: 98, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 0,
+            start: 98,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1336,7 +1533,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: chartType,
             // smooth: 'line',
             // lineStyle: { color: '#00ff00' },
-            itemStyle: { color: 'red' },
+            itemStyle: { color: '#cc00ff' },
             showSymbol: false,
             label: { show: true, fontSize: 12 },
             // yAxisIndex: 0,
@@ -1353,9 +1550,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             (item) => item.date === clickedDate
           );
           if (clickedItem) {
-            this.selectedPointId = clickedItem.id;
-            this.visible = true;
-            this.cdr.detectChanges();
+            this.ngZone.run(() => {
+              this.selectedPointId = clickedItem.id;
+              this.visible = true;
+              this.cdr.detectChanges();
+            });
           }
         }
       });
@@ -1483,7 +1682,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         ],
 
         legend: {
-          // data: ['Current Speed'],
+          data: ['Current Direction'],
+          // selected: {
+          //   'Current Direction': true,
+          // },
           orient: 'vertical',
           right: '15%',
           top: '2%',
@@ -1511,12 +1713,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 0, // You can adjust to define how much of the chart is visible initially
+            start: 98, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 0,
+            start: 98,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1537,14 +1739,38 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             // smooth: 'line',
             // lineStyle: { color: '#00ff00' },
             itemStyle: { color: 'black' },
-            // showSymbol: true,
+            // showSymbol: false,
             // symbol:
             //   'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
             // symbolSize: 14,
             // symbolOffset: [0, -7],
             // symbolRotate: (value: any) => value[1],
             // label: { show: false, fontSize: 12 },
-            // yAxisIndex: 0,
+            yAxisIndex: 0,
+          },
+
+          {
+            data: this.fullData.map((item) => [item.date, 0]), // fix Y at bottom
+            type: 'scatter', // use scatter so it doesn't draw a line
+            // itemStyle: { color: '#1f77b4' },
+            itemStyle: { color: '#4900ff' },
+            symbol:
+              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+            symbolSize: 14,
+            symbolOffset: [0, -7],
+            symbolRotate: (value: any, params: any) =>
+              parseFloat(this.fullData[params.dataIndex].direction),
+            label: { show: false },
+            yAxisIndex: 0,
+            // name: '',
+            // showLegendSymbol: false,
+            // legendHoverLink: false,
+            // emphasis: {
+            //   disabled: true,
+            // },
+            tooltip: {
+              show: false, // prevent tooltips too
+            },
           },
         ],
       };
@@ -1558,9 +1784,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             (item) => item.date === clickedDate
           );
           if (clickedItem) {
-            this.selectedPointId = clickedItem.id;
-            this.visible = true;
-            this.cdr.detectChanges();
+            this.ngZone.run(() => {
+              this.selectedPointId = clickedItem.id;
+              this.visible = true;
+              this.cdr.detectChanges();
+            });
           }
         }
       });
@@ -1635,7 +1863,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'red',
+              color: '#cc00ff',
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1662,12 +1890,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 0,
+            start: 98,
             end: 100,
           },
           {
             type: 'inside',
-            start: 0,
+            start: 98,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1708,7 +1936,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   item.current_speed,
             // ]),
             type: chartType,
-            itemStyle: { color: 'red' },
+            itemStyle: { color: '#cc00ff' },
             showSymbol: false,
             label: { show: true, fontSize: 12 },
             yAxisIndex: 0,
@@ -1733,6 +1961,29 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             // label: { show: false },
             yAxisIndex: 1,
           },
+          // {
+          //   data: this.fullData.map((item) => [item.date, 0]), // fix Y at bottom
+          //   type: 'scatter', // use scatter so it doesn't draw a line
+          //   // itemStyle: { color: '#1f77b4' },
+          //   itemStyle: { color: 'blue' },
+          //   symbol:
+          //     'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+          //   symbolSize: 14,
+          //   symbolOffset: [0, -7],
+          //   symbolRotate: (value: any, params: any) =>
+          //     parseFloat(this.fullData[params.dataIndex].direction),
+          //   label: { show: false },
+          //   yAxisIndex: 0,
+          //   // name: '',
+          //   // showLegendSymbol: false,
+          //   // legendHoverLink: false,
+          //   // emphasis: {
+          //   //   disabled: true,
+          //   // },
+          //   tooltip: {
+          //     show: false, // prevent tooltips too
+          //   },
+          // },
         ],
       };
 
@@ -1745,9 +1996,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             (item) => item.date === clickedDate
           );
           if (clickedItem) {
-            this.selectedPointId = clickedItem.id;
-            this.visible = true;
-            this.cdr.detectChanges();
+            this.ngZone.run(() => {
+              this.selectedPointId = clickedItem.id;
+              this.visible = true;
+              this.cdr.detectChanges();
+            });
           }
         }
       });
@@ -1844,7 +2097,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'red',
+              color: '#cc00ff',
               padding: [0, 0, 15, 0],
               fontSize: 16,
             },
@@ -1854,7 +2107,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
               lineStyle: {
-                color: 'red',
+                color: '#cc00ff',
               },
             },
             splitLine: {
@@ -1867,10 +2120,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
           {
             type: 'value',
-            name: 'Tide (m)',
+            name: 'Water Level (m)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#1f77b4',
+              color: '#4900ff',
               padding: [0, 0, 15, 0],
               fontSize: 16,
             },
@@ -1880,7 +2133,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
               lineStyle: {
-                color: '#1f77b4', // orange
+                color: '#4900ff', // orange
               },
             },
             splitLine: {
@@ -1925,7 +2178,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
         ],
         legend: {
-          data: ['Current Speed', 'Tide', 'Current Direction'],
+          data: ['Water Level', 'Current Speed', 'Current Direction'],
           orient: 'horizontal',
           right: '15%',
           textStyle: {
@@ -1950,46 +2203,23 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         },
         dataZoom: [
           {
-            type: 'inside',
-            xAxisIndex: 0,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-          {
             type: 'slider',
             bottom: 20,
             height: 15,
-            xAxisIndex: 0,
-            filterMode: 'filter',
-            start: 0,
+            start: 98,
             end: 100,
           },
           {
             type: 'inside',
-            yAxisIndex: 0,
-            filterMode: 'filter',
-            start: 0,
+            start: 98,
             end: 100,
-          },
-          {
-            type: 'inside',
-            yAxisIndex: 1,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-          {
-            type: 'inside',
-            yAxisIndex: 2,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
+            zoomOnMouseWheel: true,
+            moveOnMouseMove: true,
           },
         ],
         series: [
           {
-            name: 'Tide',
+            name: 'Water Level',
             // data: this.sampleDataAdcp.map((item) => [
             //   item.timestamp,
             //   item.tide,
@@ -2002,7 +2232,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   color: '#1f77b4',
             // },
             itemStyle: {
-              color: '#1f77b4',
+              color: '#4900ff',
             },
             showSymbol: false,
             label: {
@@ -2025,7 +2255,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   color: '#00ff00',
             // },
             itemStyle: {
-              color: 'red',
+              color: '#cc00ff',
             },
             showSymbol: false,
             label: {
@@ -2064,6 +2294,30 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             // },
             yAxisIndex: 2,
           },
+
+          // {
+          //   data: this.fullData.map((item) => [item.date, 0]), // fix Y at bottom
+          //   type: 'scatter', // use scatter so it doesn't draw a line
+          //   // itemStyle: { color: '#1f77b4' },
+          //   itemStyle: { color: 'blue' },
+          //   symbol:
+          //     'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
+          //   symbolSize: [10, 10], // Reduce size here (width, height)
+          //   symbolOffset: [0, -7],
+          //   symbolRotate: (value: any, params: any) =>
+          //     parseFloat(this.fullData[params.dataIndex].direction),
+          //   label: { show: false },
+          //   yAxisIndex: 2,
+          //   // name: '',
+          //   // showLegendSymbol: false,
+          //   // legendHoverLink: false,
+          //   // emphasis: {
+          //   //   disabled: true,
+          //   // },
+          //   tooltip: {
+          //     show: false, // prevent tooltips too
+          //   },
+          // },
         ],
       };
 
@@ -2078,9 +2332,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             (item) => item.date === clickedDate
           );
           if (clickedItem) {
-            this.selectedPointId = clickedItem.id;
-            this.visible = true;
-            this.cdr.detectChanges();
+            this.ngZone.run(() => {
+              this.selectedPointId = clickedItem.id;
+              this.visible = true;
+              this.cdr.detectChanges();
+            });
           }
         }
       });
@@ -2203,7 +2459,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Tide (m)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#1f77b4',
+              color: '#4900ff',
               padding: [0, 0, 10, 0],
               fontSize: 16,
             },
@@ -2213,7 +2469,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
               lineStyle: {
-                color: '#1f77b4', // orange
+                color: '#4900ff', // orange
               },
             },
             splitLine: {
@@ -2358,7 +2614,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   color: '#1f77b4',
             // },
             itemStyle: {
-              color: '#1f77b4',
+              color: '#4900ff',
             },
             showSymbol: false,
             label: {

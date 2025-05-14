@@ -1,15 +1,51 @@
 <div class="report_main">
+
+    <div class="files_container">
+        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+
+        <div class="folder" *ngFor="let folder of files_list; let i = index">
+            <div class="folder-header" (click)="toggleFolder(i, folder.id)">
+                <img [src]="expandedFolders[i] ? '../../assets/file_opened.png' : '../../assets/file_closed.png'"
+                    alt="folder" />
+                <div class="folder-info">
+                    <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
+                </div>
+                <span class="arrow">{{ expandedFolders[i] ? '▾' : '▸' }}</span>
+            </div>
+
+            <div class="file-list" *ngIf="expandedFolders[i]">
+                <div [ngClass]="getFileClass(f, folder.id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f, $event, folder.id, folder.folder_name)">
+                    <img [src]="getFileImage(f)" alt="file" />
+                    <p>{{ f }}</p>
+                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="tablecontainer">
-        <p-table #dt [value]="sampleDataAdcp" [columns]="selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
-            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="13" responsiveLayout="scroll"
-            [rowsPerPageOptions]="[13,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
+        <p-table #dt [value]="main_table" [columns]="selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
+            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="10" responsiveLayout="scroll"
+            [rowsPerPageOptions]="[10,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
             [exportHeader]="'customExportHeader'" selectionMode="multiple"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [filterDelay]="0"
             [tableStyle]="{'min-width': '50rem'}" responsiveLayout="stack" [breakpoint]="'960px'" stripedRows="tr"
             rowHover="true" showCurrentPageReport="true">
 
             <ng-template #caption>
+
+
+
                 <div class="caption">
+                    <!-- <div *ngIf="last_row" class="last-row-info">
+                        <div><i class="pi pi-bolt"></i> Battery: {{ last_row.battery }}</div>
+                        <div><i class="pi pi-database"></i> Dept: {{ last_row.dept }}</div>
+                        <div><i class="pi pi-file"></i> File: {{ last_row.file_name }}</div>
+                        <div><i class="pi pi-chart-line"></i> High WL: {{ last_row.high_water_level }}</div>
+                        <div><i class="pi pi-compass"></i> Latitude: {{ last_row.lat }}</div>
+                        <div><i class="pi pi-compass rotate-180"></i> Longitude: {{ last_row.lon }}</div>
+                    </div> -->
                     <div class="captionrow">
                         <div class="captionrowinrow">
                             <div id="search">
@@ -38,7 +74,8 @@
             </ng-template>
 
             <ng-template pTemplate="body" let-row let-columns="columns" let-i="rowIndex">
-                <tr [ngClass]="{ 'highlight-row': rowMatchesSearch(row, columns) }">
+                <tr [ngClass]="{ 'highlight-row': rowMatchesSearch(row, columns) }"
+                    [ngStyle]="{'background-color': row.high_water_level === 1 ? '#00ff00':'' }">
                     <td class="centered-cell">{{ i + 1 }}</td>
                     <td *ngFor="let col of columns" class="centered-cell">
                         <ng-container [ngSwitch]="col.type">
