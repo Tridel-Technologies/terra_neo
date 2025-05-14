@@ -67,26 +67,26 @@
                 <div class="tide">
                     <h5 class="title-tide">Tide</h5>
                     <img src="../../assets/tide.png" alt="">
-                    <p style="align-self: center;">{{selected_data.tide}}</p>
+                    <p style="align-self: center;">{{selected_data.tide}} {{ units.waterLevel }}</p>
                 </div>
                 <div class="battery">
                     <h5 class="title-tide">Battery</h5>
                     <div class="bat">
                         <app-battery [percentage]="12"></app-battery>
                     </div>
-                    <p style="align-self: center;">{{selected_data.battery}}</p>
+                    <p style="align-self: center;">{{selected_data.battery}} {{ units.battery }}</p>
                 </div>
             </div>
             <div class="currents">
                 <div class="current_speed" *ngIf="isLive">
                     <h5 class="title-tide">Current Speed</h5>
                     <img src="../../assets/speed.png" alt="">
-                    <p style="align-self: center;">{{selected_data.current_speed}}</p>
+                    <p style="align-self: center;">{{selected_data.current_speed}} {{ units.currentSpeed }}</p>
                 </div>
                 <div class="current_direction" *ngIf="isLive">
                     <h5 class="title-tide">Current Direction</h5>
                     <img src="../../assets/dire.png" alt="">
-                    <p style="align-self: center;">{{selected_data.current_direction}}</p>
+                    <p style="align-self: center;">{{selected_data.current_direction}} {{ units.currentDirection }}</p>
                 </div>
                 <div class="current1" *ngIf="!isLive">
                     <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours before</h5>
@@ -95,12 +95,12 @@
                         <div class="cbox-left">
                             <h6 style="align-self: flex-start;">Speed</h6>
                             <img class="cbox-img" src="../../assets/speed.png" alt="">
-                            <p>{{selected_data.current_speed_b_6}}</p>
+                            <p>{{selected_data.current_speed_b_6}} {{ units.currentSpeed }}</p>
                         </div>
                         <div class="cbox-right">
                             <h6 style="align-self: flex-start;">Direction</h6>
                             <img class="cbox-img" src="../../assets/dire.png" alt="">
-                            <p>{{selected_data.current_dir_b_6}}</p>
+                            <p>{{selected_data.current_dir_b_6}} {{ units.currentDirection }}</p>
                         </div>
                     </div>
 
@@ -112,12 +112,12 @@
                         <div class="cbox-left">
                             <h6 style="align-self: flex-start;">Speed</h6>
                             <img class="cbox-img" src="../../assets/speed.png" alt="">
-                            <p>{{selected_data.current_direction}}</p>
+                            <p>{{selected_data.current_direction}} {{ units.currentDirection }}</p>
                         </div>
                         <div class="cbox-right">
                             <h6 style="align-self: flex-start;">Direction</h6>
                             <img class="cbox-img" src="../../assets/dire.png" alt="">
-                            <p>{{selected_data.current_speed}}</p>
+                            <p>{{selected_data.current_speed}} {{ units.currentSpeed }}</p>
                         </div>
                     </div>
                 </div>
@@ -128,12 +128,12 @@
                         <div class="cbox-left">
                             <h6 style="align-self: flex-start;">Speed</h6>
                             <img class="cbox-img" src="../../assets/speed.png" alt="">
-                            <p>{{selected_data.current_speed_after_6}}</p>
+                            <p>{{selected_data.current_speed_after_6}} {{ units.currentSpeed }}</p>
                         </div>
                         <div class="cbox-right">
                             <h6 style="align-self: flex-start;">Direction</h6>
                             <img class="cbox-img" src="../../assets/dire.png" alt="">
-                            <p>{{selected_data.current_dir_after_6}}</p>
+                            <p>{{selected_data.current_dir_after_6}} {{ units.currentDirection }}</p>
                         </div>
                     </div>
                 </div>

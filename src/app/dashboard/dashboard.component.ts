@@ -4,6 +4,7 @@ import { Component, OnInit } from '@angular/core';
 import { BatteryComponent } from "./battery/battery.component";
 import { tap } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
+import { UnitService, UnitSettings } from '../settings/unit.service';
 
 interface Files {
   id: number,
@@ -45,7 +46,15 @@ export class DashboardComponent implements OnInit{
   selected_folder_name!:string;
   selected_data!:dashdata;
   isLive:boolean = true;
-  constructor(private http:HttpClient, private toast:ToastrService){}
+  constructor(private http:HttpClient, private toast:ToastrService, private unitService: UnitService){}
+
+  // Units
+  units: UnitSettings = {
+    waterLevel: '',
+    currentSpeed: '',
+    currentDirection: '',
+    battery: ''
+  };
 
   toggle_tap(){
     try {
@@ -150,6 +159,12 @@ export class DashboardComponent implements OnInit{
         
       }
     );
+
+    // Units
+    this.unitService.units$.subscribe((u) => {
+      this.units = u;
+    });
+
   }
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;

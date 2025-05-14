@@ -11,11 +11,18 @@ export const appConfig: ApplicationConfig = {
   providers: [
     provideAnimations(), // required animations providers
     provideToastr(),
-    provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes)]
-
-  providers: [provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes), 
+    provideZoneChangeDetection({ eventCoalescing: true }), 
+    provideRouter(routes),
     providePrimeNG({
       theme: {preset: Aura}
-    })]
+    })
+  ]
+
+  // providers: [
+  //   provideZoneChangeDetection({ eventCoalescing: true }),
+  //   provideRouter(routes),
+  //   providePrimeNG({
+  //     theme: {preset: Aura}
+  //   })]
 
 };
