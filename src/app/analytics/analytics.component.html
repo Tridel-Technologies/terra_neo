@@ -23,12 +23,6 @@
         </div>
     </div>
 
-
-
-
-
-
-
     <div class="chartsContainer">
         <div class="view">
             <!-- <p-select class="dateDrop" [options]="chartOptions" [(ngModel)]="selectedChart" placeholder="Select a chart"
@@ -40,15 +34,34 @@
             <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
             <label>Multi View</label> -->
         </div>
+        
         <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <p-colorPicker 
+                    [(ngModel)]="tideChartColor" 
+                    (onChange)="onColorChange(tideChartColor, 'tideChartColor')">
+                </p-colorPicker>
+            </div>
             <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
         <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <p-colorPicker 
+                    [(ngModel)]="currentSpeedColor" 
+                    (onChange)="onColorChange(currentSpeedColor, 'currentSpeedColor')">
+                </p-colorPicker>
+            </div>
             <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
         <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+            <div style="display: flex; justify-content: center; align-items: center; margin-bottom: 10px;">
+                <p-colorPicker 
+                    [(ngModel)]="currentDirectionColor" 
+                    (onChange)="onColorChange(currentDirectionColor, 'currentDirectionColor')">
+                </p-colorPicker>
+            </div>
             <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
@@ -59,26 +72,6 @@
         <div class="chartContainer" *ngIf="viewMode === 'Tri Axis'">
             <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
-
-        <!-- <div class="chartsContainers" *ngIf="isCompareView">
-
-            <div class="four_chart">
-                <div class="top_two">
-                    <div class="left_c">
-                        <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-                    </div>
-                    <div class="right_c">
-                        <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-                    </div>
-                </div>
-                <div class="bottom_two">
-                    <div class="left_c">
-                        <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
-                    </div>
-                    <div class="right_c"></div>
-                </div>
-            </div>
-        </div> -->
 
         <div class="chartContainer" *ngIf="viewMode === 'Polar'">
             <div id="midpolar" class="chart-diagram" style="width: 100%; height: 400px;"></div>

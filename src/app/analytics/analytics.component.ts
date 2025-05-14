@@ -22,6 +22,7 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { SelectModule } from 'primeng/select';
+import { ColorPickerModule } from 'primeng/colorpicker';
 
 interface Files {
   id: number;
@@ -83,6 +84,7 @@ interface SelectedData {
     ButtonModule,
     HttpClientModule,
     SelectModule,
+    ColorPickerModule,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
@@ -147,7 +149,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     first: 0,
     rows: 20,
   };
-  private fullData: ApiData[] = []; // Store the complete dataset
+  private fullData: ApiData[] = [];
 
   sampleDataAdcp = [
     {
@@ -606,6 +608,25 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       tide: 3.86,
     },
   ];
+
+  tideChartColor: string = localStorage.getItem('tideChartColor') ?? '#4900ff';
+  currentSpeedColor: string = localStorage.getItem('currentSpeedColor') ?? '#ff00c1';
+  currentDirectionColor: string = localStorage.getItem('currentDirectionColor') ?? '#000000';
+
+  onColorChange(color: string, type: string): void {
+    if (type === 'tideChartColor') {
+      this.tideChartColor = color;
+      this.Tide();
+    } else if (type === 'currentSpeedColor') {
+      this.currentSpeedColor = color;
+      this.currentSpeed();
+    } else if (type === 'currentDirectionColor') {
+      this.currentDirectionColor = color;
+      this.currentDirection();
+    }
+
+    localStorage.setItem(type, color);
+  }
 
   constructor(
     private http: HttpClient,
@@ -1104,25 +1125,24 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     const chartType = this.selectedChart;
     this.loading = true;
     const tide = document.getElementById('tide');
-
-    // const computedStyle = getComputedStyle(document.body);
-    // const bgColor = computedStyle
-    //   .getPropertyValue('--secbackground-color')
-    //   .trim();
-    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    // const subText = computedStyle.getPropertyValue('--main-text').trim();
-
+  
+    // Load saved color from localStorage or use default
+    const savedColor = localStorage.getItem('tideChartColor');
+    if (savedColor) {
+      this.tideChartColor = savedColor;
+    }
+  
     const bgColor = '#ffffff'; // White background for image export
     const mainText = '#000000'; // Black for titles/labels
     const subText = '#666666'; // Grey for axis labels and legend
-
+  
     if (tide) {
       const existingInstance = echarts.getInstanceByDom(tide);
       if (existingInstance) {
         existingInstance.dispose();
       }
       const tideLevel = echarts.init(tide);
-
+  
       const option = {
         title: {
           text: 'Water Level',
@@ -1135,11 +1155,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         tooltip: {
           trigger: 'axis',
         },
-        // grid: {
-        //   left: '7%',
-        //   // bottom: '30%',
-        //   right: '5%',
-        // },
         xAxis: [
           {
             type: 'time',
@@ -1157,9 +1172,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
             },
-            // splitLine: {
-            //   show: true,
-            // },
           },
           {
             type: 'time',
@@ -1178,26 +1190,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
           },
         ],
-        // graphic: [
-        //   {
-        //     type: 'text',
-        //     left: 500, // adjust X
-        //     top: 390, // adjust Y
-        //     style: {
-        //       text: 'DateTime',
-        //       fill: mainText,
-        //       font: '14px sans-serif',
-        //     },
-        //   },
-        // ],
-
         yAxis: [
           {
             type: 'value',
             name: 'Water Level (m)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#4900ff',
+              color: this.tideChartColor, // Use selected color
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1228,21 +1227,15 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
           },
         ],
-
         legend: {
-          // type: 'scroll',
-          orient: 'vertical', // Orient the legend vertically
+          orient: 'vertical',
           right: '15%',
-          // top: '2%',
-          // top: 'middle',
           textStyle: {
-            color: '#4900ff', // Set legend text color to white
+            color: this.tideChartColor, // Use selected color
             fontSize: 14,
           },
         },
-
         toolbox: {
-          // right: 10,
           feature: {
             dataZoom: {
               yAxisIndex: 'none',
@@ -1261,61 +1254,32 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             borderColor: mainText,
           },
         },
-
         dataZoom: [
           {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 90, // You can adjust to define how much of the chart is visible initially
-            end: 100, // Set the percentage of the range initially visible
+            start: 90,
+            end: 100,
           },
           {
             type: 'inside',
             start: 90,
-            end: 100, // Can be modified based on your dataset's initial view preference
+            end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
           },
         ],
-
         series: [
           {
             name: 'Water Level',
             data: this.fullData.map((item) => {
               return [item.date, parseFloat(item.pressure)];
             }),
-            // data: this.sampleDataAdcp.map((item) => [
-            //   item.timestamp,
-            //   item.tide,
-            // ]),
-            // data: sampleData.map(([date, value]) => ({
-            //   value: [date, value],
-            // })),
-            // data: this.sampleDataTide.map(item => [item.date, item.level]),
-            //  data: sampleData.map(item => [item[0], item[1]]),
             type: chartType === 'bar' ? 'bar' : chartType,
-            // areaStyle: {
-            //   color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            //     {
-            //       offset: 0,
-            //       color: 'rgba(31, 119, 180, 0.4)',
-            //     },
-            //     {
-            //       offset: 1,
-            //       color: 'rgba(31, 119, 180, 0.05)',
-            //     },
-            //   ]),
-            //   opacity: 1,
-            // },
-
-            smooth: 'line',
-            // lineStyle: 'line',
             barWidth: chartType === 'bar' ? '50%' : undefined,
-
             itemStyle: {
-              // color: '#1f77b4',
-              color: '#4900ff',
+              color: this.tideChartColor, // Use selected color
             },
             showSymbol: false,
             label: {
@@ -1323,12 +1287,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               fontSize: 12,
             },
           },
-
           {
-            // Invisible dummy series to trigger rendering of top and right axes
             type: 'line',
             xAxisIndex: 1,
-            // yAxisIndex: 1,
             data: [],
             lineStyle: {
               opacity: 0,
@@ -1340,8 +1301,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
         ],
       };
-
-      // Set options for the chart
+  
       tideLevel.setOption(option);
       tideLevel.off('click');
       tideLevel.on('click', (params: any) => {
@@ -1362,7 +1322,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       window.addEventListener('resize', () => {
         tideLevel.resize();
       });
-    } else {
     }
   }
 
@@ -1370,12 +1329,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     const chartType = this.selectedChart;
     const speed = document.getElementById('currentSpeed');
 
-    // const computedStyle = getComputedStyle(document.body);
-    // const bgColor = computedStyle
-    //   .getPropertyValue('--secbackground-color')
-    //   .trim();
-    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    // const subText = computedStyle.getPropertyValue('--main-text').trim();
+    const savedColor = localStorage.getItem('currentSpeedColor');
+    if (savedColor) {
+      this.currentSpeedColor = savedColor;
+    }
 
     const bgColor = '#ffffff'; // White background for image export
     const mainText = '#000000'; // Black for titles/labels
@@ -1444,7 +1401,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#cc00ff',
+              color: this.currentSpeedColor,
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1485,7 +1442,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           right: '15%',
           top: '2%',
           textStyle: {
-            color: '#cc00ff',
+            color: this.currentSpeedColor,
             fontSize: 14,
           },
         },
@@ -1533,7 +1490,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: chartType,
             // smooth: 'line',
             // lineStyle: { color: '#00ff00' },
-            itemStyle: { color: '#cc00ff' },
+            itemStyle: { color: this.currentSpeedColor },
             showSymbol: false,
             label: { show: true, fontSize: 12 },
             // yAxisIndex: 0,
@@ -1571,13 +1528,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     const chartType = this.selectedChart;
     const direction = document.getElementById('currentDirection');
 
-    // const computedStyle = getComputedStyle(document.body);
-    // const bgColor = computedStyle
-    //   .getPropertyValue('--secbackground-color')
-    //   .trim();
-    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    // const subText = computedStyle.getPropertyValue('--main-text').trim();
-
+    const savedColor = localStorage.getItem('currentDirectionColor');
+    if (savedColor) {
+      this.currentDirectionColor = savedColor;
+    }
+    
     const bgColor = '#ffffff'; // White background for image export
     const mainText = '#000000'; // Black for titles/labels
     const subText = '#666666'; // Grey for axis labels and legend
@@ -1646,7 +1601,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Direction (°)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'black',
+              color: this.currentDirectionColor,
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1690,7 +1645,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           right: '15%',
           top: '2%',
           textStyle: {
-            color: 'black',
+            color: this.currentDirectionColor,
             fontSize: 14,
           },
         },
@@ -1738,7 +1693,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             type: chartType,
             // smooth: 'line',
             // lineStyle: { color: '#00ff00' },
-            itemStyle: { color: 'black' },
+            itemStyle: { color: this.currentDirectionColor },
             // showSymbol: false,
             // symbol:
             //   'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
@@ -1753,7 +1708,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             data: this.fullData.map((item) => [item.date, 0]), // fix Y at bottom
             type: 'scatter', // use scatter so it doesn't draw a line
             // itemStyle: { color: '#1f77b4' },
-            itemStyle: { color: '#4900ff' },
+            itemStyle: { color: this.currentDirectionColor },
             symbol:
               'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
             symbolSize: 14,
@@ -1863,7 +1818,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#cc00ff',
+              color: this.currentSpeedColor,
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
@@ -1876,7 +1831,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Direction (°)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'black',
+              color: this.currentDirectionColor,
               padding: [30, 0, 0, 0],
               fontSize: 16,
             },
@@ -1907,7 +1862,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           right: '15%',
           top: '2%',
           textStyle: {
-            color: 'black',
+            color: this.currentDirectionColor,
             fontSize: 14,
           },
         },
@@ -1936,7 +1891,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   item.current_speed,
             // ]),
             type: chartType,
-            itemStyle: { color: '#cc00ff' },
+            itemStyle: { color: this.currentSpeedColor },
             showSymbol: false,
             label: { show: true, fontSize: 12 },
             yAxisIndex: 0,
@@ -1951,7 +1906,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               return [item.date, parseFloat(item.direction)];
             }),
             type: chartType,
-            itemStyle: { color: 'black' },
+            itemStyle: { color: this.currentDirectionColor },
             // showSymbol: true,
             // symbol:
             //   'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
@@ -2097,7 +2052,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Speed (m/s)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#cc00ff',
+              color: this.currentSpeedColor,
               padding: [0, 0, 15, 0],
               fontSize: 16,
             },
@@ -2107,7 +2062,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
               lineStyle: {
-                color: '#cc00ff',
+                color: this.currentSpeedColor,
               },
             },
             splitLine: {
@@ -2123,7 +2078,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Water Level (m)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: '#4900ff',
+              color: this.tideChartColor,
               padding: [0, 0, 15, 0],
               fontSize: 16,
             },
@@ -2133,7 +2088,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
               lineStyle: {
-                color: '#4900ff', // orange
+                color: this.tideChartColor,
               },
             },
             splitLine: {
@@ -2151,7 +2106,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'Current Direction (°)',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: 'black',
+              color: this.currentDirectionColor,
               padding: [30, 0, 0, 0],
               fontSize: 16,
             },
@@ -2161,7 +2116,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             axisLine: {
               show: true,
               lineStyle: {
-                color: 'black',
+                color: this.currentDirectionColor,
               },
             },
             splitLine: {
@@ -2232,7 +2187,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   color: '#1f77b4',
             // },
             itemStyle: {
-              color: '#4900ff',
+              color: this.tideChartColor,
             },
             showSymbol: false,
             label: {
@@ -2255,7 +2210,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   color: '#00ff00',
             // },
             itemStyle: {
-              color: '#cc00ff',
+              color: this.currentSpeedColor,
             },
             showSymbol: false,
             label: {
@@ -2280,7 +2235,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             //   type: 'dashed',
             // },
             itemStyle: {
-              color: 'black',
+              color: this.currentDirectionColor,
             },
             // showSymbol: true,
             // symbol:
