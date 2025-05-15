@@ -1,11 +1,16 @@
 const express = require('express')
-const { importAll, getFiles, getDataByFolderIdAndFileName, updateValues } = require('./controller')
+const { importAll, getFiles, getDataByFolderIdAndFileName, updateValues, getUser, loginUser, signup, checkusername, forget_password, change_password } = require('./controller')
 const router = express.Router();
 
 router.post('/import', importAll);
 router.get('/get_files', getFiles);
 router.get('/fetch_data_by_file/:folder_id/:file_name', getDataByFolderIdAndFileName)
 router.post('/update_values', updateValues)
-
+router.get('/getuser',getUser)
+router.post('/login', loginUser);
+router.post('/signup',signup);
+router.post('/check',checkusername);
+router.post('/verifyUser',forget_password);
+router.post('/resetPassword',change_password);
 
 module.exports = router;

@@ -1,0 +1,224 @@
+<div class="login-page">
+  <div class="company-header">
+    <img src="../../assets/logo_copy.png" alt="Company Logo" class="company-logo">
+    <div class="company-text">
+      <p class="company-name">Tridel Technologies</p>
+      <!-- <p class="company-quote">Connecting Environmental Science, Engineering and Technology</p> -->
+    </div>
+  </div>
+
+  <div class="project">
+    <span>INHO India</span>
+  </div>
+  <!-- <div class="project"> -->
+
+  <!-- signup-box -->
+  <div class="signup-box" *ngIf="signup_form && !forget_password_form">
+    <div class="avatar">
+      <img src="../../assets/nho-removebg-preview.png" alt="Avatar">
+    </div>
+    <h2>TERRA Neo</h2>
+    <form (ngSubmit)="signup()" #formRef="ngForm">
+      <div class="column">
+      <div class="input-wrapper">
+        <i class="fa fa-user input-icon"></i>
+        <input type="text" name="username" [(ngModel)]="userName_signup" (ngModelChange)="checkusername()"
+          #userName_signupRef="ngModel" placeholder="Username" required minlength="5" pattern="^[a-zA-Z]+$" />
+      </div>
+    </div>
+    <small class="err-msg-container" *ngIf="(username_exists)">
+      username already in use
+    </small>
+      <small class="err-msg-container"
+        *ngIf="userName_signupRef.invalid && userName_signup">
+At least 5 letters, no numbers or symbols
+
+      </small>
+            <div class="column">
+
+      <div class="input-wrapper">
+        <i class="fa fa-envelope input-icon"></i>
+        <input type="email" name="email_id" [(ngModel)]="Email_id_signup" (ngModelChange)="validateEmail()"
+          #Email_id_signupRef="ngModel" placeholder="name@company.com" required />
+      </div>
+      </div>
+      <small class="err-msg-container" *ngIf="(email_exists)">
+        email already in use
+      </small>
+      <small class="err-msg-container" *ngIf="emailInvalid && Email_id_signup">
+        Please enter a valid email.
+      </small>
+      <div class="column">
+
+      <div class="input-wrapper password-wrapper">
+        <i class="fa fa-lock input-icon"></i>
+        <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password_signup"
+          (ngModelChange)="validateEmail()" #password_signupRef="ngModel" placeholder="Password"autocomplete="new-password"
+ required minlength="7"
+          maxlength="15" />
+        <button type="button" (click)="togglePassword()" class="toggle-password">
+          <i [class]="showPassword ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash'"></i>
+        </button>
+      </div>
+      </div>
+      <small class="err-msg-container" *ngIf="passwordInvalid && password_signup">
+        Need 8–15 chars with a alphabet, number & symbol      </small>
+            <div class="column">
+
+      <div class="input-wrapper password-wrapper">
+        <i class="fa fa-lock input-icon"></i>
+        <input [type]="showPassword ? 'text' : 'password'" name="confirmPassword" [(ngModel)]="confirm_password_signup"
+          #confirm_passwordRef="ngModel" placeholder="Confrim New Password"   autocomplete="new-password"
+ required minlength="7" maxlength="15" />
+        <button type="button" (click)="togglePassword()" class="toggle-password">
+          <i [class]="showPassword ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash'"></i>
+        </button>
+      </div>
+</div>
+      <small class="err-msg-container" *ngIf="confirm_password_signup !== password_signup && confirm_password_signup">
+        Passwords do not match
+      </small>
+
+      <button class="button signup_btn" type="submit"    [disabled]="
+      !formRef.valid ||
+      username_exists ||
+      email_exists ||
+      emailInvalid ||
+      confirm_password_signup !== password_signup
+    "
+  ><i class="fa-solid fa-user-plus adduser"></i>Sign up</button>
+            <div class="signup_form"><small>Do you have an account? - </small>
+        <a href="#" (click)="showLogInForm($event)"> Sign In</a>
+      </div>
+    </form>
+  </div>
+
+
+  <!-- login-box -->
+  <div class="login-box" *ngIf="!signup_form && !forget_password_form">
+    <div class="avatar">
+      <img src="../../assets/nho-removebg-preview.png" alt="Avatar">
+    </div>
+    <h2>TERRA Neo</h2>
+    <form (ngSubmit)="login()" #form="ngForm">
+            <div class="column">
+
+      <div class="input-wrapper">
+        <i class="fa fa-user input-icon"></i>
+        <input type="text" name="username" [(ngModel)]="userName" #userNameRef="ngModel" 
+        placeholder="Username" minlength="5" pattern="^[a-zA-Z]+$" />
+      </div>
+      </div>
+            <small class="err-msg-container"
+        *ngIf="userNameRef.invalid && userName">
+At least 5 letters, no numbers or symbols
+
+      </small>
+      <div class="column">
+
+      <div class="input-wrapper password-wrapper">
+        <i class="fa fa-lock input-icon"></i>
+        <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password" #passwordRef="ngModel"
+          placeholder="Password"   autocomplete="new-password"
+ required minlength="7" maxlength="15" />
+        <button type="button" (click)="togglePassword()" class="toggle-password">
+          <i [class]="showPassword ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash'"></i>
+        </button>
+      </div>
+      
+      </div>
+      <div class="forgot-password">
+        <a href="#" (click)="showForgetPasswordForm($event)">Forget Password?</a>
+      </div>
+      <!-- <small class="err-msg-container"
+        *ngIf="passwordRef.invalid && passwordRef.touched && passwordRef.errors?.['required']">
+        Password is required.
+      </small>
+      <small class="err-msg-container"
+        *ngIf="userNameRef.invalid && userNameRef.touched && userNameRef.errors?.['required']">
+        Username is required.
+      </small> -->
+      <button class="button loginbtn" type="submit"><i class="fa-solid fa-right-to-bracket login_btn"></i>Sign In</button>
+      <!-- <div class="forgot-password">
+        <a href="#" (click)="showForgetPasswordForm($event)">Forget Password?</a>
+      </div> -->
+      <div class="signup_form"><small>Don't have an account? -</small>
+        <a href="#" (click)="showSignUpForm($event)"> Sign up</a>
+      </div>
+      <!-- <label class="remember">
+        <input type="checkbox" [(ngModel)]="rememberMe" name="rememberMe" /> Remember me
+      </label> -->
+    </form>
+  </div>
+
+  <!-- forget password -->
+  <div class="forgot-box" *ngIf="!signup_form && forget_password_form && !login_form">
+    <div class="avatar">
+      <img src="../../assets/nho-removebg-preview.png" alt="Avatar">
+    </div>
+    <h2>TERRA Neo</h2>
+    <p>Forgot Password</p>
+    <form (ngSubmit)="forget_password()" #formRef="ngForm">
+            <div class="column">
+
+      <div class="input-wrapper">
+        <i class="fa fa-user input-icon"></i>
+        <input type="text" name="username" [(ngModel)]="userName_forget" #userName__forgetRef="ngModel"
+          placeholder="Username"   [disabled]="emailVerified"
+ required minlength="5" />
+      </div>
+      </div>
+            <div class="column">
+
+      <div class="input-wrapper">
+        <i class="fa fa-envelope input-icon"></i>
+        <input type="text" name="email_id" [(ngModel)]="Email_id_forget" #Email__forgetRef="ngModel"
+          placeholder="name@company.com" [disabled]="emailVerified" required />
+      </div>
+</div>
+      <div class="column"*ngIf="emailVerified">
+
+      <div class="input-wrapper password-wrapper" >
+        <i class="fa fa-lock input-icon"></i>
+        <input [type]="showPassword ? 'text' : 'password'" name="password" [(ngModel)]="password_forget"
+          (ngModelChange)="onPasswordChange($event, password_forgetRef)" #password_forgetRef="ngModel" placeholder="New Password"   autocomplete="new-password"
+ required minlength="7" maxlength="15" />
+        <button type="button" (click)="togglePassword()" class="toggle-password">
+          <i [class]="showPassword ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash'"></i>
+        </button>
+      </div>
+      </div>
+      <small class="err-msg-container"*ngIf="emailVerified && password_forget_invalid && password_forget">
+      Need 8–15 chars with a alphabet, number & symbol      </small>
+      <div class="column"*ngIf="emailVerified">
+      <div class="input-wrapper password-wrapper" *ngIf="emailVerified">
+        <i class="fa fa-lock input-icon"></i>
+        <input [type]="showPassword ? 'text' : 'password'" name="confirmPassword" [(ngModel)]="confirm_password_forget"
+          #confirm_password__forgetRef="ngModel" placeholder="Confirm New Password"   autocomplete="new-password"
+required minlength="7" maxlength="15" />
+        <button type="button" (click)="togglePassword()" class="toggle-password">
+          <i [class]="showPassword ? 'fa-regular fa-eye' : 'fa-regular fa-eye-slash'"></i>
+        </button>
+      </div>
+      </div>
+      <small class="err-msg-container" *ngIf="confirm_password_forget !== password_forget && confirm_password_forget">
+        Passwords do not match
+      </small>
+      <!-- Submit button -->
+      <button class="button forgetbtn" type="submit" [disabled]="
+    emailVerified && (
+      !formRef.valid ||
+      !password_forget ||
+      confirm_password_forget !== password_forget
+    )
+  ">>
+        {{ emailVerified ? 'Reset Password' : 'Verify' }}
+      </button>
+      
+            <div class="signup_form"><small>I know my Password - </small>
+        <a href="#" (click)="showLogInForm($event)"> Sign In</a>
+      </div>
+    </form>
+
+  </div>
+</div>

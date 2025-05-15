@@ -1,0 +1,268 @@
+/* === Page Background and Layout === */
+.login-page {
+  height: 100vh;
+  background: url("../../assets/earth1.jpg") no-repeat center center;
+  /* background-size: cover; */
+  background-repeat: no-repeat;
+  background-position: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+/* === Company Header === */
+.company-header {
+  position: absolute;
+  bottom: 20px;  
+  left: 20px;
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 10;
+}
+
+.company-logo {
+  width: 70px;
+  height: auto;
+}
+
+.company-name {
+  font-size: 20px;
+  color: white;
+  margin: 0;
+}
+
+
+.company-quote {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  margin: 0;
+}
+
+/* === Project Tag === */
+.project {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  z-index: 2;
+  font-size: 18px;
+  font-weight: bold;
+  color: white;
+}
+
+/* === Login Box === */
+.login-box {
+  width: 420px;
+  height: 420px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 50%;
+  padding: 40px 20px;
+  text-align: center;
+  color: white;
+  position: relative;
+  /* box-shadow: 0 8px 25px 0 rgb(0, 0, 0); */
+  backdrop-filter: blur(6.5px);
+  -webkit-backdrop-filter: blur(6.5px);
+  margin-top: 50px;
+}
+.login-box .login_btn{
+  margin-right: 10px;
+}
+ a{
+  font-size: medium;
+  color: white;
+  text-decoration: none;
+}
+a:hover {
+  text-decoration: underline;
+}
+
+.signup-box {
+  width: 500px;
+  height: 500px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 40px 20px 20px 20px;
+  text-align: center;
+  color: white;
+  position: relative;
+  box-shadow: 0 8px 25px 0 rgb(0, 0, 0);
+  backdrop-filter: blur(6.5px);
+  -webkit-backdrop-filter: blur(6.5px);
+  margin-top: 30px;
+}
+.signup-box .input-wrapper{
+  width: 70%;
+  display: flex;
+}
+.forgot-password {
+  text-align: left;
+  margin-left: 50px;
+}
+
+.signup-box .signup_btn{
+  margin-top: 20px;
+  /* width: 5%; */
+}
+
+.signup-box .adduser{
+  margin-right: 10px;
+}
+
+.forgot-box{
+  width: 500px;
+  height: 550px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 15px;
+  padding: 40px 20px;
+  text-align: center;
+  color: white;
+  position: relative;
+  backdrop-filter: blur(6.5px);
+  -webkit-backdrop-filter: blur(6.5px);
+  margin-top: 10px;
+}
+/* === Avatar === */
+.avatar img {
+  width: 90px;
+  height: 90px;
+  border-radius: 50%;
+  margin-top: -30px;
+  padding: 5px;
+  border-radius: 50%;
+  border: 2px solid #00f0ff;
+  box-shadow: 0 0 15px #00f0ff;
+
+}
+h2{
+  margin-top: 5px;
+}
+/* === Headers === */
+.login-box h3 {
+  margin: 20px 0 10px;
+  font-weight: 500;
+}
+
+
+
+.input-wrapper input:focus,
+.password-wrapper input:focus {
+  border: 1px solid #ffffff;
+  border-radius: 30px;
+  box-shadow: 0px 0px 5px rgba(255, 255, 255, 0.5);
+}
+
+
+/* === Password Wrapper (with toggle button) === */
+.password-wrapper {
+  position: relative;
+  display: flex;
+  width: 100%;
+}
+
+/* === Toggle Password Eye Icon === */
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: rgb(0, 0, 0);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+}
+
+/* === Error Message === */
+.err-msg-container {
+  display: flex;
+  position: fixed;
+  color: #fe8787;
+  font-size:medium;
+  margin-left: 15%;
+  margin-top: 0px;
+}
+.login-box .err-msg-container {
+  display: flex;
+  position: fixed;
+  color: #fe8787;
+  font-size:medium;
+  margin-left: 10%;
+  margin-top: 0px;
+}
+
+.column{
+  display: flex;
+  flex-direction: column;
+  margin: -15px;
+}
+
+/* === Login Button === */
+.button {
+  width: 50%;
+  padding: 8px;
+  border: none;
+  border-radius: 20px;
+  background:rgb(116,183,216);
+  color: white;
+  margin-top: 5px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+/* === Remember Me Checkbox === */
+.remember {
+  display: block;
+  margin-top: 10px;
+  font-size: 12px;
+}
+
+.remember input {
+  margin-right: 5px;
+}
+.input-wrapper {
+  position: relative;
+  width: 80%;
+  margin: 20px auto;
+}
+
+.input-wrapper input {
+  width: 100%;
+  padding: 8px 8px 8px 35px; 
+  border: none;
+  border-radius: 20px;
+  background: white;
+  color: #000;
+}
+
+.input-icon {
+  position: absolute;
+  top: 50%;
+  left: 10px;
+  transform: translateY(-50%);
+  color: #000;
+  font-size: 14px;
+  pointer-events: none;
+}
+.forgetbtn{
+margin-top: 20px;
+}
+.forgot-box .input-wrapper{
+  width: 70%;
+  display: flex;
+}
+.loginbtn{
+  margin-top: 20px;
+  }
+.signup_form{
+  margin-top: 10px;
+}
+.signup_btn:disabled,.forgetbtn:disabled {
+  background-color: #ccc;        
+  color: #666;                   
+  cursor: not-allowed;           
+  border: none;                  
+  opacity: 0.7;                  
+}
