@@ -145,7 +145,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   // Optional: disable unavailable dates
   disabledPolarDates: Date[] = []; // populate if needed
 
-  viewMode: string = 'Polar';
+  viewMode: string = 'Single Axis';
   viewModes = [
     { label: 'Single Axis', value: 'Single Axis' },
     { label: 'Dual Axis', value: 'Dual Axis' },
@@ -501,8 +501,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.loading = true;
 
-    // Find the newly added row using the isNewRow flag
-    const newRow = this.main_table.find((row) => row.isNewRow);
+    // Find all newly added rows using the isNewRow flag
+    const newRows = this.main_table.filter((row) => row.isNewRow);
     const changedRows = this.main_table.filter(
       (row) => this.changedRows.has(row.id) && !row.isNewRow
     );
@@ -511,32 +511,36 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     let promises: Promise<any>[] = [];
 
     // Handle new rows
-    if (newRow) {
-      // Parse the date string to get hours and minutes
-      const date = new Date(newRow.date);
-      const hours = date.getHours().toString().padStart(2, '0');
-      const minutes = date.getMinutes().toString().padStart(2, '0');
-      const timeString = `${hours}:${minutes}`;
+    if (newRows.length > 0) {
+      const newRowsPromises = newRows.map(newRow => {
+        // Parse the date string to get hours and minutes
+        const date = new Date(newRow.date);
+        const hours = date.getHours().toString().padStart(2, '0');
+        const minutes = date.getMinutes().toString().padStart(2, '0');
+        const timeString = `${hours}:${minutes}`;
 
-      const newRowPayload = {
-        id: newRow.id,
-        timestamp: newRow.date,
-        speed: parseFloat(newRow.speed),
-        direction: parseFloat(newRow.direction),
-        tide: parseFloat(newRow.pressure),
-        time: timeString,
-      };
+        const newRowPayload = {
+          id: newRow.id,
+          file_id: newRow.file_id,
+          timestamp: newRow.date,
+          speed: parseFloat(newRow.speed),
+          direction: parseFloat(newRow.direction),
+          tide: parseFloat(newRow.pressure),
+          time: timeString,
+        };
 
-      const newRowPromise = this.http
-        .post('http://localhost:3000/api/addNewRow', newRowPayload)
-        .toPromise();
-      promises.push(newRowPromise);
+        return this.http
+          .post('http://localhost:3000/api/addNewRow', newRowPayload)
+          .toPromise();
+      });
+      promises.push(...newRowsPromises);
     }
 
     // Handle updated rows
     if (changedRows.length > 0) {
       const updatePayload = changedRows.map((row) => ({
         id: row.id,
+        file_id: row.file_id,
         speed: parseFloat(row.speed),
         direction: parseFloat(row.direction),
         pressure: parseFloat(row.pressure),
@@ -657,7 +661,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onDialogShow() {
-    // Ensure data is loaded
     if (this.main_table.length === 0 && this.fullData.length > 0) {
       this.main_table = this.fullData;
     }
@@ -1044,7 +1047,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
       tideLevel.off('click');
       tideLevel.on('click', (params: any) => {
-        if (params.data && params.data[0]) {
+        if (params.data && params.data[0] && this.isProcessedData) {
           const clickedDate = params.data[0];
           const clickedItem = this.fullData.find(
             (item) => item.date === clickedDate
@@ -1236,7 +1239,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       currentSpeed.setOption(option);
       currentSpeed.off('click');
       currentSpeed.on('click', (params: any) => {
-        if (params.data && params.data[0]) {
+        if (params.data && params.data[0] && this.isProcessedData) {
           const clickedDate = params.data[0];
           const clickedItem = this.fullData.find(
             (item) => item.date === clickedDate
@@ -1470,7 +1473,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       currentDirection.setOption(option);
       currentDirection.off('click');
       currentDirection.on('click', (params: any) => {
-        if (params.data && params.data[0]) {
+        if (params.data && params.data[0] && this.isProcessedData) {
           const clickedDate = params.data[0];
           const clickedItem = this.fullData.find(
             (item) => item.date === clickedDate
@@ -1688,7 +1691,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       chart.setOption(option);
       chart.off('click');
       chart.on('click', (params: any) => {
-        if (params.data && params.data[0]) {
+        if (params.data && params.data[0] && this.isProcessedData) {
           const clickedDate = params.data[0];
           const clickedItem = this.fullData.find(
             (item) => item.date === clickedDate
@@ -2019,7 +2022,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       // Add click event after setting options
       midspeedanddirection.off('click');
       midspeedanddirection.on('click', (params: any) => {
-        if (params.data && params.data[0]) {
+        if (params.data && params.data[0] && this.isProcessedData) {
           const clickedDate = params.data[0];
           const clickedItem = this.fullData.find(
             (item) => item.date === clickedDate

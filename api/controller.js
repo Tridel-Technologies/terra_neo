@@ -161,8 +161,8 @@ const addNewRow = async (req, res) => {
     }
 
     const result = await pool.query(
-      `INSERT INTO tb_${file_id}_processed (station_id, date, speed, direction, dept, pressure, battery, file_id, file_name, lat, lon, high_water_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
-      [data.rows[0].station_id, timestamp, speed, direction, data.rows[0].dept, tide, data.rows[0].battery, data.rows[0].file_id, data.rows[0].file_name, data.rows[0].lat, data.rows[0].lon, 0]
+      `INSERT INTO tb_${file_id}_processed (station_id, date, speed, direction, depth, pressure, battery, file_id, lat, lon, high_water_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
+      [data.rows[0].station_id, timestamp, speed, direction, data.rows[0].depth, tide, data.rows[0].battery, data.rows[0].file_id, data.rows[0].lat, data.rows[0].lon, 0]
     );
 
     await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [file_id]);
@@ -227,7 +227,7 @@ const updateData = async (req, res) => {
     const results = await Promise.all(updatePromises);
     const totalUpdated = results.reduce((sum, item) => sum + item.affected, 0);
 
-    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [file_id]);
+    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [updatePayload[0].file_id]);
 
     res.status(200).json({
       success: true,
