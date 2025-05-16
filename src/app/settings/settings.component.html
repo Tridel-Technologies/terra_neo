@@ -1,0 +1,33 @@
+<div class="files_container">
+    <p>Files</p>
+</div>
+
+<div class="units_container">
+
+    <h2>Sensor Settings</h2>
+
+    <h3>Set Units</h3>
+
+    <div *ngFor="let param of unitSettings" class="parameter-row">
+        <div class="parameter-card">
+            <div class="parameter-content">
+                <span class="parameter-icon">
+                    <i [ngClass]="param.iconClass"></i>
+                </span>
+                <span class="parameter-label">{{ param.label }}</span>
+            </div>
+        </div>
+
+        <div class="unit-selection">
+            <div class="tooltip-container" *ngFor="let unit of param.units">
+                <button class="unit-button" [class.selected]="selectedUnits[param.key] === unit"
+                    (click)="selectUnit(param.key, unit)">
+                    {{ unit }}
+                </button>
+                <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
+            </div>
+        </div>
+
+    </div>
+
+</div>

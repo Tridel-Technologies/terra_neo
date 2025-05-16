@@ -1,4 +1,4 @@
-<div class="batt">
+<div class="batt" [ngClass]="isLive?'batt':'batt-live'">
     <svg class="stat-circle" width="200" viewBox="0 0 20 20">
         <!-- Background Circle -->
         <circle class="bg" cx="10" cy="10" r="8"></circle>
@@ -12,7 +12,7 @@
 
 
     </svg>
-    <div class="icon">
+    <div class="icon" [ngClass]="isLive? 'icon':'icon-live'">
 
         <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"
             image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 309.465">

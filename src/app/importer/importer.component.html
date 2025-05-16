@@ -6,9 +6,8 @@
         <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
 
         <div class="folder" *ngFor="let folder of files_list; let i = index">
-            <div class="folder-header" (click)="toggleFolder(i, folder.id)">
-                <img [src]="expandedFolders[i] ? '../../assets/file_opened.png' : '../../assets/file_closed.png'"
-                    alt="folder" />
+            <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
+                <img [src]="expandedFolders[i] ? 'assets/file_opened.png' : 'assets/file_closed.png'" alt="folder" />
                 <div class="folder-info">
                     <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
                 </div>
@@ -16,28 +15,39 @@
             </div>
 
             <div class="file-list" *ngIf="expandedFolders[i]">
-                <div [ngClass]="getFileClass(f, folder.id)" *ngFor="let f of folder.files"
-                    (click)="toggleFileSelection(f, $event, folder.id)">
-                    <img [src]="getFileImage(f)" alt="file" />
-                    <p>{{ f }}</p>
-                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                <div *ngFor="let f of folder.files" [ngClass]="getFileClass(f.file_name, folder.folder_id)"
+                    (click)="toggleFileSelection(f.file_name, $event, folder.folder_id)">
+                    <img [src]="getFileImage(f.file_name)" alt="file" />
+                    <p>{{ f.file_name }}</p>
+
                 </div>
             </div>
         </div>
+
     </div>
 
 
     <div class="main_section">
 
         <div class="coordinates">
-            <h4>Latitude</h4>
-            <input type="number" [(ngModel)]="lat">
 
             <h4>Longitude</h4>
-            <input type="number" [(ngModel)]="lon">
+            <input type="number" step="any" min="-180" max="180" placeholder="Longitude (-180 to 180)" [(ngModel)]="lon"
+                name="longitude" #long="ngModel">
+            <div *ngIf="long.invalid" class="error">
+                Longitude must be between -180° and +180°.
+            </div>
+
+            <h4>Latitude</h4>
+            <input type="number" step="any" min="-90" max="90" placeholder="Latitude (-90 to 90)" [(ngModel)]="latitude"
+                name="latitude" #lat="ngModel" (change)="changinglat()">
+            <div *ngIf="lat.invalid" class="error1">
+                Latitude must be between -90° and +90°.
+            </div>
 
 
-            <h4 *ngIf="!isMulti">Select High Water Level</h4>
+
+            <h4 *ngIf="!isMulti">Select High Water Time</h4>
             <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti">
             <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
                 <option value="1">-- Please Select High Water Level from Table - -></option>
@@ -127,11 +137,10 @@
                         <tr *ngFor="let row of main_table; let i=index" (click)="onRowClick(row, i)"
                             [class.selected]="selectedRowIndex === i">
                             <td>{{ row.station_id }}</td>
-                            <td>{{ row.date | date: 'yyyy-MM-dd' }}</td>
-                            <td>{{ row.time }}</td>
+                            <td>{{ row.date | date: 'yyyy-MM-dd HH:mm:ss' }}</td>
                             <td>{{ row.speed }}</td>
                             <td>{{ row.direction }}</td>
-                            <td>{{ row.dept }}</td>
+                            <td>{{ row.depth }}</td>
                             <td>{{ row.battery }}</td>
                             <td>{{ row.pressure }}</td>
                         </tr>
@@ -148,15 +157,15 @@
                 <table class="styled-table">
                     <thead>
                         <tr>
-                            <th *ngFor="let column of displayedColumns">{{ column }}</th>
+                            <th *ngFor="let column of tableHeaders">{{ column }}</th>
                             <th>Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr *ngFor="let row of historyData; let i=index">
                             <td>{{ row.station_id }}</td>
-                            <td>{{ row.Date }}</td>
-                            <td>{{ row.Time }}</td>
+                            <td>{{ row.DateTime | date:'yyyy MM dd HH:mm:ss'}}</td>
+                            <!-- <td>{{ row.Time }}</td> -->
                             <td>{{ row.speed }}</td>
                             <td>{{ row.direction }}</td>
                             <td>{{ row.depth }}</td>
