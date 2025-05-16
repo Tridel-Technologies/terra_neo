@@ -81,28 +81,6 @@ const getFiles = async (req, res) => {
   }
 }
 
-const getDataByFolderIdAndFileName = async (req, res) => {
-  const { folder_id, file_name } = req.params;  // Accept folder_id and file_name as params
-  console.log(req.params)
-  try {
-    const result = await pool.query(
-      `SELECT 
-           *
-         FROM 
-           tb_adcp_master d
-         WHERE 
-           file_id = $1 AND file_name = $2`,  // Use folder_id and file_name in WHERE clause
-      [folder_id, file_name]  // Pass both folder_id and file_name as query parameters
-    );
-
-    res.status(200).json(result.rows);
-
-  } catch (err) {
-    console.error('Fetch error:', err);
-    res.status(500).json({ message: 'Error fetching data', error: err.message });
-  }
-};
-
 const updateValues = async (req, res) => {
   const { file_name, lat, lon, high_water_level } = req.body;
 
@@ -147,10 +125,10 @@ const updateValues = async (req, res) => {
       await client.query(`UPDATE tb_adcp_master SET high_water_level = 0`);
 
       await client.query(
-        `UPDATE tb_adcp_master 
-           SET high_water_level = 1 
-           WHERE date::date = $1 
-             AND time = $2 
+        `UPDATE tb_adcp_master
+           SET high_water_level = 1
+           WHERE date::date = $1
+             AND time = $2
              AND file_name = $3`,
         [dateStr, timeStr, file_name[0]]
       );
@@ -169,14 +147,26 @@ const updateValues = async (req, res) => {
 };
 
 const addNewRow = async (req, res) => {
-  const { id, speed, direction, tide, timestamp } = req.body;
+  const { speed, direction, tide, timestamp, file_id } = req.body;
+  if (!file_id || !speed || !direction || !tide || !timestamp) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
+
   try {
-    const data = await pool.query(`SELECT * FROM tb_adcp_master WHERE id = $1`, [id])
+    const data = await pool.query(
+      `SELECT * FROM tb_${file_id}_processed ORDER BY RANDOM() LIMIT 1`
+    );
+    if (!data.rows.length) {
+      return res.status(404).json({ message: "No data found in table" });
+    }
 
     const result = await pool.query(
-      `INSERT INTO tb_adcp_master (station_id, date, speed, direction, dept, pressure, battery, file_id, file_name, lat, lon, high_water_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
+      `INSERT INTO tb_${file_id}_processed (station_id, date, speed, direction, dept, pressure, battery, file_id, file_name, lat, lon, high_water_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`,
       [data.rows[0].station_id, timestamp, speed, direction, data.rows[0].dept, tide, data.rows[0].battery, data.rows[0].file_id, data.rows[0].file_name, data.rows[0].lat, data.rows[0].lon, 0]
     );
+
+    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [file_id]);
+
     res.status(200).json({ message: "Row added successfully" })
   } catch (error) {
     res.status(500).json({ message: `Error: ${error}` })
@@ -196,10 +186,10 @@ const updateData = async (req, res) => {
     }
 
     const updatePromises = updatePayload.map(async (item) => {
-      const { id, speed, direction, pressure } = item;
+      const { id, speed, direction, pressure, file_id } = item;
 
-      if (!id) {
-        throw new Error("Each update item must include an id");
+      if (!id || !file_id) {
+        throw new Error("Each update item must include an id and file_id");
       }
 
       const updateObj = {};
@@ -221,7 +211,7 @@ const updateData = async (req, res) => {
         // Add id as the last parameter
         values.push(id);
 
-        const query = `UPDATE tb_adcp_master SET ${setClauses.join(', ')} WHERE id = $${paramIndex}`;
+        const query = `UPDATE tb_${file_id}_processed SET ${setClauses.join(', ')} WHERE id = $${paramIndex}`;
 
         pool.query(query, values)
           .then(result => {
@@ -236,6 +226,8 @@ const updateData = async (req, res) => {
 
     const results = await Promise.all(updatePromises);
     const totalUpdated = results.reduce((sum, item) => sum + item.affected, 0);
+
+    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [file_id]);
 
     res.status(200).json({
       success: true,
@@ -252,9 +244,84 @@ const updateData = async (req, res) => {
   }
 };
 
+const getDataByFolderIdAndFileName = async (req, res) => {
+  const { file_id } = req.params;
+  console.log(req.params)
+  try {
+    const result = await pool.query(
+      `SELECT
+         *
+       FROM
+         tb_${file_id}
+       `,
+    );
+    res.status(200).json(result.rows);
 
+  } catch (err) {
+    console.error('Fetch error:', err);
+    res.status(500).json({ message: 'Error fetching data', error: err.message });
+  }
+};
 
+const getProcessedDataByFileId = async (req, res) => {
+  const { file_id } = req.params;
+  console.log(req.params)
+  try {
+    const result = await pool.query(
+      `SELECT
+         *
+       FROM
+         tb_${file_id}_processed
+       `,
+    );
+    res.status(200).json(result.rows);
 
+  } catch (err) {
+    console.error('Fetch error:', err);
+    res.status(500).json({ message: 'Error fetching data', error: err.message });
+  }
+};
+
+const getFoldersWithFiles = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        f.id AS folder_id,
+        f.folder_name,
+        fi.id AS file_id,
+        fi.file_name,
+        fi.is_processed
+      FROM
+        tb_folders f
+      LEFT JOIN
+        tb_file fi ON fi.folder_id = f.id
+      ORDER BY
+        f.id, fi.id;
+    `;
+    const result = await pool.query(query);
+    const foldersMap = {};
+    result.rows.forEach(row => {
+      if (!foldersMap[row.folder_id]) {
+        foldersMap[row.folder_id] = {
+          folder_id: row.folder_id,
+          folder_name: row.folder_name,
+          files: []
+        };
+      }
+      if (row.file_id) {
+        foldersMap[row.folder_id].files.push({
+          file_id: row.file_id,
+          file_name: row.file_name,
+          is_processed: row.is_processed
+        });
+      }
+    });
+    const foldersWithFiles = Object.values(foldersMap);
+    res.status(200).json({ data: foldersWithFiles });
+  } catch (error) {
+    res.status(500).json({ message: `Error: ${error.message}` });
+  }
+};
 
 module.exports = {
   importAll,
@@ -262,5 +329,8 @@ module.exports = {
   getDataByFolderIdAndFileName,
   updateValues,
   addNewRow,
-  updateData
+  updateData,
+  getFoldersWithFiles,
+  getProcessedDataByFileId
 };
+

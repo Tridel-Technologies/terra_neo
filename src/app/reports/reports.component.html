@@ -4,9 +4,8 @@
         <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
 
         <div class="folder" *ngFor="let folder of files_list; let i = index">
-            <div class="folder-header" (click)="toggleFolder(i, folder.id)">
-                <img [src]="expandedFolders[i] ? '../../assets/file_opened.png' : '../../assets/file_closed.png'"
-                    alt="folder" />
+            <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
+                <img [src]="expandedFolders[i] ? 'assets/file_opened.png' : 'assets/file_closed.png'" alt="folder" />
                 <div class="folder-info">
                     <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
                 </div>
@@ -14,18 +13,21 @@
             </div>
 
             <div class="file-list" *ngIf="expandedFolders[i]">
-                <div [ngClass]="getFileClass(f, folder.id)" *ngFor="let f of folder.files"
-                    (click)="toggleFileSelection(f, $event, folder.id, folder.folder_name)">
-                    <img [src]="getFileImage(f)" alt="file" />
-                    <p>{{ f }}</p>
-                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                <div *ngFor="let f of folder.files" style="cursor: pointer;"
+                    [ngClass]="getFileClass(f.file_name, folder.folder_id)" (click)="toggleFileSelection(f.file_id)">
+                    <img [src]="getFileImage(f.file_name)" alt="file" />
+                    <p>{{ f.file_name }}</p>
+                    <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem"
+                        title="Processed File"></i>
                 </div>
             </div>
         </div>
+
     </div>
 
     <div class="tablecontainer">
-        <p-table #dt [value]="main_table" [columns]="selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
+        <p-table #dt [value]="showToggleTable ? toggleTableData : main_table"
+            [columns]="showToggleTable ? summaryColumns : selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
             [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="10" responsiveLayout="scroll"
             [rowsPerPageOptions]="[10,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
             [exportHeader]="'customExportHeader'" selectionMode="multiple"
@@ -34,18 +36,7 @@
             rowHover="true" showCurrentPageReport="true">
 
             <ng-template #caption>
-
-
-
                 <div class="caption">
-                    <!-- <div *ngIf="last_row" class="last-row-info">
-                        <div><i class="pi pi-bolt"></i> Battery: {{ last_row.battery }}</div>
-                        <div><i class="pi pi-database"></i> Dept: {{ last_row.dept }}</div>
-                        <div><i class="pi pi-file"></i> File: {{ last_row.file_name }}</div>
-                        <div><i class="pi pi-chart-line"></i> High WL: {{ last_row.high_water_level }}</div>
-                        <div><i class="pi pi-compass"></i> Latitude: {{ last_row.lat }}</div>
-                        <div><i class="pi pi-compass rotate-180"></i> Longitude: {{ last_row.lon }}</div>
-                    </div> -->
                     <div class="captionrow">
                         <div class="captionrowinrow">
                             <div id="search">
@@ -53,6 +44,23 @@
                                     (input)="onSearch($any($event).target.value, dt)" />
                             </div>
                         </div>
+                        <!-- <button pButton type="button"
+                            label="{{ showToggleTable ? 'Show Full Table' : 'Show Summary Table' }}"
+                            (click)="toggle_tap()"></button> -->
+                        <!-- <label>Single View</label>
+            <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
+            <label>Multi View</label> -->
+
+                        <p-toggleswitch [(ngModel)]="showToggleTable" (ngModelChange)="toggle_tap()">
+                        </p-toggleswitch>
+                        <label>
+                            {{ showToggleTable ? 'Files' : '-&+ 6 hours' }}
+                        </label>
+
+
+
+
+
                         <div class="filter">
                             <p-multiselect display="chip" [options]="cols" [(ngModel)]="selectedColumns"
                                 optionLabel="header" selectedItemsLabel="{0} columns selected"
@@ -75,7 +83,7 @@
 
             <ng-template pTemplate="body" let-row let-columns="columns" let-i="rowIndex">
                 <tr [ngClass]="{ 'highlight-row': rowMatchesSearch(row, columns) }"
-                    [ngStyle]="{'background-color': row.high_water_level === 1 ? '#00ff00':'' }">
+                    [ngStyle]="{'background-color': row.high_water_level === 1 ? '#a5efd7':'' }">
                     <td class="centered-cell">{{ i + 1 }}</td>
                     <td *ngFor="let col of columns" class="centered-cell">
                         <ng-container [ngSwitch]="col.type">

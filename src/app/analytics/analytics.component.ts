@@ -23,27 +23,14 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { SelectModule } from 'primeng/select';
 import { ColorPickerModule } from 'primeng/colorpicker';
+import { DatePickerModule } from 'primeng/datepicker';
+import { BehaviorSubject } from 'rxjs';
 
 interface Files {
   id: number;
   files: string[];
   folder_name: string;
   timestamp: string;
-}
-interface dashdata {
-  id: string;
-  tide: string;
-  date: string;
-  time: string;
-  battery: string;
-  current_speed: string;
-  current_direction: string;
-  current_speed_b_6: string;
-  current_dir_b_6: string;
-  current_speed_after_6: string;
-  current_dir_after_6: string;
-  lat: string;
-  lon: string;
 }
 
 interface ApiData {
@@ -72,6 +59,19 @@ interface SelectedData {
   current_direction: string;
 }
 
+interface Folders {
+  folder_id: number;
+  folder_name: string;
+  files: fileData[];
+  timestamp: string;
+}
+
+interface fileData {
+  file_id: number;
+  file_name: string;
+  is_processed: boolean;
+}
+
 @Component({
   selector: 'app-analytics',
   imports: [
@@ -85,6 +85,7 @@ interface SelectedData {
     HttpClientModule,
     SelectModule,
     ColorPickerModule,
+    DatePickerModule,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
@@ -100,18 +101,19 @@ interface SelectedData {
     ]),
   ],
 })
-export class AnalyticsComponent implements OnInit, AfterViewInit {
+export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
   selectedFiles: any[] = []; // Array to track selected files
   isMulti: boolean = true;
   main_table: ApiData[] = [];
-  files_list: Files[] = [];
+  files_list: Folders[] = [];
   selected_folder_name!: string;
   selected_data!: SelectedData;
   isLive: boolean = true;
-  changedRows: Set<number> = new Set(); // Track rows that have been modified
+  changedRows: Set<number> = new Set();
+  isProcessedData: boolean = false;
 
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
   @ViewChild('tideChart') tideChart!: ElementRef;
@@ -135,8 +137,15 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   //   { label: 'Scatter Series', value: 'scatter' },
   //   { label: 'Bar Plot', value: 'bar' },
   // ];
+  PolarSelectedInterVal = 60;
 
-  viewMode: string = 'Single Axis';
+  selectedPolarDate: Date = new Date(); // default to today
+  maxDate: Date = new Date(); // restrict future dates
+
+  // Optional: disable unavailable dates
+  disabledPolarDates: Date[] = []; // populate if needed
+
+  viewMode: string = 'Polar';
   viewModes = [
     { label: 'Single Axis', value: 'Single Axis' },
     { label: 'Dual Axis', value: 'Dual Axis' },
@@ -151,467 +160,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   };
   private fullData: ApiData[] = [];
 
-  sampleDataAdcp = [
-    {
-      id: 1,
-
-      timestamp: '2024-10-01T00:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 245,
-
-      tide: 3.66,
-    },
-
-    {
-      id: 2,
-
-      timestamp: '2024-10-01T01:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 91,
-
-      tide: 3.56,
-    },
-
-    {
-      id: 3,
-
-      timestamp: '2024-10-01T02:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 247,
-
-      tide: 3.45,
-    },
-
-    {
-      id: 4,
-
-      timestamp: '2024-10-01T03:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 342,
-
-      tide: 3.31,
-    },
-
-    {
-      id: 5,
-
-      timestamp: '2024-10-01T04:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 165,
-
-      tide: 3.12,
-    },
-
-    {
-      id: 6,
-
-      timestamp: '2024-10-01T05:00:00Z',
-
-      current_speed: 0,
-
-      current_direction: 304,
-
-      tide: 2.86,
-    },
-
-    {
-      id: 7,
-
-      timestamp: '2024-10-01T06:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 111,
-
-      tide: 2.7,
-    },
-
-    {
-      id: 8,
-
-      timestamp: '2024-10-01T07:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 268,
-
-      tide: 2.51,
-    },
-
-    {
-      id: 9,
-
-      timestamp: '2024-10-01T08:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 258,
-
-      tide: 2.24,
-    },
-
-    {
-      id: 10,
-
-      timestamp: '2024-10-01T09:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 335,
-
-      tide: 2,
-    },
-
-    {
-      id: 11,
-
-      timestamp: '2024-10-01T10:00:00Z',
-
-      current_speed: 0,
-
-      current_direction: 205,
-
-      tide: 1.82,
-    },
-
-    {
-      id: 12,
-
-      timestamp: '2024-10-01T11:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 83,
-
-      tide: 1.62,
-    },
-
-    {
-      id: 13,
-
-      timestamp: '2024-10-01T12:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 315,
-
-      tide: 1.43,
-    },
-
-    {
-      id: 14,
-
-      timestamp: '2024-10-01T13:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 114,
-
-      tide: 1.23,
-    },
-
-    {
-      id: 15,
-
-      timestamp: '2024-10-01T14:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 268,
-
-      tide: 1.11,
-    },
-
-    {
-      id: 16,
-
-      timestamp: '2024-10-01T15:00:00Z',
-
-      current_speed: 0,
-
-      current_direction: 357,
-
-      tide: 1,
-    },
-
-    {
-      id: 17,
-
-      timestamp: '2024-10-01T16:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 203,
-
-      tide: 0.91,
-    },
-
-    {
-      id: 18,
-
-      timestamp: '2024-10-01T17:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 143,
-
-      tide: 0.86,
-    },
-
-    {
-      id: 19,
-
-      timestamp: '2024-10-01T18:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 99,
-
-      tide: 0.83,
-    },
-
-    {
-      id: 20,
-
-      timestamp: '2024-10-01T19:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 161,
-
-      tide: 0.84,
-    },
-
-    {
-      id: 21,
-
-      timestamp: '2024-10-01T20:00:00Z',
-
-      current_speed: 0,
-
-      current_direction: 123,
-
-      tide: 0.88,
-    },
-
-    {
-      id: 22,
-
-      timestamp: '2024-10-01T21:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 175,
-
-      tide: 0.94,
-    },
-
-    {
-      id: 23,
-
-      timestamp: '2024-10-01T22:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 252,
-
-      tide: 1.08,
-    },
-
-    {
-      id: 24,
-
-      timestamp: '2024-10-01T23:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 73,
-
-      tide: 1.18,
-    },
-
-    {
-      id: 25,
-
-      timestamp: '2024-10-02T00:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 122,
-
-      tide: 1.35,
-    },
-
-    {
-      id: 26,
-
-      timestamp: '2024-10-02T01:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 39,
-
-      tide: 1.5,
-    },
-
-    {
-      id: 27,
-
-      timestamp: '2024-10-02T02:00:00Z',
-
-      current_speed: 0,
-
-      current_direction: 97,
-
-      tide: 1.64,
-    },
-
-    {
-      id: 28,
-
-      timestamp: '2024-10-02T03:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 324,
-
-      tide: 1.86,
-    },
-
-    {
-      id: 29,
-
-      timestamp: '2024-10-02T04:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 206,
-
-      tide: 2.01,
-    },
-
-    {
-      id: 30,
-
-      timestamp: '2024-10-02T05:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 184,
-
-      tide: 2.16,
-    },
-
-    {
-      id: 31,
-
-      timestamp: '2024-10-02T06:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 177,
-
-      tide: 2.4,
-    },
-
-    {
-      id: 32,
-
-      timestamp: '2024-10-02T07:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 332,
-
-      tide: 2.67,
-    },
-
-    {
-      id: 33,
-
-      timestamp: '2024-10-02T08:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 249,
-
-      tide: 2.79,
-    },
-
-    {
-      id: 34,
-
-      timestamp: '2024-10-02T09:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 77,
-
-      tide: 3.04,
-    },
-
-    {
-      id: 35,
-
-      timestamp: '2024-10-02T10:00:00Z',
-
-      current_speed: 1,
-
-      current_direction: 219,
-
-      tide: 3.28,
-    },
-
-    {
-      id: 36,
-
-      timestamp: '2024-10-02T11:00:00Z',
-
-      current_speed: 3,
-
-      current_direction: 148,
-
-      tide: 3.46,
-    },
-
-    {
-      id: 37,
-
-      timestamp: '2024-10-02T12:00:00Z',
-
-      current_speed: 2,
-
-      current_direction: 287,
-
-      tide: 3.61,
-    },
-
-    {
-      id: 38,
-
-      timestamp: '2024-10-02T13:00:00Z',
-
-      current_speed: 0,
-
-      current_direction: 224,
-
-      tide: 3.86,
-    },
-  ];
-
   tideChartColor: string = localStorage.getItem('tideChartColor') ?? '#4900ff';
-  currentSpeedColor: string = localStorage.getItem('currentSpeedColor') ?? '#ff00c1';
-  currentDirectionColor: string = localStorage.getItem('currentDirectionColor') ?? '#000000';
+  currentSpeedColor: string =
+    localStorage.getItem('currentSpeedColor') ?? '#ff00c1';
+  currentDirectionColor: string =
+    localStorage.getItem('currentDirectionColor') ?? '#000000';
 
   onColorChange(color: string, type: string): void {
     if (type === 'tideChartColor') {
@@ -628,6 +181,19 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     localStorage.setItem(type, color);
   }
 
+  onDataTypeChange(): void {
+    localStorage.setItem('isProcessedData', this.isProcessedData.toString());
+    this.open_file(this.selectedFiles[0].file_id);
+    this.loadChart();
+  }
+
+  private bgColor: string = '#ffffff';
+  private mainText: string = '#000000';
+  private subText: string = '#666666';
+
+  private themeSubscription: any;
+  private themeChange$ = new BehaviorSubject<string>('light');
+
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
@@ -635,35 +201,60 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     private ngZone: NgZone
   ) {}
   ngOnInit(): void {
+    // Load saved data type preference
+    const savedDataType = localStorage.getItem('isProcessedData');
+    if (savedDataType !== null) {
+      this.isProcessedData = savedDataType === 'true';
+    }
+
+    // Initialize theme colors
+    this.updateColors();
+
+    // Set up theme change observer
+    this.setupThemeObserver();
+
     this.files_list = [];
     this.http
-      .get('http://localhost:3000/api/get_files')
+      .get('http://localhost:3000/api/files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
         this.expandedFolders = this.files_list.map(() => false);
-        if (this.files_list.length > 0 && this.files_list[0].files.length > 0) {
-          const firstFolder = this.files_list[0];
-          const firstFile = firstFolder.files[0];
+      });
+  }
 
-          // Set folder as opened
-          this.expandedFolders[0] = true;
-          this.openedFolder = firstFolder.id;
-          this.selected_folder_name = firstFolder.folder_name;
-
-          // Select file
-          this.selectedFiles = [
-            {
-              file_name: firstFile,
-              file_id: firstFolder.id,
-            },
-          ];
-          this.opened_file = firstFile;
-
-          // Fetch data for the file
-          this.open_file(firstFile, firstFolder.id);
+  private setupThemeObserver() {
+    this.themeSubscription = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (mutation.attributeName === 'class') {
+          const isDark = document.body.classList.contains('dark-theme');
+          const newTheme = isDark ? 'dark' : 'light';
+          if (this.themeChange$.value !== newTheme) {
+            this.themeChange$.next(newTheme);
+            this.updateColors();
+            this.loadChart();
+          }
         }
       });
+    }).observe(document.body, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+  }
+
+  private updateColors() {
+    const computedStyle = getComputedStyle(document.body);
+    this.bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    this.mainText = computedStyle.getPropertyValue('--font-color').trim();
+    this.subText = computedStyle
+      .getPropertyValue('--font-secondary-color')
+      .trim();
+    console.log('Colors updated:', {
+      theme: this.themeChange$.value,
+      bgColor: this.bgColor,
+      mainText: this.mainText,
+      subText: this.subText,
+    });
   }
 
   updateField(item: any, field: string, event: Event) {
@@ -681,22 +272,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
   }
-  toggleFileSelection(
-    fileName: string,
-    event: MouseEvent,
-    file_id: number,
-    folder_name: string
-  ) {
-    console.log(fileName, file_id);
-    this.selected_folder_name = folder_name;
+  toggleFileSelection(file_id: number) {
     this.isMulti = false;
     this.selectedFiles = [
       {
-        file_name: fileName,
         file_id: file_id,
       },
     ];
-    this.open_file(fileName, file_id);
+    this.open_file(file_id);
   }
 
   getFileImage(fileName: string): string {
@@ -711,8 +294,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         return 'assets/file.png'; // Default file image
     }
   }
-  open_file(file_name: string, file_id: number) {
-    this.opened_file = file_name;
+  open_file(file_id: number) {
     this.loading = true;
 
     this.fullData = [];
@@ -725,7 +307,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
 
     this.http
       .get(
-        `http://localhost:3000/api/fetch_data_by_file/${this.openedFolder}/${file_name}`
+        `http://localhost:3000/api/${
+          this.isProcessedData ? 'get_processed_data' : 'fetch_data_by_file'
+        }/${file_id}`
       )
       .subscribe({
         next: (response: any) => {
@@ -971,7 +555,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           this.toast.success('Data updated successfully');
           this.changedRows.clear(); // Reset tracked changes
           // Refresh the data
-          this.open_file(this.opened_file, this.openedFolder);
+          this.open_file(this.selectedFiles[0].file_id);
           this.visible = false;
         })
         .catch((error) => {
@@ -1009,8 +593,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       // Keep the ISO format with UTC timezone
       const formattedDate = newDate.toISOString();
 
+      // Generate a unique ID for the new row
+      const maxId = Math.max(...this.main_table.map((row) => row.id));
+      const newId = maxId + 1;
+
       const newRow = {
-        id: item.id,
+        id: newId,
         date: formattedDate,
         speed: '',
         direction: '',
@@ -1041,8 +629,31 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     }
   }
 
+  removeRow(item: ApiData) {
+    if (this.main_table.length > 1) {
+      const index = this.main_table.findIndex((row) => row.id === item.id);
+      if (index !== -1) {
+        this.main_table.splice(index, 1);
+        this.fullData = [...this.main_table];
+        this.main_table.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        this.fullData.sort(
+          (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        this.cdr.detectChanges();
+      }
+    } else {
+      this.toast.warning('Cannot remove the last row');
+    }
+  }
+
   ngOnDestroy() {
     this.cleanupCharts();
+    if (this.themeSubscription) {
+      this.themeSubscription.disconnect();
+    }
+    this.themeChange$.complete();
   }
 
   onDialogShow() {
@@ -1051,51 +662,56 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       this.main_table = this.fullData;
     }
 
-    // Wait for the dialog and table to be fully rendered
+    this.fillDataGaps();
+
     setTimeout(() => {
       if (this.selectedPointId !== null) {
-        const tableWrapper = this.tableWrapper?.nativeElement;
-        if (tableWrapper) {
-          // Find the selected row element
-          const selectedRow = tableWrapper.querySelector(
-            `tr[data-id="${this.selectedPointId}"]`
-          );
-          if (selectedRow) {
-            // Get the position of the selected row relative to the table wrapper
-            const rowTop = selectedRow.offsetTop;
-            const wrapperHeight = tableWrapper.clientHeight;
-            const rowHeight = selectedRow.clientHeight;
+        // Find the index of the selected item
+        const selectedIndex = this.main_table.findIndex(
+          (item) => item.id === this.selectedPointId
+        );
 
-            // Calculate the scroll position to center the row
+        if (selectedIndex !== -1) {
+          // Calculate the virtual scroll position
+          const rowHeight = 46; // This should match virtualScrollItemSize
+          const tableWrapper = this.tableWrapper?.nativeElement;
+
+          if (tableWrapper) {
+            const wrapperHeight = tableWrapper.clientHeight;
             const scrollPosition = Math.max(
               0,
-              rowTop - wrapperHeight / 2 + rowHeight / 2
+              selectedIndex * rowHeight - wrapperHeight / 2 + rowHeight / 2
             );
 
-            // Scroll to the position with smooth behavior
-            tableWrapper.scrollTo({
-              top: scrollPosition,
-              behavior: 'smooth',
-            });
-          } else {
-            // If row not found, it might be because of virtual scrolling
-            // Find the index of the selected item
-            const selectedIndex = this.main_table.findIndex(
-              (item) => item.id === this.selectedPointId
-            );
-            if (selectedIndex !== -1) {
-              // Calculate approximate scroll position based on row height and index
-              const rowHeight = 46; // This should match virtualScrollItemSize
-              const scrollPosition = Math.max(
-                0,
-                selectedIndex * rowHeight - tableWrapper.clientHeight / 2
+            // First scroll to the approximate position
+            tableWrapper.scrollTop = scrollPosition;
+
+            // Then try to find and center the exact row after a short delay
+            setTimeout(() => {
+              const selectedRow = tableWrapper.querySelector(
+                `tr[data-id="${this.selectedPointId}"]`
               );
 
-              tableWrapper.scrollTo({
-                top: scrollPosition,
-                behavior: 'smooth',
-              });
-            }
+              if (selectedRow) {
+                const rowTop = selectedRow.offsetTop;
+                const fineScrollPosition = Math.max(
+                  0,
+                  rowTop - wrapperHeight / 2 + rowHeight / 2
+                );
+
+                tableWrapper.scrollTo({
+                  top: fineScrollPosition,
+                  behavior: 'smooth',
+                });
+
+                // Add a highlight effect
+                selectedRow.style.transition = 'background-color 0.3s ease';
+                selectedRow.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
+                setTimeout(() => {
+                  selectedRow.style.backgroundColor = '';
+                }, 1500);
+              }
+            }, 100);
           }
         }
       }
@@ -1106,7 +722,77 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           chart.resize();
         }
       });
-    }, 500); // Increased timeout to ensure dialog and table are fully rendered
+    }, 100); // Reduced initial timeout
+  }
+
+  private fillDataGaps() {
+    if (this.main_table.length < 2) return;
+
+    // Sort the table by date first
+    this.main_table.sort(
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+    );
+
+    const newRows: ApiData[] = [];
+    let maxId = Math.max(...this.main_table.map((row) => row.id));
+
+    // Check each consecutive pair of rows
+    for (let i = 0; i < this.main_table.length - 1; i++) {
+      const currentRow = this.main_table[i];
+      const nextRow = this.main_table[i + 1];
+
+      const currentDate = new Date(currentRow.date);
+      const nextDate = new Date(nextRow.date);
+      const timeDiff = nextDate.getTime() - currentDate.getTime();
+      const minutesDiff = timeDiff / (1000 * 60);
+
+      if (minutesDiff > 10) {
+        // Calculate how many 10-minute intervals we need to fill
+        const intervalsToFill = Math.floor(minutesDiff / 10) - 1;
+
+        for (let j = 0; j < intervalsToFill; j++) {
+          // Calculate the new timestamp
+          const newDate = new Date(
+            currentDate.getTime() + (j + 1) * 10 * 60 * 1000
+          );
+          const formattedDate = newDate.toISOString();
+
+          maxId++;
+          const newRow: ApiData = {
+            id: maxId,
+            date: formattedDate,
+            speed: '',
+            direction: '',
+            pressure: '',
+            file_id: currentRow.file_id,
+            file_name: currentRow.file_name,
+            battery: '',
+            dept: '',
+            high_water_level: 0,
+            lat: '',
+            lon: '',
+            station_id: '',
+            time: formattedDate.split('T')[1].split('.')[0],
+            isNewRow: true,
+          };
+
+          newRows.push(newRow);
+        }
+      }
+    }
+
+    // Add all new rows to main_table
+    if (newRows.length > 0) {
+      this.main_table = [...this.main_table, ...newRows];
+      // Sort again after adding new rows
+      this.main_table.sort(
+        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      );
+      this.fullData = [...this.main_table];
+
+      // Notify user about added rows
+      this.toast.info(`Added ${newRows.length} rows to fill time gaps`);
+    }
   }
 
   closeDialog() {
@@ -1121,34 +807,59 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
   }
 
+  private updateXAxisLabel(
+    chart: EChartsType,
+    startValue: number,
+    endValue: number
+  ) {
+    const option = chart.getOption() as EChartsOption;
+
+    // Calculate time difference in days
+    const startDate = new Date(startValue);
+    const endDate = new Date(endValue);
+    const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    // Set x-axis label based on time range
+    let xAxisLabel = 'DateTime';
+    if (diffDays <= 1) {
+      xAxisLabel = 'DateTime';
+    } else if (diffDays <= 31) {
+      xAxisLabel = 'Date';
+    } else if (diffDays <= 365) {
+      xAxisLabel = 'Monthly';
+    } else {
+      xAxisLabel = 'Yearly';
+    }
+
+    (option.xAxis as any[])[0].name = xAxisLabel;
+    chart.setOption(option);
+  }
+
   Tide(): void {
     const chartType = this.selectedChart;
     this.loading = true;
     const tide = document.getElementById('tide');
-  
+
     // Load saved color from localStorage or use default
     const savedColor = localStorage.getItem('tideChartColor');
     if (savedColor) {
       this.tideChartColor = savedColor;
     }
-  
-    const bgColor = '#ffffff'; // White background for image export
-    const mainText = '#000000'; // Black for titles/labels
-    const subText = '#666666'; // Grey for axis labels and legend
-  
+
     if (tide) {
       const existingInstance = echarts.getInstanceByDom(tide);
       if (existingInstance) {
         existingInstance.dispose();
       }
       const tideLevel = echarts.init(tide);
-  
+
       const option = {
         title: {
           text: 'Water Level',
           left: '1%',
           textStyle: {
-            color: mainText,
+            color: this.mainText,
             fontSize: 20,
           },
         },
@@ -1161,12 +872,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: mainText,
+              color: this.mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: subText,
+              color: this.mainText,
               rotate: 45,
             },
             axisLine: {
@@ -1201,7 +912,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               fontSize: 16,
             },
             axisLabel: {
-              color: subText,
+              color: this.subText,
             },
             axisLine: {
               show: true,
@@ -1246,12 +957,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
             restore: {},
             saveAsImage: {
-              backgroundColor: bgColor,
+              backgroundColor: this.bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: mainText,
+            borderColor: this.mainText,
           },
         },
         dataZoom: [
@@ -1288,6 +999,26 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
           },
           {
+            name: 'High Water Time',
+            data: this.fullData
+              .filter((item) => item.high_water_level === 1)
+              .map((item) => [item.date, parseFloat(item.pressure)]),
+            type: 'scatter',
+            symbolSize: 15,
+            itemStyle: {
+              color: '#ff0000',
+              borderColor: this.mainText,
+              borderWidth: 2,
+            },
+            label: {
+              show: true,
+              position: 'top',
+              formatter: 'High Water Time',
+              fontSize: 12,
+              color: '#ff0000',
+            },
+          },
+          {
             type: 'line',
             xAxisIndex: 1,
             data: [],
@@ -1301,8 +1032,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           },
         ],
       };
-  
+
       tideLevel.setOption(option);
+
+      tideLevel.on('dataZoom', (params) => {
+        const option = tideLevel.getOption() as EChartsOption;
+        const startValue = (option.dataZoom as any[])[0].startValue;
+        const endValue = (option.dataZoom as any[])[0].endValue;
+        this.updateXAxisLabel(tideLevel, startValue, endValue);
+      });
+
       tideLevel.off('click');
       tideLevel.on('click', (params: any) => {
         if (params.data && params.data[0]) {
@@ -1334,10 +1073,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       this.currentSpeedColor = savedColor;
     }
 
-    const bgColor = '#ffffff'; // White background for image export
-    const mainText = '#000000'; // Black for titles/labels
-    const subText = '#666666'; // Grey for axis labels and legend
-
     if (speed) {
       const existingInstance = echarts.getInstanceByDom(speed);
       if (existingInstance) {
@@ -1350,7 +1085,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           text: 'Current Speed',
           left: '1%',
           textStyle: {
-            color: mainText,
+            color: this.mainText,
             fontSize: 20,
           },
         },
@@ -1362,12 +1097,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: mainText,
+              color: this.mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: subText,
+              color: this.mainText,
               rotate: 45,
             },
             axisLine: {
@@ -1405,7 +1140,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: subText },
+            axisLabel: { color: this.subText },
             axisLine: {
               show: true,
               // lineStyle: { color: '#00ff00' },
@@ -1451,12 +1186,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: bgColor,
+              backgroundColor: this.bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: mainText,
+            borderColor: this.mainText,
           },
         },
 
@@ -1519,6 +1254,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       window.addEventListener('resize', () => {
         currentSpeed.resize();
       });
+      currentSpeed.on('dataZoom', (params) => {
+        const option = currentSpeed.getOption() as EChartsOption;
+        const startValue = (option.dataZoom as any[])[0].startValue;
+        const endValue = (option.dataZoom as any[])[0].endValue;
+        this.updateXAxisLabel(currentSpeed, startValue, endValue);
+      });
     } else {
       this.loading = false;
     }
@@ -1532,10 +1273,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     if (savedColor) {
       this.currentDirectionColor = savedColor;
     }
-    
-    const bgColor = '#ffffff'; // White background for image export
-    const mainText = '#000000'; // Black for titles/labels
-    const subText = '#666666'; // Grey for axis labels and legend
 
     if (direction) {
       const existingInstance = echarts.getInstanceByDom(direction);
@@ -1549,7 +1286,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           text: 'Current Direction',
           left: '1%',
           textStyle: {
-            color: mainText,
+            color: this.mainText,
             fontSize: 20,
           },
         },
@@ -1562,12 +1299,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: mainText,
+              color: this.mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: subText,
+              color: this.subText,
               rotate: 45,
             },
             axisLine: {
@@ -1605,7 +1342,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: subText },
+            axisLabel: { color: this.subText },
             axisLine: {
               show: true,
               // lineStyle: { color: '#00ff00' },
@@ -1654,12 +1391,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: bgColor,
+              backgroundColor: this.bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: mainText,
+            borderColor: this.mainText,
           },
         },
 
@@ -1751,6 +1488,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       window.addEventListener('resize', () => {
         currentDirection.resize();
       });
+      currentDirection.on('dataZoom', (params) => {
+        const option = currentDirection.getOption() as EChartsOption;
+        const startValue = (option.dataZoom as any[])[0].startValue;
+        const endValue = (option.dataZoom as any[])[0].endValue;
+        this.updateXAxisLabel(currentDirection, startValue, endValue);
+      });
     } else {
       this.loading = false;
     }
@@ -1760,9 +1503,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
     const chartType = this.selectedChart;
     const chartContainer = document.getElementById('currentSpeedDirection');
 
-    const bgColor = '#ffffff';
-    const mainText = '#000000';
-    const subText = '#666666';
+    // const bgColor = '#ffffff';
+    // const mainText = '#000000';
+    // const subText = '#666666';
 
     if (chartContainer) {
       const existingInstance = echarts.getInstanceByDom(chartContainer);
@@ -1777,7 +1520,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           text: 'Dual Axis',
           left: '1%',
           textStyle: {
-            color: mainText,
+            color: this.mainText,
             fontSize: 20,
           },
         },
@@ -1802,12 +1545,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           name: 'DateTime',
           nameLocation: 'middle',
           nameTextStyle: {
-            color: mainText,
+            color: this.mainText,
             padding: [44, 0, 0, 0],
             fontSize: 14,
           },
           axisLabel: {
-            color: subText,
+            color: this.subText,
             rotate: 45,
           },
           axisLine: { show: true },
@@ -1822,7 +1565,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: subText },
+            axisLabel: { color: this.subText },
             axisLine: { show: true },
             splitLine: { show: true },
           },
@@ -1835,7 +1578,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               padding: [30, 0, 0, 0],
               fontSize: 16,
             },
-            axisLabel: { color: subText },
+            axisLabel: { color: this.subText },
             axisLine: { show: true },
             splitLine: { show: false },
           },
@@ -1871,12 +1614,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: bgColor,
+              backgroundColor: this.bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: mainText,
+            borderColor: this.mainText,
           },
         },
 
@@ -1964,6 +1707,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       window.addEventListener('resize', () => {
         chart.resize();
       });
+      chart.on('dataZoom', (params) => {
+        const option = chart.getOption() as EChartsOption;
+        const startValue = (option.dataZoom as any[])[0].startValue;
+        const endValue = (option.dataZoom as any[])[0].endValue;
+        this.updateXAxisLabel(chart, startValue, endValue);
+      });
     } else {
       this.loading = false;
     }
@@ -1972,17 +1721,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   midSpeedDirection(): void {
     const chartType = this.selectedChart;
     const mid = document.getElementById('midSpeedDirection');
-
-    // const computedStyle = getComputedStyle(document.body);
-    // const bgColor = computedStyle
-    //   .getPropertyValue('--secbackground-color')
-    //   .trim();
-    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    // const subText = computedStyle.getPropertyValue('--main-text').trim();
-
-    const bgColor = '#ffffff'; // White background for image export
-    const mainText = '#000000'; // Black for titles/labels
-    const subText = '#666666'; // Grey for axis labels and legend
 
     if (mid) {
       const existingInstance = echarts.getInstanceByDom(mid);
@@ -1999,7 +1737,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           left: '1%',
           // top: '0%',
           textStyle: {
-            color: mainText,
+            color: this.mainText,
             fontSize: 20,
           },
         },
@@ -2017,12 +1755,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: mainText,
+              color: this.mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: subText,
+              color: this.subText,
               rotate: 45,
             },
             axisLine: {
@@ -2057,7 +1795,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               fontSize: 16,
             },
             axisLabel: {
-              color: subText,
+              color: this.subText,
             },
             axisLine: {
               show: true,
@@ -2083,7 +1821,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               fontSize: 16,
             },
             axisLabel: {
-              color: subText,
+              color: this.subText,
             },
             axisLine: {
               show: true,
@@ -2111,7 +1849,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
               fontSize: 16,
             },
             axisLabel: {
-              color: subText,
+              color: this.subText,
             },
             axisLine: {
               show: true,
@@ -2137,7 +1875,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           orient: 'horizontal',
           right: '15%',
           textStyle: {
-            color: subText,
+            color: this.subText,
             fontSize: 14,
           },
         },
@@ -2148,12 +1886,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
             },
             restore: {},
             saveAsImage: {
-              backgroundColor: bgColor,
+              backgroundColor: this.bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: mainText,
+            borderColor: this.mainText,
           },
         },
         dataZoom: [
@@ -2300,332 +2038,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
       window.addEventListener('resize', () => {
         midspeedanddirection.resize();
       });
-    } else {
-      this.loading = false;
-    }
-  }
-
-  midSpeedDirection2(): void {
-    const chartType = this.selectedChart;
-    const mid = document.getElementById('midSpeedDirection2');
-
-    // const computedStyle = getComputedStyle(document.body);
-    // const bgColor = computedStyle
-    //   .getPropertyValue('--secbackground-color')
-    //   .trim();
-    // const mainText = computedStyle.getPropertyValue('--chart-maintext').trim();
-    // const subText = computedStyle.getPropertyValue('--main-text').trim();
-
-    const bgColor = '#ffffff'; // White background for image export
-    const mainText = '#000000'; // Black for titles/labels
-    const subText = '#666666'; // Grey for axis labels and legend
-
-    if (mid) {
-      const existingInstance = echarts.getInstanceByDom(mid);
-      if (existingInstance) {
-        existingInstance.dispose();
-      }
-      const midspeedanddirection = echarts.init(mid);
-      this.midChartInstance = midspeedanddirection; // Store the instance before setting options
-
-      const option = {
-        title: {
-          text: 'Tri-axis',
-          // text: 'Tri-axis (🌊 Tide, 🌀 Current Speed, 🧭 Current Direction)',
-          left: '1%',
-          // top: '0%',
-          textStyle: {
-            color: mainText,
-            fontSize: 20,
-          },
-        },
-        tooltip: {
-          trigger: 'axis',
-        },
-        // grid: {
-        //   left: '9%',
-        //   // bottom: '30%',
-        //   right: '5%',
-        // },
-        xAxis: [
-          {
-            type: 'time',
-            name: 'Date',
-            nameLocation: 'middle',
-            nameTextStyle: {
-              color: mainText,
-              padding: [40, 0, 0, 0],
-              fontSize: 16,
-            },
-            axisLabel: {
-              color: subText,
-              rotate: 45,
-            },
-            axisLine: {
-              show: true,
-            },
-          },
-          {
-            type: 'time',
-            position: 'top',
-            axisLine: {
-              show: true,
-            },
-            axisTick: {
-              show: false,
-            },
-            axisLabel: {
-              show: false,
-            },
-            splitLine: {
-              show: false,
-            },
-          },
-        ],
-        yAxis: [
-          {
-            type: 'value',
-            name: 'Current Speed (m/s)',
-            nameLocation: 'middle',
-            nameTextStyle: {
-              color: 'red',
-              padding: [0, 0, 10, 0],
-              fontSize: 16,
-            },
-            axisLabel: {
-              color: subText,
-            },
-            axisLine: {
-              show: true,
-              lineStyle: {
-                color: 'red',
-              },
-            },
-            splitLine: {
-              show: false,
-              // lineStyle: {
-              //   type: 'solid',
-              //   color: '#00ff00',
-              // },
-            },
-          },
-          {
-            type: 'value',
-            name: 'Tide (m)',
-            nameLocation: 'middle',
-            nameTextStyle: {
-              color: '#4900ff',
-              padding: [0, 0, 10, 0],
-              fontSize: 16,
-            },
-            axisLabel: {
-              color: subText,
-            },
-            axisLine: {
-              show: true,
-              lineStyle: {
-                color: '#4900ff', // orange
-              },
-            },
-            splitLine: {
-              show: false,
-              // lineStyle: {
-              //   type: 'solid',
-              //   color: '#00ff00',
-              // },
-            },
-            position: 'left',
-            offset: 70, // to avoid overlap with third y-axis
-          },
-          {
-            type: 'value',
-            name: 'Current Direction (°)',
-            nameLocation: 'middle',
-            nameTextStyle: {
-              color: 'green',
-              padding: 25,
-              fontSize: 16,
-            },
-            axisLabel: {
-              color: subText,
-            },
-            axisLine: {
-              show: true,
-              lineStyle: {
-                color: 'green',
-              },
-            },
-            splitLine: {
-              show: false,
-              // lineStyle: {
-              //   type: 'solid',
-              //   color: '#00ff00',
-              // },
-            },
-            position: 'right',
-            min: 0,
-            max: 360,
-            interval: 90,
-          },
-        ],
-        legend: {
-          data: ['Current Speed', 'Tide', 'Current Direction'],
-          orient: 'horizontal',
-          right: '15%',
-          textStyle: {
-            color: subText,
-            fontSize: 14,
-          },
-        },
-        toolbox: {
-          feature: {
-            dataZoom: {
-              yAxisIndex: 'none',
-            },
-            restore: {},
-            saveAsImage: {
-              backgroundColor: bgColor,
-              pixelRatio: 2,
-            },
-          },
-          iconStyle: {
-            borderColor: mainText,
-          },
-        },
-        dataZoom: [
-          {
-            type: 'inside',
-            xAxisIndex: 0,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-          {
-            type: 'slider',
-            bottom: 20,
-            height: 15,
-            xAxisIndex: 0,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-          {
-            type: 'inside',
-            yAxisIndex: 0,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-          {
-            type: 'inside',
-            yAxisIndex: 1,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-          {
-            type: 'inside',
-            yAxisIndex: 2,
-            filterMode: 'filter',
-            start: 0,
-            end: 100,
-          },
-        ],
-        series: [
-          {
-            name: 'Current Speed',
-            // data: this.sampleDataAdcp.map((item) => [
-            //   item.timestamp,
-            //   item.current_speed,
-            // ]),
-            data: this.main_table.map((item) => {
-              const dateStr = item.date.split('T')[0];
-              const combinedDateTime = new Date(`${dateStr}T${item.time}`);
-              return [combinedDateTime, parseFloat(item.speed)];
-            }),
-            type: 'scatter',
-            // lineStyle: {
-            //   color: '#00ff00',
-            // },
-            itemStyle: {
-              color: 'red',
-            },
-            showSymbol: false,
-            label: {
-              show: false,
-              fontSize: 12,
-            },
-            yAxisIndex: 0,
-          },
-          {
-            name: 'Tide',
-            data: this.sampleDataAdcp.map((item) => [
-              item.timestamp,
-              item.tide,
-            ]),
-            // type: chartType,
-            type: 'scatter',
-            // lineStyle: {
-            //   color: '#1f77b4',
-            // },
-            itemStyle: {
-              color: '#4900ff',
-            },
-            showSymbol: false,
-            label: {
-              show: false,
-              fontSize: 12,
-            },
-            yAxisIndex: 1,
-          },
-          {
-            name: 'Current Direction',
-            // data: this.sampleDataAdcp.map((item) => [
-            //   item.timestamp,
-            //   item.current_direction,
-            // ]),
-            data: this.main_table.map((item) => {
-              const dateStr = item.date.split('T')[0];
-              const combinedDateTime = new Date(`${dateStr}T${item.time}`);
-              return [combinedDateTime, parseFloat(item.direction)];
-            }),
-            type: 'scatter',
-            // lineStyle: {
-            //   color: '#0000ff',
-            //   type: 'dashed',
-            // },
-            itemStyle: {
-              color: 'green',
-            },
-            showSymbol: true,
-            symbol:
-              'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
-            symbolSize: 14,
-            symbolOffset: [0, -7],
-            symbolRotate: (value: any) => value[1],
-            label: {
-              show: false,
-              fontSize: 12,
-            },
-            yAxisIndex: 2,
-          },
-        ],
-      };
-
-      midspeedanddirection.setOption(option);
-
-      // Add click event after setting options
-      midspeedanddirection.on('click', (params: echarts.ECElementEvent) => {
-        const dataIndex = params.dataIndex;
-        if (dataIndex !== undefined) {
-          this.selectedPointId = this.sampleDataAdcp[dataIndex].id;
-          this.visible = true;
-        }
-      });
-
-      this.loading = false;
-      window.addEventListener('resize', () => {
-        midspeedanddirection.resize();
+      midspeedanddirection.on('dataZoom', (params) => {
+        const option = midspeedanddirection.getOption() as EChartsOption;
+        const startValue = (option.dataZoom as any[])[0].startValue;
+        const endValue = (option.dataZoom as any[])[0].endValue;
+        this.updateXAxisLabel(midspeedanddirection, startValue, endValue);
       });
     } else {
       this.loading = false;
@@ -2633,63 +2050,30 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
   }
 
   midpolar(): void {
+    // const selectedDate = '2025-04-01';
+    const selectedDate = this.formatDateToYMD(this.selectedPolarDate);
+    // Filter only data of that day
+    // const dayData = this.fullData.filter((d) => d.date === selectedDate);
+    console.log('Raw selected date from calendar:', this.selectedPolarDate);
+    console.log(
+      'Formatted selected date (YMD):',
+      this.formatDateToYMD(this.selectedPolarDate)
+    );
+
+    const intervalMinutes = this.PolarSelectedInterVal; // can be 30, 60, 360, 1440 for 30m, 1h, 6h, 24h
+    const groupedData = this.groupByIntervalWithinDay(
+      this.fullData,
+      selectedDate,
+      intervalMinutes
+    );
+    const averagedPolarData = this.computeAverages(groupedData);
+
+    console.log('groupedData', groupedData);
+
+    console.log('averagedPolarData', averagedPolarData);
+
     // const chartType = this.selectedChart;
     // this.loading = true;
-    let sampleDataPolar = [
-      { speed: 3.4, direction: 45 },
-      { speed: 1.6, direction: 120 },
-      { speed: 4.1, direction: 270 },
-      { speed: 2.4, direction: 90 },
-      { speed: 0.0, direction: 180 },
-      { speed: 4.4, direction: 200 },
-      { speed: 0.9, direction: 320 },
-      { speed: 2.8, direction: 135 },
-      { speed: 1.5, direction: 270 },
-      { speed: 1.2, direction: 15 },
-      { speed: 2.3, direction: 60 },
-      { speed: 5.1, direction: 330 },
-      { speed: 3.1, direction: 75 },
-      { speed: 2.0, direction: 150 },
-      { speed: 4.3, direction: 210 },
-      { speed: 0.7, direction: 300 },
-      { speed: 5.2, direction: 10 },
-      { speed: 0.8, direction: 80 },
-      { speed: 5.0, direction: 360 },
-      { speed: 2.5, direction: 240 },
-      { speed: 1.0, direction: 30 },
-      { speed: 3.7, direction: 190 },
-      { speed: 1.6, direction: 120 },
-      { speed: 4.0, direction: 210 },
-      { speed: 2.9, direction: 260 },
-      { speed: 2.3, direction: 350 },
-      { speed: 4.6, direction: 180 },
-      { speed: 1.3, direction: 70 },
-      { speed: 3.0, direction: 45 },
-      { speed: 0.9, direction: 300 },
-      { speed: 4.5, direction: 220 },
-      { speed: 0.6, direction: 110 },
-      { speed: 2.1, direction: 190 },
-      { speed: 3.8, direction: 350 },
-      { speed: 5.0, direction: 40 },
-      { speed: 2.6, direction: 80 },
-      { speed: 5.3, direction: 140 },
-      { speed: 3.2, direction: 300 },
-      { speed: 1.4, direction: 160 },
-      { speed: 5.7, direction: 270 },
-      { speed: 2.0, direction: 30 },
-      { speed: 1.1, direction: 50 },
-      { speed: 4.2, direction: 200 },
-      { speed: 0.8, direction: 360 },
-      { speed: 2.3, direction: 120 },
-      { speed: 3.0, direction: 90 },
-      { speed: 4.8, direction: 260 },
-      { speed: 0.5, direction: 300 },
-      { speed: 5.9, direction: 15 },
-      { speed: 3.5, direction: 170 },
-      { speed: 2.2, direction: 320 },
-      { speed: 2.8, direction: 240 },
-      { speed: 6.1, direction: 360 },
-    ];
     const polar2 = document.getElementById('midpolar')!;
 
     setTimeout(() => {
@@ -2769,8 +2153,15 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
           '>8 m/s': 0,
         }));
 
+        // const averagedPolarData = this.fullData.map((data) => {
+        //   return {
+        //     speed: parseFloat(data.speed),
+        //     direction: parseFloat(data.direction),
+        //   };
+        // });
+
         // Map directions to labels and fill dataBins with counts
-        sampleDataPolar.forEach(({ speed, direction }) => {
+        averagedPolarData.forEach(({ speed, direction }) => {
           const directionIndex = Math.round(direction / 22.5) % 16;
           const speedCategory = categorizeSpeed(speed);
           dataBins[directionIndex][speedCategory] += 1;
@@ -2892,5 +2283,68 @@ export class AnalyticsComponent implements OnInit, AfterViewInit {
         // this.loading = false;
       }
     }, 0);
+  }
+
+  private groupByIntervalWithinDay(
+    data: ApiData[],
+    selectedDate: string,
+    intervalMinutes: number
+  ): Record<string, { speed: number; direction: number }[]> {
+    const grouped: Record<string, { speed: number; direction: number }[]> = {};
+
+    const dateStart = new Date(`${selectedDate}T01:00:00`);
+    const dateEnd = new Date(`${selectedDate}T23:59:59`);
+
+    data.forEach((entry) => {
+      const localTime = this.toIST(entry.date); // entry.datetime = ISO string
+
+      if (localTime >= dateStart && localTime <= dateEnd) {
+        // Round down to nearest interval
+        const roundedTime = new Date(
+          Math.floor(localTime.getTime() / (intervalMinutes * 60 * 1000)) *
+            intervalMinutes *
+            60 *
+            1000
+        );
+
+        const key = roundedTime.toISOString(); // Or use HH:mm if preferred
+
+        if (!grouped[key]) {
+          grouped[key] = [];
+        }
+
+        grouped[key].push({
+          speed: parseFloat(entry.speed),
+          direction: parseFloat(entry.direction),
+        });
+      }
+    });
+
+    return grouped;
+  }
+
+  private toIST(dateStr: string): Date {
+    const utcDate = new Date(dateStr);
+    const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in ms
+    return new Date(utcDate.getTime() + istOffset);
+  }
+
+  private computeAverages(
+    grouped: Record<string, { speed: number; direction: number }[]>
+  ): { speed: number; direction: number }[] {
+    return Object.values(grouped).map((group) => {
+      const avgSpeed =
+        group.reduce((sum, item) => sum + item.speed, 0) / group.length;
+      const avgDirection =
+        group.reduce((sum, item) => sum + item.direction, 0) / group.length;
+      return { speed: avgSpeed, direction: avgDirection };
+    });
+  }
+
+  private formatDateToYMD(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }
