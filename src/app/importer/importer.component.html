@@ -30,11 +30,18 @@
     <div class="main_section">
 
         <div class="coordinates">
-            <h4>Latitude</h4>
-            <input type="number" [(ngModel)]="lat">
-
+            
             <h4>Longitude</h4>
-            <input type="number" [(ngModel)]="lon">
+            <input type="number" step="any" min="-180" max="180" placeholder="Longitude (-180 to 180)" [(ngModel)]="lon" name="longitude" #long="ngModel">
+            <div *ngIf="long.invalid" class="error">
+                Longitude must be between -180° and +180°.
+            </div>
+            
+            <h4>Latitude</h4>
+            <input type="number" step="any" min="-90" max="90" placeholder="Latitude (-90 to 90)" [(ngModel)]="lat" name="latitude" #lat="ngModel">
+            <div *ngIf="lat.invalid" class="error1">
+                Latitude must be between -90° and +90°.
+            </div>
 
 
             <h4 *ngIf="!isMulti">Select High Water Level</h4>
@@ -115,7 +122,11 @@
             </div>
         </div> -->
         <div class="table_container" *ngIf="!isMulti">
-            <p *ngIf="main_table.length === 0">No Files Selected</p>
+            <!-- <p *ngIf="main_table.length === 0">No Files Selected</p> -->
+            <div *ngIf="main_table.length === 0" class="land">
+                <app-landing-page></app-landing-page>
+            </div>
+             
             <div class="bod" *ngIf="main_table.length > 0">
                 <table class="styled-table">
                     <thead>
@@ -144,6 +155,7 @@
     <div class="home_main" *ngIf="is_show_import">
         <div class="table_container">
             <p *ngIf="historyData.length === 0">No Files Selected</p>
+
             <div class="bod" *ngIf="historyData.length > 0">
                 <table class="styled-table">
                     <thead>

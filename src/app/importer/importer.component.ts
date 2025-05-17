@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { GlobalConfig } from '../global/app.global';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { LandingPageComponent } from "./landing-page/landing-page.component";
 
 interface Files {
   id: number,
@@ -15,7 +16,7 @@ interface Files {
 
 @Component({
   selector: 'app-importer',
-  imports: [CommonModule, HttpClientModule, FormsModule],
+  imports: [CommonModule, HttpClientModule, FormsModule, LandingPageComponent],
   templateUrl: './importer.component.html',
   styleUrl: './importer.component.css',
   providers:[DatePipe]
@@ -40,8 +41,8 @@ export class ImporterComponent {
   main_table:any[] = [];
 
 
-  lat:number=0;
-  lon:number=0;
+  lat:number | null = null;
+  lon:number | null = null;
   high_water_level!:string;
   selectedRowIndex: number | null = null;
   selectedRowData: any = null;

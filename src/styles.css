@@ -47,6 +47,13 @@ html {
   /* Tooltip */
   --tooltip-bg: #333;
   --tooltip-text: #fff;
+
+  /* Circuit */
+  --circuit-color: #000000;
+  --circuit-border-color: #00000075;
+  --circuit-hover: #00000021;
+  --circuit-hover2: #00000121;
+  --text-color: #000;
 }
 
 /* Dark theme override */
@@ -78,6 +85,13 @@ html {
   /* Tooltip */
   --tooltip-bg: #eee;
   --tooltip-text: #000;
+
+    /* Circuit */
+  --circuit-color: aqua;
+  --circuit-border-color: #00f7ff7c;
+  --circuit-hover: #00f7ff21;
+  --circuit-hover2: #09f6fe21;
+  --text-color: #ffffff;
 }
 
 

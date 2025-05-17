@@ -53,7 +53,8 @@ export class DashboardComponent implements OnInit{
     waterLevel: '',
     currentSpeed: '',
     currentDirection: '',
-    battery: ''
+    battery: '',
+    depth: ''
   };
 
   toggle_tap(){

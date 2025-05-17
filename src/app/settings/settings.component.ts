@@ -34,6 +34,12 @@ export class SettingsComponent {
     label: 'Battery',
     iconClass: 'fas fa-battery-full',
     units: ['%', 'volts']
+  },
+  {
+    key: 'depth',
+    label: 'Depth',
+    iconClass: 'fas fa-arrows-down-to-line',
+    units: ['m', 'ft']
   }
 ];
 
@@ -55,6 +61,10 @@ getTooltip(paramKey: string, unit: string): string {
     battery: {
       '%': 'Percentage',
       volts: 'Volts'
+    },
+    depth: {
+      m: 'Meters',
+      ft: 'Feet'
     }
   };
 
