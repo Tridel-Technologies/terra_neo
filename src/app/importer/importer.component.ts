@@ -6,11 +6,15 @@ import { GlobalConfig } from '../global/app.global';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 
-interface Files {
-  id: number,
-  files: string[],
+interface Folders {
+  folder_id: number,
   folder_name:string,
+  files: fileData[],
   timestamp: string
+}
+interface fileData{
+  file_id:number,
+  file_name:string,
 }
 
 @Component({
@@ -29,7 +33,7 @@ export class ImporterComponent {
   historyData: any = [];
   FileName!: string;
   is_show_import: boolean = false;
-  files_list: Files[] = [];
+  files_list: Folders[] = [];
   allowFolderUpload: boolean = false;
   uploaded_files:string[]=[]
   expandedFolders: boolean[] = [];
@@ -38,10 +42,11 @@ export class ImporterComponent {
   selectedFiles: any[] = [];  // Array to track selected files
   isMulti:boolean = false;
   main_table:any[] = [];
+fileWiseUploadData: { [fileName: string]: any[] } = {};
 
 
-  lat:number=0;
-  lon:number=0;
+  latitude:number | null = null;
+  lon:number | null = null;
   high_water_level!:string;
   selectedRowIndex: number | null = null;
   selectedRowData: any = null;
@@ -51,9 +56,9 @@ export class ImporterComponent {
     this.selectedRowData = row;
     console.log('Selected Row:', row);
     const date = new Date(row.date)
-    const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd');
+    const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
     console.log(formattedDate);
-    this.high_water_level = `${formattedDate} ${row.time}`
+    this.high_water_level = `${formattedDate}`
 
   }
   
@@ -61,11 +66,11 @@ export class ImporterComponent {
     console.log(this.selectedFiles);
     const files = [];
     for (let index = 0; index < this.selectedFiles.length; index++) {
-      files.push(this.selectedFiles[index].file_name);
+      files.push(this.selectedFiles[index]);
     }
     // file_name, lat, lon, high_water_level
     const data ={
-      file_name:files, lat:this.lat, lon:this.lon, high_water_level:this.high_water_level
+      file_name:files, lat:this.latitude, lon:this.lon, high_water_level:this.high_water_level
     }
     console.log("sendingData", data);
     this.http.post('http://localhost:3000/api/update_values',data).subscribe(
@@ -77,14 +82,14 @@ export class ImporterComponent {
   }
 
   constructor(private http: HttpClient, private toast:ToastrService,private datePipe: DatePipe) {}
-  main_table_headers = ['STRING', 'date', 'time', 'speedms', 'direction', 'dept', 'battery', 'pressure_in_bar'];
+  main_table_headers = ['STRING', 'date', 'speedms', 'direction', 'dept', 'battery', 'pressure_in_bar'];
   open_file(file_name:string, file_id:number){
     this.opened_file = file_name;
     const data ={
       folder_id:file_id,
       file_name:file_name
     }
-    this.http.get(`http://localhost:3000/api/fetch_data_by_file/${this.openedFolder}/${file_name}`).subscribe(
+    this.http.get(`http://localhost:3000/api/fetch_data_by_file/${file_id}`).subscribe(
       (response:any)=>{
         console.log("response", response);
         if(this.isMulti){
@@ -109,8 +114,11 @@ export class ImporterComponent {
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
+    console.log(this.expandedFolders)
   }
-
+changinglat(){
+  console.log(this.latitude)
+}
 
   toggleFileSelection(fileName: string, event: MouseEvent, file_id:number) {
     console.log(fileName, file_id);
@@ -155,7 +163,7 @@ export class ImporterComponent {
       console.log('Storage event fired!', e);
     });
     this.files_list = [];
-    this.http.get('http://localhost:3000/api/get_files').subscribe(
+    this.http.get('http://localhost:3000/api/files').subscribe(
       (response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -182,135 +190,108 @@ export class ImporterComponent {
   }
 
   expectedHeaders = ['STRING', 'Date', 'Time', 'speedms', 'direction', 'bin_depth', 'battery', 'pressure_in_bar'];
+  tableHeaders = ['STRING', 'Date', 'speedms', 'direction', 'bin_depth', 'battery', 'pressure_in_bar'];
   onFilesSelected(event: any) {
-    const files: FileList = event.target.files;
-  
-    this.errorMessage = '';
-    this.tableData = [];
-    const promises: Promise<any>[] = [];
-    const validData: any[] = [];
-  
-    console.log(`Selected ${files.length} file(s)`);
-  
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      console.log(`Processing file: ${file.name}, size: ${(file.size / (1024 * 1024)).toFixed(2)} MB`);
-  
-      const maxSizeBytes = this.maxFileSizeMB * 1024 * 1024;
-      if (file.size > maxSizeBytes) {
-        console.error(`❌ File "${file.name}" exceeds ${this.maxFileSizeMB}MB`);
-        this.toast.error(`❌ File "${file.name}" exceeds ${this.maxFileSizeMB}MB`,"Error")
-        continue;
-      }
-  
-      const promise = this.processFile(file)
-        .then((data) => {
-          validData.push(...data);
-        })
-        .catch((err) => {
-          console.error(`❌ Skipping file "${file.name}" due to error: ${err}`);
-          this.toast.warning(`❌ Skipping file "${file.name}" due to error: ${err}`,"Error")
-        });
-  
-      promises.push(promise);
+  const files: FileList = event.target.files;
+
+  this.errorMessage = '';
+  this.tableData = [];
+  const promises: Promise<any>[] = [];
+  const fileWiseData: { [key: string]: any[] } = {};
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    const maxSizeBytes = this.maxFileSizeMB * 1024 * 1024;
+    if (file.size > maxSizeBytes) {
+      this.toast.error(`❌ File "${file.name}" exceeds ${this.maxFileSizeMB}MB`, "Error");
+      continue;
     }
-  
-    Promise.all(promises).then(() => {
-      if (validData.length === 0) {
-        this.errorMessage = 'No valid files processed.';
-      } else {
-        this.historyData = validData;
-        this.tableData = [...validData];
-        this.displayedColumns = this.expectedHeaders;
-        console.log("✅ All valid files processed successfully.", this.displayedColumns);
-        console.log("📄 Combined Data Ready for Table & DB Save:", this.historyData);
-      }
-    });
+
+    const promise = this.processFile(file)
+      .then(({ fileName, data }) => {
+        fileWiseData[fileName] = data;
+      })
+      .catch((err) => {
+        this.toast.warning(`❌ Skipping file "${file.name}" due to error: ${err}`, "Error");
+      });
+
+    promises.push(promise);
   }
-  
 
-  async processFile(file: File): Promise<any[]> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+  Promise.all(promises).then(() => {
+    const allRows = Object.values(fileWiseData).flat();
+    if (allRows.length === 0) {
+      this.errorMessage = 'No valid files processed.';
+    } else {
+      this.historyData = allRows;
+      this.tableData = [...allRows];
+      this.displayedColumns = this.expectedHeaders;
+      this.fileWiseUploadData = fileWiseData;  // <- store for import step
+    }
+  });
+}
 
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(reader.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
 
-          console.log(`📄 Reading sheet "${sheetName}" from file: ${file.name}`);
-          let sheetData: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+  async processFile(file: File): Promise<{ fileName: string, data: any[] }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-          if (sheetData.length === 0) {
-            return reject(`File "${file.name}" is empty.`);
-          }
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(reader.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
 
-          // Trim all headers (remove extra spaces)
-          const fileHeaders = Object.keys(sheetData[0]).map((h) => h.trim());
-          const isHeaderValid = this.expectedHeaders.every((h) => fileHeaders.includes(h.trim()));
+        let sheetData: any[] = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+        if (sheetData.length === 0) return reject(`File "${file.name}" is empty.`);
 
-          if (!isHeaderValid) {
-            console.warn(`❌ Invalid header format in file: ${file.name}`);
-            return reject(`Invalid header format in file: ${file.name}`);
-          }
+        const fileHeaders = Object.keys(sheetData[0]).map((h) => h.trim());
+        const isHeaderValid = this.expectedHeaders.every((h) => fileHeaders.includes(h.trim()));
+        if (!isHeaderValid) return reject(`Invalid header format in file: ${file.name}`);
 
-          console.log(`✅ Header validated for file: ${file.name}`);
-          this.uploaded_files.push(file.name);
+        this.uploaded_files.push(file.name);
 
-          const formattedData = sheetData.map((row, index) => {
-            const cleanedRow: any = {};
-            
-            // Trim all keys and handle missing data
-            Object.keys(row).forEach(key => {
-              const cleanedKey = key.trim(); // Remove extra spaces from headers
-              cleanedRow[cleanedKey] = row[key];
-            });
-
-            // Check and validate each required field
-            for (const key of this.expectedHeaders) {
-              const value = cleanedRow[key];
-              if (
-                value === null ||
-                value === undefined ||
-                value === '' ||
-                (typeof value === 'number' && isNaN(value))
-              ) {
-                console.warn(`Empty/NaN value in "${key}" at row ${index + 2} in file ${file.name}`);
-                this.toast.warning(`Empty/NaN value in "${key}" at row ${index + 2} in file ${file.name}`,"Warning")
-              }
-            }
-
-            const time = this.convertToTimeFormat(cleanedRow['Time']);
-            const date = this.convertToDateFormat(cleanedRow['Date']);
-
-            return {
-              station_id: cleanedRow['STRING'],
-              Date: date,
-              Time: time,
-              speed: cleanedRow['speedms'],
-              direction: cleanedRow['direction'],
-              depth: cleanedRow['bin_depth'],
-              battery: cleanedRow['battery'],
-              pressure: cleanedRow['pressure_in_bar'],
-              file_name:file.name
-            };
+        const formattedData = sheetData.map((row, index) => {
+          const cleanedRow: any = {};
+          Object.keys(row).forEach(key => {
+            cleanedRow[key.trim()] = row[key];
           });
 
-          console.log(`✅ File "${file.name}" processed successfully with ${formattedData.length} row(s).`);
-          console.log("formated",formattedData)
-          this.historyData = formattedData;
-          this.displayedColumns = this.expectedHeaders;
-          resolve(formattedData);
-        } catch (err: any) {
-          console.error(`❌ Error processing file "${file.name}":`, err.message || err);
-          reject(err.message || `Error processing file: ${file.name}`);
-        }
-      };
+          for (const key of this.expectedHeaders) {
+            const value = cleanedRow[key];
+            if (!value || (typeof value === 'number' && isNaN(value))) {
+              this.toast.warning(`Empty/NaN value in "${key}" at row ${index + 2} in file ${file.name}`, "Warning");
+            }
+          }
 
-      reader.readAsArrayBuffer(file);
-    });
-  }
+          const time = this.convertToTimeFormat(cleanedRow['Time']);
+          const date = this.convertToDateFormat(cleanedRow['Date']);
+          const dateTime = `${date}T${time}Z`;
+
+          return {
+            station_id: cleanedRow['STRING'],
+            date: dateTime,
+            speed: cleanedRow['speedms'],
+            direction: cleanedRow['direction'],
+            depth: cleanedRow['bin_depth'],
+            battery: cleanedRow['battery'],
+            pressure: cleanedRow['pressure_in_bar'],
+            lat: "18.3", // Replace with dynamic value if available
+            lon: "52.3", // Replace with dynamic value if available
+          };
+        });
+
+        resolve({ fileName: file.name, data: formattedData });
+      } catch (err: any) {
+        reject(err.message || `Error processing file: ${file.name}`);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
 
   excelSerialDateToJSDate(serial: number): string {
     const excelEpoch = new Date(1899, 11, 30); // Excel epoch starts from 1900-01-01 but needs an offset
@@ -371,34 +352,38 @@ export class ImporterComponent {
   }
 
   import() {
-    const file = {
-      data: this.historyData,
-      folder_name:this.FileName,
-      files: this.uploaded_files
-    };
-    if(!this.FileName){
-      this.toast.warning("Please Enter Folder name","warning");
-    }else{
-      this.http.post(`http://localhost:3000/api/import`, file).subscribe(
-        (response: any) => {
-          console.log(response);
-          this.toast.success(response.message, "Success");
-          this.is_show_import = false;
-          this.historyData = []
-          this.FileName = '';
-          this.uploaded_files = [];
-          this.files_list = [];
-          setTimeout(() => {
-            this.http.get('http://localhost:3000/api/get_files').subscribe(
-              (response: any) => {
-                this.files_list = response['data'];
-                console.log('files:', response, this.files_list);
-                this.expandedFolders = this.files_list.map(() => false);
-  
-              });
-          }, 100);
-        }
-      );
-    }
+  if (!this.FileName) {
+    this.toast.warning("Please Enter Folder name", "Warning");
+    return;
   }
+
+  const file = {
+    folder_name: this.FileName,
+    file_name: Object.keys(this.fileWiseUploadData),
+    data: this.fileWiseUploadData
+  };
+
+  console.log(file);
+  this.http.post(`http://localhost:3000/api/createFile`, file).subscribe(
+    (response: any) => {
+      this.toast.success(response.message, "Success");
+      this.is_show_import = false;
+      this.historyData = [];
+      this.FileName = '';
+      this.uploaded_files = [];
+      this.files_list = [];
+      this.fileWiseUploadData = {};
+
+      setTimeout(() => {
+        this.http.get('http://localhost:3000/api/get_files').subscribe(
+          (response: any) => {
+            this.files_list = response['data'];
+            this.expandedFolders = this.files_list.map(() => false);
+          }
+        );
+      }, 100);
+    }
+  );
+}
+
 }

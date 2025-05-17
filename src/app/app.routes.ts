@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { BaseComponent } from './base/base.component';
+import { LoginComponent } from './login/login.component';
 import { AnalyticsComponent } from './analytics/analytics.component';
 import { ReportsComponent } from './reports/reports.component';
 
@@ -7,7 +8,11 @@ export const routes: Routes = [
     {
         path:'',
         pathMatch:'full',
-        redirectTo:'base'
+        redirectTo:'login'
+    },
+    {
+        path:'login',
+        component:LoginComponent
     },
     {
         path:'base',

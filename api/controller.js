@@ -1,5 +1,6 @@
-const { poo } = require('fontawesome');
+const { poo, file } = require('fontawesome');
 const { pool } = require('./db');
+const bcrypt = require('bcrypt');
 
 const importAll = async (req, res) => {
   const { data, files, folder_name } = req.body;
@@ -30,7 +31,7 @@ const importAll = async (req, res) => {
 
       // Optional: Validate each item before insert
       if (
-        !item.station_id || !item.Date || !item.Time ||
+        !item.station_id || !item.DateTime  ||
         item.speed == null || item.direction == null ||
         item.depth == null || item.pressure == null || item.battery == null
       ) {
@@ -40,12 +41,11 @@ const importAll = async (req, res) => {
 
       await pool.query(
         `INSERT INTO tb_adcp_master (
-          station_id, date, time, speed, direction, dept, pressure, battery, file_id, file_name
-        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+          station_id, date, speed, direction, dept, pressure, battery, file_id, file_name
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
         [
           item.station_id,
-          item.Date,
-          item.Time,
+          item.DateTime,
           item.speed,
           item.direction,
           item.depth,
@@ -70,18 +70,18 @@ const importAll = async (req, res) => {
 };
 
 
-const getFiles = async (req, res) => {
-  try {
-    const result = await pool.query(`SELECT * FROM tb_files`);
-    res.status(200).json({
-      data: result.rows
-    })
-  } catch (error) {
-    res.status(500).json({ message: `Error: ${error}` })
-  }
+const getFiles = async(req, res)=>{
+    try {
+        const result = await pool.query(`SELECT * FROM tb_folders`);
+        res.status(200).json({
+            data:result.rows
+        })
+    } catch (error) {
+        res.status(500).json({message:`Error: ${error}`})
+    }
 }
 
-const updateValues = async (req, res) => {
+ const updateValues = async (req, res) => {
   const { file_name, lat, lon, high_water_level } = req.body;
 
   if (!file_name || !Array.isArray(file_name) || file_name.length === 0) {
@@ -92,48 +92,63 @@ const updateValues = async (req, res) => {
   try {
     await client.query('BEGIN');
 
-    // Step 1: Update lat/lon based on file_name array
-    const fields = [];
-    const values = [];
-    let index = 1;
+    // ✅ Step 1: Update lat/lon for each file_id
+    if (lat !== undefined || lon !== undefined) {
+      for (const file of file_name) {
+        const fields = [];
+        const values = [];
+        let idx = 1;
 
-    if (lat !== undefined) {
-      fields.push(`lat = $${index++}`);
-      values.push(lat);
-    }
+        if (lat !== undefined) {
+          fields.push(`lat = $${idx++}`);
+          values.push(lat);
+        }
 
-    if (lon !== undefined) {
-      fields.push(`lon = $${index++}`);
-      values.push(lon);
-    }
+        if (lon !== undefined) {
+          fields.push(`lon = $${idx++}`);
+          values.push(lon);
+        }
 
-    if (fields.length > 0) {
-      values.push(file_name); // $index
-      const updateQuery = `
-          UPDATE tb_adcp_master
+        const updateQuery = `
+          UPDATE tb_${file.file_id}
           SET ${fields.join(', ')}
-          WHERE file_name = ANY($${index})
         `;
-      await client.query(updateQuery, values);
+        const updateQuery2 = `
+          UPDATE tb_${file.file_id}_processed
+          SET ${fields.join(', ')}
+        `;
+
+        await client.query(updateQuery, values);
+        await client.query(updateQuery2, values);
+      }
     }
 
-    // Step 2: If high_water_level timestamp is provided, update accordingly
+    // ✅ Step 2: Update high_water_level if timestamp provided (only in one table)
     if (high_water_level) {
-      const [dateStr, timeStr] = high_water_level.split(' '); // '2025-04-30', '09:10:00'
-      console.log("Using exact date/time:", dateStr, timeStr);
+      const isValidFormat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(high_water_level);
+      if (!isValidFormat) {
+        throw new Error('Invalid high_water_level format. Expected YYYY-MM-DD HH:MM:SS');
+      }
 
-      await client.query(`UPDATE tb_adcp_master SET high_water_level = 0`);
+      const targetTable = `tb_${file_name[0].file_id}`;
 
+      // Reset all rows
+      await client.query(`UPDATE ${targetTable} SET high_water_level = 0`);
+
+      // Set high_water_level = 1 for matching timestamp
       await client.query(
-        `UPDATE tb_adcp_master
-           SET high_water_level = 1
-           WHERE date::date = $1
-             AND time = $2
-             AND file_name = $3`,
-        [dateStr, timeStr, file_name[0]]
+        `UPDATE ${targetTable}
+         SET high_water_level = 1
+         WHERE date = $1`,
+        [high_water_level]
+      );
+      await client.query(
+        `UPDATE ${targetTable}_processed
+         SET high_water_level = 1
+         WHERE date = $1`,
+        [high_water_level]
       );
     }
-
 
     await client.query('COMMIT');
     res.json({ message: 'Update successful' });
@@ -145,6 +160,259 @@ const updateValues = async (req, res) => {
     client.release();
   }
 };
+
+const createFolderAndFile = async (req, res) => {
+  const { folder_name, file_name, data } = req.body;
+
+  if (!folder_name || !Array.isArray(file_name) || typeof data !== "object") {
+    return res.status(400).json({ message: "Invalid input format" });
+  }
+
+  try {
+    // 1. Insert folder
+    const folderInsertQuery = `INSERT INTO tb_folders (folder_name) VALUES($1) RETURNING id`;
+    const folderResult = await pool.query(folderInsertQuery, [folder_name]);
+
+    const folderId = folderResult.rows[0]?.id;
+    if (!folderId) {
+      return res.status(500).json({ status: "failed", message: "Folder creation failed" });
+    }
+
+    const insertedFiles = [];
+
+    // 2. Loop through each file and handle insertions
+    for (const fname of file_name) {
+      const fileData = data[fname];
+
+      if (!Array.isArray(fileData)) {
+        continue; // Skip invalid data for this file
+      }
+
+      // Insert file
+      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id) VALUES ($1, $2) RETURNING id`;
+      const fileResult = await pool.query(fileInsertQuery, [fname, folderId]);
+      const fileId = fileResult.rows[0]?.id;
+
+      if (!fileId) {
+        continue; // Skip this file if insert failed
+      }
+
+      // Create dynamic table for the file
+      const tableName = `tb_${fileId}`;
+      const tblCreateQuery = `
+        CREATE TABLE ${tableName} (
+          id SERIAL PRIMARY KEY,
+          station_id TEXT,
+          date TIMESTAMPTZ,
+          lat TEXT,
+          lon TEXT,
+          speed TEXT,
+          direction TEXT,
+          depth TEXT,
+          pressure TEXT,
+          battery TEXT,
+          high_water_level INTEGER,
+          file_id INTEGER REFERENCES tb_file(id)
+        )`;
+      const tblperocessed =  `
+        CREATE TABLE ${tableName}_processed (
+          id SERIAL PRIMARY KEY,
+          station_id TEXT,
+          date TIMESTAMPTZ,
+          lat TEXT,
+          lon TEXT,
+          speed TEXT,
+          direction TEXT,
+          depth TEXT,
+          pressure TEXT,
+          battery TEXT,
+          high_water_level INTEGER,
+          file_id INTEGER REFERENCES tb_file(id)
+        )`;
+      const tbCreateResult = await pool.query(tblCreateQuery);
+      const tbCreateProcessed = await pool.query(tblperocessed)
+
+      if (tbCreateResult.command !== 'CREATE' && tbCreateProcessed.command !== 'CREATE') {
+        continue; // Skip if table creation failed
+      }
+
+
+      // Insert all rows into the dynamic table
+      const insertQuery = `
+        INSERT INTO ${tableName} (
+          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+         const insertQuery_processed = `
+        INSERT INTO ${tableName}_processed (
+          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+
+      for (const row of fileData) {
+        const values = [
+          row.station_id,
+          row.date,
+          row.lat,
+          row.lon,
+          row.speed,
+          row.direction,
+          row.depth,
+          row.pressure,
+          row.battery,
+          0,
+          fileId
+        ];
+        await pool.query(insertQuery, values);
+        await pool.query(insertQuery_processed, values);
+      }
+
+      insertedFiles.push({ file_name: fname, file_id: fileId });
+    }
+
+    return res.status(200).json({
+      status: "Success",
+      message: "Folder, files, and data inserted successfully",
+      folder_id: folderId,
+      files: insertedFiles
+    });
+
+  } catch (error) {
+    console.error("Error:", error);
+    return res.status(500).json({
+      status: "failed",
+      message: error.message || "Unexpected error occurred"
+    });
+  }
+};
+
+
+
+  // login page api
+//get the count of the users
+const getUser = async (req, res) => {
+    try {
+      const result = await pool.query("SELECT COUNT(*) FROM user_tb");
+      res.json(result.rows);
+    } catch (err) {
+      res.status(500).send(err.message);
+    }
+  };
+
+//check for the matches
+const checkusername=async(req,res)=>{
+const{user_name, email_id}=req.body
+    try {
+      const result = await pool.query(
+        'SELECT COUNT(*) AS count FROM user_tb WHERE user_name = $1',
+        [user_name]
+      );
+      const email_result = await pool.query(
+        'SELECT COUNT(*) AS count FROM user_tb WHERE email_id = $1',
+        [email_id]
+      );
+      res.json({
+      usernameExists: result.rows[0].count > 0,
+      emailExists: email_result.rows[0].count > 0
+    });
+    } catch (error) {
+      console.error('Error in checkUsername:', error);
+      res.status(500).json({ message: 'Error checking username.' });
+    }
+};
+
+
+//Add the user
+const signup = async (req, res) => {
+  const { user_name,password,email_id } = req.body;
+  console.log('Incoming user:', req.body);
+  const encrypt_password = await bcrypt.hash(password, 10);
+
+  try {
+    await pool.query(
+      'INSERT INTO user_tb (user_name,password,email_id) VALUES ($1, $2, $3)',
+      [user_name,encrypt_password,email_id ]
+    );
+    res.status(201).send('User added');
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+};
+
+//check the username and password to access
+const loginUser = async (req, res) => {
+  const { user_name, password } = req.body;
+  console.log("Attempting login for:", user_name);
+
+  try {
+    const result = await pool.query('SELECT * FROM user_tb WHERE user_name = $1', [user_name]);
+
+    if (result.rows.length === 0) {
+      console.log("No user found");
+      return res.status(401).json({ message: 'User not found' });
+    }
+
+    const user = result.rows[0];
+    console.log("Found user:", user.user_name);
+
+    // ✅ Use bcrypt to compare hashed password
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Invalid password' });
+
+    }
+    console.log("Login successful");
+    res.status(200).json({ message: 'Login successful', user });
+  } catch (error) {
+    console.error("Login error:", error);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+//check the username and email exists  
+
+const forget_password = async (req, res) => {
+  const { user_name, email_id } = req.body;
+
+  try {
+    // Check if username exists
+    const userResult = await pool.query(
+      'SELECT * FROM user_tb WHERE user_name = $1',
+      [user_name]
+    );
+
+    if (userResult.rows.length === 0) {
+      return res.json({ valid: false, reason: 'username' });
+    }
+
+    // Check if email matches the found user
+    const emailMatch = userResult.rows.find(u => u.email_id === email_id);
+    if (!emailMatch) {
+      return res.json({ valid: false, reason: 'email' });
+    }
+
+    res.json({ valid: true });
+  } catch (err) {
+    console.error('Forget password error:', err);
+    res.status(500).json({ message: 'Server error' });
+  }
+};
+
+//change the password
+
+const change_password=async(req,res)=>{
+   const { user_name, newPassword } = req.body;
+  const encrypt_password = await bcrypt.hash(newPassword, 10);
+
+   console.log("res",req.body)
+  try {
+    await pool.query(
+      'UPDATE user_tb SET password = $1 WHERE user_name = $2',
+      [encrypt_password, user_name]
+    );
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+}
 
 const addNewRow = async (req, res) => {
   const { speed, direction, tide, timestamp, file_id } = req.body;
@@ -328,9 +596,16 @@ module.exports = {
   getFiles,
   getDataByFolderIdAndFileName,
   updateValues,
+  createFolderAndFile,
+  getFoldersWithFiles,
+  getUser,
+  loginUser,
+  signup,
+  forget_password,
+  change_password,
+  checkusername,
   addNewRow,
   updateData,
-  getFoldersWithFiles,
   getProcessedDataByFileId
 };
 

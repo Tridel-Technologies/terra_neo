@@ -32,15 +32,35 @@
   .batt{
     position: relative;
     display: flex;
-    height: 300px;
-    width: 300px;
+    height: 200px;
+    width: 200px;
     justify-content: center;
     align-items: center;
+    margin-left: 35%;
   }
   .icon{
     height: 40px;
     width: 40px;
     position: absolute;
     top: 45%;
-    left: 45%;
+    left: 40%;
   }
+
+  .batt-live{
+    position: relative;
+    display: flex;
+    height: 100px;
+    width: 100px;
+    justify-content: center;
+    align-items: center;
+    /* margin-left: 40px; */
+
+  }
+  .icon-live{
+    height: 20px;
+    width: 20px;
+    position: absolute;
+    top: 40%;
+    left: 40%;
+  }
+  

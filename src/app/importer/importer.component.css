@@ -179,6 +179,7 @@
     justify-content: center;
     align-items: center;
     background-color: var(--button-bg);
+    color: white;
     border: none;
     border-radius: 10px;
     position: absolute;
@@ -279,6 +280,7 @@
     border: 1px solid #dddddd72; /* Light border */
     align-items: center;
     justify-content: center;
+    text-align: center;
   }
   
   .styled-table th {
@@ -361,6 +363,22 @@
     color: var(--font-color);
     background-color: var(--background-secondary);
   }
+  .error{
+    display: flex;
+    position: fixed;
+    font-size: x-small;
+    color: red;
+    margin-top: 74px;
+    margin-left: 10px;
+  }
+  .error1{
+    display: flex;
+    position: fixed;
+    font-size: x-small;
+    color: red;
+    margin-top: 144px;
+    margin-left: 10px;
+  }
 .spacer{
     /* height: 40%;
     width: 100%; */
@@ -372,7 +390,8 @@
     border-radius: 10px;
     border: none;
     background-color: var(--button-bg);
-    color: var(--font-color);
+    /* color: var(--font-color); */
+    color: white;
   }
   /* dashboard */
   .dashboard {

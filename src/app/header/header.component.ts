@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, Renderer2 } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { BaseComponent } from '../base/base.component';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-header',
@@ -25,7 +26,9 @@ ngOnInit(){
 onpageChange(index:number){
   this.base.index = index;
 }
-  
+  logout(){
+    this.router.navigate(['/login']);
+  }
   onChangeTheme(theme:string){
     this.renderer.setAttribute(document.documentElement, 'data-theme', theme);
     this.theme = theme;

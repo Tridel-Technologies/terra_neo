@@ -1,9 +1,10 @@
+import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 
 @Component({
   selector: 'app-battery',
   standalone: true,
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './battery.component.html',
   styleUrl: './battery.component.css'
 })
@@ -11,6 +12,7 @@ export class BatteryComponent implements OnInit, OnChanges {
   @Input() percentage: number = 0;
   strokeDashoffset: number = 0;
   batteryColor: string = 'red';
+  @Input() isLive:boolean = false;
 
   ngOnInit() {
     this.batteryColor = this.getColor()
