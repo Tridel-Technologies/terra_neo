@@ -151,6 +151,9 @@ export class ImporterComponent {
     // }
   }
   ngOnInit(): void {
+    window.addEventListener('storage', (e) => {
+      console.log('Storage event fired!', e);
+    });
     this.files_list = [];
     this.http.get('http://localhost:3000/api/get_files').subscribe(
       (response: any) => {

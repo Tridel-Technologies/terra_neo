@@ -25,6 +25,8 @@ import { SelectModule } from 'primeng/select';
 import { ColorPickerModule } from 'primeng/colorpicker';
 import { DatePickerModule } from 'primeng/datepicker';
 import { BehaviorSubject } from 'rxjs';
+import { BaseComponent } from '../base/base.component';
+import { CascadeSelectModule } from 'primeng/cascadeselect';
 
 interface Files {
   id: number;
@@ -86,6 +88,7 @@ interface fileData {
     SelectModule,
     ColorPickerModule,
     DatePickerModule,
+    CascadeSelectModule,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
@@ -105,7 +108,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
-  selectedFiles: any[] = []; // Array to track selected files
+  selectedFiles: any[] = [];
   isMulti: boolean = true;
   main_table: ApiData[] = [];
   files_list: Folders[] = [];
@@ -187,10 +190,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadChart();
   }
 
-  private bgColor: string = '#ffffff';
-  private mainText: string = '#000000';
-  private subText: string = '#666666';
-
   private themeSubscription: any;
   private themeChange$ = new BehaviorSubject<string>('light');
 
@@ -198,7 +197,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private http: HttpClient,
     private toast: ToastrService,
     private cdr: ChangeDetectorRef,
-    private ngZone: NgZone
+    private ngZone: NgZone,
+    private base:BaseComponent
   ) {}
   ngOnInit(): void {
     // Load saved data type preference
@@ -206,12 +206,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (savedDataType !== null) {
       this.isProcessedData = savedDataType === 'true';
     }
-
-    // Initialize theme colors
-    this.updateColors();
-
-    // Set up theme change observer
-    this.setupThemeObserver();
 
     this.files_list = [];
     this.http
@@ -221,40 +215,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('files:', response, this.files_list);
         this.expandedFolders = this.files_list.map(() => false);
       });
-  }
-
-  private setupThemeObserver() {
-    this.themeSubscription = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.attributeName === 'class') {
-          const isDark = document.body.classList.contains('dark-theme');
-          const newTheme = isDark ? 'dark' : 'light';
-          if (this.themeChange$.value !== newTheme) {
-            this.themeChange$.next(newTheme);
-            this.updateColors();
-            this.loadChart();
-          }
-        }
-      });
-    }).observe(document.body, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-  }
-
-  private updateColors() {
-    const computedStyle = getComputedStyle(document.body);
-    this.bgColor = computedStyle.getPropertyValue('--background-color').trim();
-    this.mainText = computedStyle.getPropertyValue('--font-color').trim();
-    this.subText = computedStyle
-      .getPropertyValue('--font-secondary-color')
-      .trim();
-    console.log('Colors updated:', {
-      theme: this.themeChange$.value,
-      bgColor: this.bgColor,
-      mainText: this.mainText,
-      subText: this.subText,
-    });
   }
 
   updateField(item: any, field: string, event: Event) {
@@ -862,7 +822,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           text: 'Water Level',
           left: '1%',
           textStyle: {
-            color: this.mainText,
+            color: localStorage.getItem('theme') === 'light' ? 'black' : 'white',
             fontSize: 20,
           },
         },
@@ -875,12 +835,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: this.mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: this.mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               rotate: 45,
             },
             axisLine: {
@@ -915,7 +875,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               fontSize: 16,
             },
             axisLabel: {
-              color: this.subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
             },
             axisLine: {
               show: true,
@@ -960,12 +920,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.bgColor,
+              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.mainText,
+            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
           },
         },
         dataZoom: [
@@ -1010,7 +970,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             symbolSize: 15,
             itemStyle: {
               color: '#ff0000',
-              borderColor: this.mainText,
+              borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
               borderWidth: 2,
             },
             label: {
@@ -1088,7 +1048,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           text: 'Current Speed',
           left: '1%',
           textStyle: {
-            color: this.mainText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             fontSize: 20,
           },
         },
@@ -1100,12 +1060,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: this.mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: this.mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               rotate: 45,
             },
             axisLine: {
@@ -1143,7 +1103,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.subText },
+            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
             axisLine: {
               show: true,
               // lineStyle: { color: '#00ff00' },
@@ -1189,12 +1149,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.bgColor,
+              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.mainText,
+            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
           },
         },
 
@@ -1289,7 +1249,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           text: 'Current Direction',
           left: '1%',
           textStyle: {
-            color: this.mainText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             fontSize: 20,
           },
         },
@@ -1302,12 +1262,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: this.mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: this.subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               rotate: 45,
             },
             axisLine: {
@@ -1345,7 +1305,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.subText },
+            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
             axisLine: {
               show: true,
               // lineStyle: { color: '#00ff00' },
@@ -1394,12 +1354,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.bgColor,
+              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.mainText,
+            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
           },
         },
 
@@ -1523,7 +1483,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           text: 'Dual Axis',
           left: '1%',
           textStyle: {
-            color: this.mainText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             fontSize: 20,
           },
         },
@@ -1548,12 +1508,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           name: 'DateTime',
           nameLocation: 'middle',
           nameTextStyle: {
-            color: this.mainText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             padding: [44, 0, 0, 0],
             fontSize: 14,
           },
           axisLabel: {
-            color: this.subText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             rotate: 45,
           },
           axisLine: { show: true },
@@ -1568,7 +1528,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.subText },
+            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
             axisLine: { show: true },
             splitLine: { show: true },
           },
@@ -1581,7 +1541,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               padding: [30, 0, 0, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.subText },
+            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
             axisLine: { show: true },
             splitLine: { show: false },
           },
@@ -1617,12 +1577,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.bgColor,
+              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.mainText,
+            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
           },
         },
 
@@ -1740,7 +1700,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           left: '1%',
           // top: '0%',
           textStyle: {
-            color: this.mainText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             fontSize: 20,
           },
         },
@@ -1758,12 +1718,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             name: 'DateTime',
             nameLocation: 'middle',
             nameTextStyle: {
-              color: this.mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
             },
             axisLabel: {
-              color: this.subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               rotate: 45,
             },
             axisLine: {
@@ -1798,7 +1758,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               fontSize: 16,
             },
             axisLabel: {
-              color: this.subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
             },
             axisLine: {
               show: true,
@@ -1824,7 +1784,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               fontSize: 16,
             },
             axisLabel: {
-              color: this.subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
             },
             axisLine: {
               show: true,
@@ -1852,7 +1812,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               fontSize: 16,
             },
             axisLabel: {
-              color: this.subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
             },
             axisLine: {
               show: true,
@@ -1878,7 +1838,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           orient: 'horizontal',
           right: '15%',
           textStyle: {
-            color: this.subText,
+            color: this.base.chartFont === 'light' ? 'black' : 'white',
             fontSize: 14,
           },
         },
@@ -1889,12 +1849,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.bgColor,
+              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.mainText,
+            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
           },
         },
         dataZoom: [
@@ -2080,11 +2040,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const polar2 = document.getElementById('midpolar')!;
 
     setTimeout(() => {
-      const bgColor = '#ffffff';
-      const mainText = '#000000';
-      const subText = '#333333';
-      const text = '#999999';
-
       if (polar2) {
         const existingInstance = echarts.getInstanceByDom(polar2);
         if (existingInstance) {
@@ -2189,7 +2144,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             // left: '1%',
             top: '18%',
             textStyle: {
-              color: mainText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               fontSize: 20,
             },
           },
@@ -2200,7 +2155,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             boundaryGap: true,
             startAngle: 100,
             axisLabel: {
-              color: subText, // White axis labels
+              color: this.base.chartFont === 'light' ? 'black' : 'white', // White axis labels
             },
             splitArea: {
               show: true,
@@ -2209,7 +2164,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               },
               axisLine: {
                 lineStyle: {
-                  color: subText,
+                  color: this.base.chartFont === 'light' ? 'black' : 'white',
                 },
               },
             },
@@ -2226,17 +2181,17 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             min: 0,
             axisLine: {
               lineStyle: {
-                color: subText, // White radius axis line
+                color: this.base.chartFont === 'light' ? 'black' : 'white', // White radius axis line
               },
             },
             axisLabel: {
-              color: subText,
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
               formatter: '{value}',
             },
             splitLine: {
               show: true,
               lineStyle: {
-                color: text,
+                color: this.base.chartFont === 'light' ? 'black' : 'white',
                 type: 'dashed',
               },
             },

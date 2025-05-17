@@ -24,4 +24,5 @@ import { AnalyticsComponent } from '../analytics/analytics.component';
 })
 export class BaseComponent {
   index: number = 2;
+  chartFont:string = 'light';
 }
