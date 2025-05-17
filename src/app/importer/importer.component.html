@@ -3,7 +3,7 @@
     <button class="import_button" (click)="on_openImport()">import</button>
 
     <div class="files_container">
-        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+        <h4 style="align-self: flex-start; margin-left: 20px;">Explorer</h4>
 
         <div class="folder" *ngFor="let folder of files_list; let i = index">
             <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">

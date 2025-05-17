@@ -7,6 +7,7 @@ import { ToastrService } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { Direction1Component } from "../widget/direction1/direction1.component";
 
 interface Files {
   folder_id: number,
@@ -37,7 +38,7 @@ interface dashdata{
 
 @Component({
   selector: 'app-dashboard',
-  imports: [HttpClientModule, CommonModule, BatteryComponent, FormsModule, ToggleSwitchModule],
+  imports: [HttpClientModule, CommonModule, BatteryComponent, FormsModule, ToggleSwitchModule, Direction1Component],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css'
 })
@@ -64,6 +65,7 @@ export class DashboardComponent implements OnInit{
 high_watel_level:any[]=[]
 isbefore:boolean = true;
 currentData!:any;
+dir:boolean = false;
   constructor(private http:HttpClient, private toast:ToastrService, private unitSerive:UnitService){}
 
     // Units
@@ -302,8 +304,52 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
       current_dir_after_6:''
     }
     this.selected_data = data;
+      this.dir = false;
     console.log("selected",this.selected_data)
+   this.directionTo= this.directionValue(parseFloat(this.selected_data.current_direction))
+   setTimeout(() => {
+    this.dir = true;
+   }, 100);
+    // this.dir=true;
   }
+  directionTo!:string;
+  directionValue(degrees: number): string {
+      degrees = degrees % 360;
+      if (degrees < 0) degrees += 360;
+      if (degrees >= 348.75 || degrees < 11.25) {
+        return 'N';   // North
+      } else if (degrees >= 11.25 && degrees < 33.75) {
+        return 'NNE'; // North-Northeast
+      } else if (degrees >= 33.75 && degrees < 56.25) {
+        return 'NE';  // Northeast
+      } else if (degrees >= 56.25 && degrees < 78.75) {
+        return 'ENE'; // East-Northeast
+      } else if (degrees >= 78.75 && degrees < 101.25) {
+        return 'E';   // East
+      } else if (degrees >= 101.25 && degrees < 123.75) {
+        return 'ESE'; // East-Southeast
+      } else if (degrees >= 123.75 && degrees < 146.25) {
+        return 'SE';  // Southeast
+      } else if (degrees >= 146.25 && degrees < 168.75) {
+        return 'SSE'; // South-Southeast
+      } else if (degrees >= 168.75 && degrees < 191.25) {
+        return 'S';   // South
+      } else if (degrees >= 191.25 && degrees < 213.75) {
+        return 'SSW'; // South-Southwest
+      } else if (degrees >= 213.75 && degrees < 236.25) {
+        return 'SW';  // Southwest
+      } else if (degrees >= 236.25 && degrees < 258.75) {
+        return 'WSW'; // West-Southwest
+      } else if (degrees >= 258.75 && degrees < 281.25) {
+        return 'W';   // West
+      } else if (degrees >= 281.25 && degrees < 303.75) {
+        return 'WNW'; // West-Northwest
+      } else if (degrees >= 303.75 && degrees < 326.25) {
+        return 'NW';  // Northwest
+      } else {
+        return 'NNW'; // North-Northwest
+      }
+    }
 
   Array_item:number[]=[1,2, 3, 4, 5,3 , 6, 7,8 , 8,9  ,9,10 ,];
   ngOnInit(): void {
@@ -349,6 +395,7 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
     this.expandedFolders[index] = !this.expandedFolders[index];
   }
   toggleFileSelection(fileName: string, event: MouseEvent, file_id:number, folder_name:string) {
+    // this.dir = false;
     console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
     this.isLive = true;

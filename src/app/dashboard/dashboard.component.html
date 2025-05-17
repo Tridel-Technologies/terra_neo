@@ -1,6 +1,6 @@
 <div class="dash_main">
     <div class="files_container">
-        <h4 style="align-self: flex-start; margin-left: 20px;">FILES</h4>
+        <h4 style="align-self: flex-start; margin-left: 20px;">Explorer</h4>
 
         <div class="folder" *ngFor="let folder of files_list; let i = index">
             <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
@@ -101,15 +101,56 @@
 
                 <div class="tide" *ngIf="isLive">
                     <h5 class="title-tide">Water Level</h5>
-                    <img src="../../assets/tide.png" alt="">
+                    <!-- <img src="../../assets/tide.png" alt=""> -->
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle -->
+                        <circle cx="60" cy="60" r="55" fill="#003366" stroke="#002244" stroke-width="3" />
+                        <!--  -->
+                        <!-- Moon -->
+                        <!-- <circle cx="90" cy="30" r="12" fill="#cccccc" stroke="#999999" stroke-width="2" /> -->
+
+                        <!-- Ocean Waves -->
+                        <path d="M20,80 Q30,70 40,80 T60,80 T80,80 T100,80" stroke="#00ccff" stroke-width="4"
+                            fill="none" />
+
+                        <path d="M20,90 Q30,80 40,90 T60,90 T80,90 T100,90" stroke="#00bfff" stroke-width="4"
+                            fill="none" />
+
+                        <!-- Arrows for Tidal Motion -->
+                        <polygon points="60,65 55,75 65,75" fill="white" />
+                        <polygon points="60,95 55,85 65,85" fill="white" />
+                    </svg>
                     <p style="align-self: center;">{{ selected_data.tide}} {{units.waterLevel}}</p>
                 </div>
                 @if (!isLive) {
                 <div class="tide-not-live" *ngFor="let tide of filteredAvgData"
-                    [ngStyle]="{'height': dynamicHeight + '%'}">
-                    <img src="../../assets/tide.png" alt="">
-                    <h5 class="title-tide">Water Level</h5>
-                    <p style="align-self: center;">{{tide.tide}}</p>
+                    [ngStyle]="{'height': dynamicHeight + '%', 'background-color':tide.name==='Current'?'rgba(182, 229, 243, 0.374)':''}">
+                    <!-- <img src="../../assets/tide.png" alt=""> -->
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle -->
+                        <circle cx="60" cy="60" r="55" fill="#003366" stroke="#002244" stroke-width="3" />
+
+                        <!-- Moon -->
+                        <!-- <circle cx="90" cy="30" r="12" fill="#cccccc" stroke="#999999" stroke-width="2" /> -->
+
+                        <!-- Ocean Waves -->
+                        <path d="M20,80 Q30,70 40,80 T60,80 T80,80 T100,80" stroke="#00ccff" stroke-width="4"
+                            fill="none" />
+
+                        <path d="M20,90 Q30,80 40,90 T60,90 T80,90 T100,90" stroke="#00bfff" stroke-width="4"
+                            fill="none" />
+
+                        <!-- Arrows for Tidal Motion -->
+                        <polygon *ngIf="isbefore && tide.name !=='Current'" points="60,65 55,75 65,75" fill="white" />
+                        <!-- Down Arrow -->
+                        <polygon *ngIf="!isbefore && tide.name !=='Current'" points="60,95 55,85 65,85" fill="white" />
+                        <!-- Up Arrow -->
+                    </svg>
+                    <h5 class="title-tide" style="margin-left: 20px;">{{tide.name ==='Current'?'': isLive ?'':
+                        isbefore?'Raising':'Falling'}} {{tide.name==='Current'? 'High Water time':'Water Level'}} <br>
+                        <p style="margin: 0; font-weight: 400;">{{tide.tide}}</p>
+                    </h5>
+                    <p style="align-self: center;"></p>
                 </div>
                 }
 
@@ -171,29 +212,87 @@
                 } -->
                 <div class="current_speed" *ngIf="isLive">
                     <h5 class="title-tide">Current Speed</h5>
-                    <img src="../../assets/speed.png" alt="">
+                    <!-- <img src="../../assets/speed.png" alt=""> -->
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle -->
+                        <circle cx="60" cy="60" r="55" fill="#001F3F" stroke="#003366" stroke-width="3" />
+
+                        <!-- Wave Path -->
+                        <path d="M20,75 Q35,65 50,75 T80,75 T110,75" stroke="#00BFFF" stroke-width="4" fill="none" />
+
+                        <!-- Swirling Current Arrows -->
+                        <path d="M30,45 C40,30 60,30 70,45" stroke="#00CED1" stroke-width="3" fill="none"
+                            marker-end="url(#arrowhead)" />
+                        <path d="M70,45 C80,60 100,60 90,40" stroke="#00CED1" stroke-width="3" fill="none"
+                            marker-end="url(#arrowhead)" />
+
+                        <!-- Arrowhead Definition -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                <polygon points="0 0, 6 3, 0 6" fill="#00CED1" />
+                            </marker>
+                        </defs>
+                    </svg>
+
+
                     <p style="align-self: center;">{{selected_data.current_speed}} {{units.currentSpeed}}</p>
                 </div>
                 <div class="current_direction" *ngIf="isLive">
                     <h5 class="title-tide">Current Direction</h5>
-                    <img src="../../assets/dire.png" alt="">
-                    <p style="align-self: center;">{{selected_data.current_direction}} {{units.currentDirection}}</p>
+                    <!-- <img src="../../assets/dire.png" alt=""> -->
+                    <app-direction1 *ngIf="dir" [direction]="selected_data.current_direction" id="Dir1"
+                        style="align-self: center;"></app-direction1>
+                    <p style="align-self: center; text-align: center;">{{selected_data.current_direction}}
+                        {{units.currentDirection}}
+                        <br> (Towards {{directionTo}})
+                    </p>
                 </div>
                 @if (!isLive) {
                 <div class="current1" *ngFor="let current of filteredAvgData"
-                    [ngStyle]="{'height': dynamicHeight + '%'}">
-                    <h5 class="title-tide" style="margin-left: 10px;">{{current.name}}</h5>
+                    [ngStyle]="{'height': dynamicHeight + '%', 'background-color':current.name==='Current'?'rgba(182, 229, 243, 0.374)':''}">
+                    <!-- <h5 class="title-tide" style="margin-left: 10px;"> {{current.name==='Current'?'': current.name}}
+                    </h5> -->
 
                     <div class="c-box">
                         <div class="cbox-left">
-                            <h6 style="align-self: flex-start;">Speed</h6>
-                            <img class="cbox-img" src="../../assets/speed.png" alt="">
-                            <p>{{current.speed}}</p>
+                            <!-- <img class="cbox-img" src="../../assets/speed.png" alt=""> -->
+                            <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Background Circle -->
+                                <circle cx="60" cy="60" r="55" fill="#001F3F" stroke="#003366" stroke-width="3" />
+
+                                <!-- Wave Path -->
+                                <path d="M20,75 Q35,65 50,75 T80,75 T110,75" stroke="#00BFFF" stroke-width="4"
+                                    fill="none" />
+
+                                <!-- Swirling Current Arrows -->
+                                <path d="M30,45 C40,30 60,30 70,45" stroke="#00CED1" stroke-width="3" fill="none"
+                                    marker-end="url(#arrowhead)" />
+                                <path d="M70,45 C80,60 100,60 90,40" stroke="#00CED1" stroke-width="3" fill="none"
+                                    marker-end="url(#arrowhead)" />
+
+                                <!-- Arrowhead Definition -->
+                                <defs>
+                                    <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3"
+                                        orient="auto">
+                                        <polygon points="0 0, 6 3, 0 6" fill="#00CED1" />
+                                    </marker>
+                                </defs>
+                            </svg>
+                            <h5>Current Speed <br>
+                                <p>{{current.speed}}</p>
+                            </h5>
+                            <p></p>
                         </div>
                         <div class="cbox-right">
-                            <h6 style="align-self: flex-start;">Direction</h6>
-                            <img class="cbox-img" src="../../assets/dire.png" alt="">
-                            <p>{{current.direction}}</p>
+                            <!-- <img class="cbox-img" src="../../assets/dire.png" alt=""> -->
+                            <div class="compass">
+                                <img [style.transform]="'rotate(' + current.direction + 'deg)'"
+                                    src="../../assets/Task_7518573_35103318.png" alt="">
+                            </div>
+                            <h5>Direction <br>
+                                <p>{{current.direction}}</p>
+                            </h5>
+                            <p></p>
                         </div>
                     </div>
                 </div>

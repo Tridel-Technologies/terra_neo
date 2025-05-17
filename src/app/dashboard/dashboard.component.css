@@ -14,14 +14,18 @@
 
 .files_container {
     width: 20%;
-    height: 100%;
+    height: 98%;
     display: flex;
     flex-direction: column;
     align-items: center;
+    overflow: hidden;
+    overflow-y: auto;
     justify-content: flex-start;
     background-color: var(--background-secondary);
   }
-  
+  .files_container h4{
+    color: var(--font-color);
+  }
   .folder {
     width: 90%;
     margin: 10px 0;
@@ -115,7 +119,7 @@
 
   /* dashboard view */
   .parent{
-    height: 100%;
+    height: 91%;
     width: 80%;
     display: flex;
     flex-direction: row;
@@ -133,7 +137,7 @@
     width: 460px;
     background-color: var(--background-secondary);
     top: 6px;
-    right: 5px;
+    right: 25px;
     border-radius: 10px;
     display: flex;
     flex-direction: row;
@@ -177,17 +181,17 @@ font-size: 12px;
 
 }
   .left{
-    height: 97%;
+    height: 99%;
     width: 19%;
     background-color: var(--background-color);
-    box-shadow: 2px 2px 6px rgba(128, 128, 128, 0.433);
+    box-shadow: 1px 1px 6px rgba(128, 128, 128, 0.433);
     border-radius: 10px;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     align-items: flex-start;
     padding: 10px;
-    margin-top: 20px;
+    /* margin-top: 20px; */
     color:var(--font-color);
     /* overflow-y: auto; */
   }
@@ -288,9 +292,9 @@ font-size: 12px;
     color: var(--font-color);
   }
   .sub-title{
-    font-size: 45px;
+    font-size: 40px;
     margin: 0px;
-    font-weight:300;
+    font-weight:200;
     margin-left: 30px;
     color: var(--font-color);
   }
@@ -310,9 +314,15 @@ font-size: 12px;
     width: 100%;
 
   }
+  .tide svg{
+    height: 50%;
+    width: 50%;
+    align-self: center;
+  }
   .title-tide{
-    font-size: 20px;
+    font-size: 18px;
     margin: 0px;
+    font-weight: 500;
     margin-left: 30px;
     color: var(--font-color);
   }
@@ -377,8 +387,8 @@ font-size: 12px;
   font-size: 15px;
 }
 .current1 img{
-  height: 50%;
-  width:25%;
+  height: 80%;
+  width:30%;
 }
 .current3 h5{
   font-size: 15px;
@@ -405,13 +415,18 @@ font-size: 12px;
     justify-content: center;
     color: var(--font-color);
   }
+  .current_speed svg{
+    height: 50%;
+    width: 60%;
+    align-self: center;
+  }
   .current_speed img{
     height: 60%;
-    width: 80%;
+    width: 70%;
     align-self: center;
   }
   .current_direction img{
-    height: 70%;
+    height: 60%;
     width: 60%;
     align-self: center;
     transform: rotate(90deg);
@@ -432,31 +447,46 @@ font-size: 12px;
     width: 50%;
     /* background-color: antiquewhite; */
     display: flex;
-    flex-direction: column;
-    justify-content: space-evenly;
+    flex-direction: row;
+    justify-content: center;
     align-items: center;
 }
-.cbox-left h6{
+.cbox-left h5{
     margin: 0;
     margin-left: 5px;
     align-self: left;
+    /* font-weight: 500; */
+    font-weight: 500;
+    font-size: 16px;
+    
 }
 .cbox-left p{
     margin: 0;
+    font-weight: 400;
+    /* margin-left: 20px; */
 }
-.cbox-right h6{
+.cbox-right h5{
     margin: 0;
     margin-left: 5px;
     align-self: left;
+    /* font-weight: 500; */
+    font-weight: 500;
+    font-size: 16px;
 }
 .cbox-right p{
     margin: 0;
+        margin: 0;
+    font-weight: 400;
+    /* margin-left: 20px; */
 }
 .cbox-img{
     height: 100px;
     width: 100px;
 }
-
+.cbox-left svg{
+  height: 50px;
+  width: 50px;
+}
 
 /* test array ui */
 .tide_array{
@@ -523,6 +553,10 @@ font-size: 12px;
   border-radius: 10px;
   align-items: center;
   /* margin-bottom: 10px; */
+}
+.tide-not-live svg{
+  height: 50%;
+  width: 20%;
 }
 .tide-not-live img{
   height: 70%;
@@ -632,4 +666,19 @@ p-toggleswitch{
 .af-bf p{
   margin: 0;
   font-size: 15px;
+}
+
+.compass{
+  height: 80px;
+  width: 80px;
+  /* background-color: antiquewhite; */
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: rotate(45deg);
+}
+.compass img{
+  height: 50%;
+  width: 50%;
+  transition: transform 0.5s ease-in-out;
 }
