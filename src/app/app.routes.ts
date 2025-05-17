@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { BaseComponent } from './base/base.component';
+import { AuthGuard } from './auth.guard';
 
 export const routes: Routes = [
     {
@@ -9,7 +10,11 @@ export const routes: Routes = [
     },
     {
         path:'base',
-        component:BaseComponent
+        component:BaseComponent,
+            canActivate: [AuthGuard],
+    children: [
+  
+    ]
     },
     
 ];
