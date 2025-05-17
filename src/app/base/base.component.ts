@@ -12,7 +12,7 @@ import { AnalyticsComponent } from '../analytics/analytics.component';
 @Component({
   selector: 'app-base',
   standalone:true,
-  imports: [CommonModule, HeaderComponent, ImporterComponent, ProcessingComponent, DashboardComponent, SettingsComponentReportsComponent, AnalyticsComponent],
+  imports: [CommonModule, HeaderComponent, ImporterComponent, ProcessingComponent, DashboardComponent, SettingsComponent, ReportsComponent, AnalyticsComponent],
   templateUrl: './base.component.html',
   styleUrl: './base.component.css',
 })
