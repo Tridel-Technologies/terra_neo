@@ -323,26 +323,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       });
   }
 
-  // tap_date(dateTime: string) {
-  //   console.log('tapped datetime:', dateTime);
-
-  //   // Find the matching item in main_table
-  //   const selectedItem = this.main_table.find((item) => item.date === dateTime);
-
-  //   if (selectedItem) {
-  //     const data: SelectedData = {
-  //       id: selectedItem.id,
-  //       tide: selectedItem.pressure,
-  //       datetime: selectedItem.date, // Use the full datetime string directly
-  //       current_speed: selectedItem.speed,
-  //       current_direction: selectedItem.direction,
-  //     };
-  //     this.selected_data = data;
-  //     console.log('Selected data:', this.selected_data);
-  //   } else {
-  //     console.warn('No matching record found for datetime:', dateTime);
-  //   }
-  // }
   getFileClass(fileName: string, file_id: number): string {
     // Check if file is selected based on both file_name and file_id
     const isSelected = this.selectedFiles.some(
@@ -355,30 +335,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   ngAfterViewInit(): void {
     this.loadChart();
   }
-
-  // onChartTypeChange() {
-  //   this.loadChart();
-  // }
-
-  // loadChart() {
-  //   setTimeout(() => {
-  //     if (this.isCompareView) {
-  //       this.Tide();
-  //       this.currentSpeed();
-  //       this.currentDirection();
-  //       this.midSpeedDirection();
-  //       this.midSpeedDirection2();
-  //       this.midpolar();
-  //     } else {
-  //       this.Tide();
-  //       this.currentSpeed();
-  //       this.currentDirection();
-  //       this.currentSpeedAndDirection();
-  //       this.midSpeedDirection();
-  //       this.midpolar();
-  //     }
-  //   }, 100);
-  // }
 
   loadChart() {
     // Ensure cleanup of existing charts

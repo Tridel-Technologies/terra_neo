@@ -22,7 +22,7 @@ ngOnInit(){
   this.onChangeTheme(theme!);
 }
 
-  constructor(private renderer: Renderer2, private base:BaseComponent){}
+  constructor(private renderer: Renderer2, private base:BaseComponent, private router:Router){}
 onpageChange(index:number){
   this.base.index = index;
 }
