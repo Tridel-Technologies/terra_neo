@@ -44,23 +44,16 @@
                                     (input)="onSearch($any($event).target.value, dt)" />
                             </div>
                         </div>
-                        <!-- <button pButton type="button"
-                            label="{{ showToggleTable ? 'Show Full Table' : 'Show Summary Table' }}"
-                            (click)="toggle_tap()"></button> -->
-                        <!-- <label>Single View</label>
-            <p-toggleswitch [(ngModel)]="isCompareView" (ngModelChange)="loadChart()"></p-toggleswitch>
-            <label>Multi View</label> -->
-
-                        <p-toggleswitch [(ngModel)]="showToggleTable" (ngModelChange)="toggle_tap()">
-                        </p-toggleswitch>
-                        <label>
-                            {{ showToggleTable ? 'Files' : '-&+ 6 hours' }}
-                        </label>
-
-
-
-
-
+                        <div style="display: flex; align-items: center;">
+                            <label style="margin-right: 10px; font-weight: bold;">
+                                Files
+                            </label>
+                            <p-toggleswitch [(ngModel)]="showToggleTable" (ngModelChange)="toggle_tap()">
+                            </p-toggleswitch>
+                            <label style="margin-left: 10px; font-weight: bold;">
+                                -/+ 6 hours
+                            </label>
+                        </div>
                         <div class="filter">
                             <p-multiselect display="chip" [options]="cols" [(ngModel)]="selectedColumns"
                                 optionLabel="header" selectedItemsLabel="{0} columns selected"
