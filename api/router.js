@@ -1,5 +1,5 @@
 const express = require('express')
-const { importAll, getFiles, getDataByFolderIdAndFileName, updateValues, createFolderAndFile, getFoldersWithFiles, getUser, loginUser, signup, checkusername, forget_password, change_password } = require('./controller')
+const { importAll, getFiles, getDataByFolderIdAndFileName, updateValues, createFolderAndFile, getFoldersWithFiles, getUser, loginUser, signup, checkusername, forget_password, change_password, changeFolder, createFolder } = require('./controller')
 const router = express.Router();
 
 router.post('/import', importAll);
@@ -10,6 +10,8 @@ router.post('/update_values', updateValues)
 
 router.post('/createFile', createFolderAndFile);
 router.get('/files', getFoldersWithFiles);
+router.post('/change_folder', changeFolder);
+router.post('/create_folder', createFolder)
 
 router.get('/getuser',getUser)
 router.post('/login', loginUser);

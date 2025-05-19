@@ -470,6 +470,55 @@ const change_password=async(req,res)=>{
   }
 }
 
+
+
+const changeFolder = async(req, res)=>{
+   const { file_id, folder_id } = req.body;
+
+  if (!file_id || !folder_id) {
+    return res.status(400).json({ message: 'file_id and folder_id are required.' });
+  }
+
+  try {
+    // Check if file exists
+    const checkFile = await pool.query('SELECT * FROM tb_file WHERE id = $1', [file_id]);
+
+    if (checkFile.rows.length === 0) {
+      return res.status(404).json({ message: 'File not found.' });
+    }
+
+    // Update folder_id
+    await pool.query(
+      'UPDATE tb_file SET folder_id = $1 WHERE id = $2',
+      [folder_id, file_id]
+    );
+
+    res.status(200).json({ message: 'File moved successfully.' });
+  } catch (err) {
+    console.error('Error moving file:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+}
+
+
+const createFolder = async(req, res)=>{
+   const { folder_name } = req.body;
+
+  if (!folder_name) {
+    return res.status(400).json({ message: 'Folder name is required' });
+  }
+
+  try {
+    const insertQuery = `INSERT INTO tb_folders (folder_name) VALUES ($1) RETURNING *`;
+    const result = await pool.query(insertQuery, [folder_name]);
+
+    res.status(201).json({ message: 'Folder created successfully', folder: result.rows[0] });
+  } catch (err) {
+    console.error('Error adding folder:', err);
+    res.status(500).json({ message: 'Internal server error' });
+  }
+}
+
 module.exports = {
   importAll,
   getFiles,
@@ -482,5 +531,7 @@ module.exports = {
   signup,
   forget_password,
   change_password,
-  checkusername
+  checkusername,
+  changeFolder,
+  createFolder
 };

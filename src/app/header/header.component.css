@@ -26,7 +26,7 @@ margin-left: 20px;
 .pages_item p{
     font-size: 18px;
     margin: 30px;
-    color: var(--font-color);
+    /* color: var(--font-color); */
 }
 
 .theme{
@@ -73,10 +73,16 @@ margin-left: 20px;
 }
 .page{
     cursor: pointer;
+    color: var(--font-);
+}
+.page p{
+    cursor: pointer;
+    color: var(--font-color);
 }
 .page_active{
     border-bottom: 2px solid blue;
-cursor: pointer;
+    color: blue;
+    cursor: pointer;
 }
 .page:hover{
     border-bottom: 2px solid blue;
