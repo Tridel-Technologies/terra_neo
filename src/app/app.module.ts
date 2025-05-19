@@ -1,26 +1,21 @@
 import { NgModule } from '@angular/core';
-import { AppComponent } from './app.component';
 import { BrowserModule } from '@angular/platform-browser';
-import { ToastrModule } from 'ngx-toastr';
+import { FormsModule } from '@angular/forms';
+import { AppComponent } from './app.component';
+import { NgxEchartsModule } from 'ngx-echarts';
 import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform-browser/animations';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-
-// import { CompassChartComponent } from './compass-chart/compass-chart.component';
+import { ToastrModule } from 'ngx-toastr';
 
 @NgModule({
-  declarations: [
-  ],
+  declarations: [],
   imports: [
     BrowserModule,
     BrowserAnimationsModule,
-
-
-    ToastrModule.forRoot({}),
+    FormsModule,
+    NgxEchartsModule.forRoot({ echarts: () => import('echarts') }),
+    ToastrModule.forRoot(),
     HttpClientModule,
-
-
-
-
   ],
   providers: [
 

@@ -1,78 +1,75 @@
-/* You can add global styles to this file, and also import other style files */
+@import "primeicons/primeicons.css";
+
 body, html{
-    margin: 0;
-    height: 100vh;
-    width: 100vw;
-    transform: scale(1);
+  margin: 0;
+  height: 100vh;
+  width: 100vw;
+  transform: scale(1);
+}
+
+/* Define default light theme */
+:root {
+  /* Colors */
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+
+  /* Font Colors */
+  --font-color: #212529;
+  --font-secondary-color: #6c757d;
+
+  /* Backgrounds */
+  --background-color: #ffffff;
+  --background-secondary: #f8f9fad7;
+  --card-background: #ffffff;
+
+  /* Icons */
+  --icon-color: #343a40;
+
+  /* Highlight */
+  --highlight-color: #e2e6ea;
+
+  /* Buttons */
+  --button-bg: var(--primary-color);
+  --button-color: #ffffff;
+
+  /* Bars */
+  --bar-bg: #e9ecef;
+  --bar-foreground: var(--primary-color);
+}
+
+/* Dark theme override */
+[data-theme="dark"] {
+  --primary-color: #0d6efd;
+  --secondary-color: #adb5bd;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+
+  --font-color: #f8f9fa;
+  --font-secondary-color: #ced4da;
+
+  --background-color: #121212;
+  --background-secondary: #1e1e1e;
+  --card-background: #1c1c1c;
+
+  --icon-color: #dee2e6;
+
+  --highlight-color: #2c2c2c;
+
+  --button-bg: var(--primary-color);
+  --button-color: #ffffff;
+
+  --bar-bg: #343a40;
+  --bar-foreground: var(--primary-color);
 }
 
 
 
-
-
-/* Define default light theme */
-:root {
-    /* Colors */
-    --primary-color: #007bff;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #17a2b8;
-  
-    /* Font Colors */
-    --font-color: #212529;
-    --font-secondary-color: #6c757d;
-  
-    /* Backgrounds */
-    --background-color: #ffffff;
-    --background-secondary: #f8f9fad7;
-    --card-background: #ffffff;
-  
-    /* Icons */
-    --icon-color: #343a40;
-  
-    /* Highlight */
-    --highlight-color: #e2e6ea;
-  
-    /* Buttons */
-    --button-bg: var(--primary-color);
-    --button-color: #ffffff;
-  
-    /* Bars */
-    --bar-bg: #e9ecef;
-    --bar-foreground: var(--primary-color);
-  }
-  
-  /* Dark theme override */
-  [data-theme="dark"] {
-    --primary-color: #0d6efd;
-    --secondary-color: #adb5bd;
-    --success-color: #198754;
-    --danger-color: #dc3545;
-    --warning-color: #ffc107;
-    --info-color: #0dcaf0;
-  
-    --font-color: #f8f9fa;
-    --font-secondary-color: #ced4da;
-  
-    --background-color: #121212;
-    --background-secondary: #1e1e1e;
-    --card-background: #1c1c1c;
-  
-    --icon-color: #dee2e6;
-  
-    --highlight-color: #2c2c2c;
-  
-    --button-bg: var(--primary-color);
-    --button-color: #ffffff;
-  
-    --bar-bg: #343a40;
-    --bar-foreground: var(--primary-color);
-  }
-  
-
-
-  *{
-    font-family: "Jost", sans-serif;
-  }
+*{
+  font-family: "Jost", sans-serif;
+}

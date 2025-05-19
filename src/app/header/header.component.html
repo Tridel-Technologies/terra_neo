@@ -8,7 +8,7 @@
         <p [ngClass]="index ===4?'page_active':'page'" (click)="onpageChange(4)">Settings</p>
     </div>
     <div class="theme">
-        <i class="fa-regular fa-moon" *ngIf="theme === 'light'" (click)="onChangeTheme('dark')"></i>
+        <i class="fa-regular fa-moon"  (click)="onChangeTheme('dark')"></i>
         <i class="fa-regular fa-sun" *ngIf="theme === 'dark'" (click)="onChangeTheme('light')"></i>
     </div>
     <div class="user">

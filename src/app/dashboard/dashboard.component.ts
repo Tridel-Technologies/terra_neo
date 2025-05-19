@@ -1,7 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Component, OnInit } from '@angular/core';
-import { BatteryComponent } from "./battery/battery.component";
+import { BatteryComponent } from './battery/battery.component';
 import { tap } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
 import { FormsModule } from '@angular/forms';
@@ -40,9 +40,9 @@ interface dashdata{
   selector: 'app-dashboard',
   imports: [HttpClientModule, CommonModule, BatteryComponent, FormsModule, ToggleSwitchModule, Direction1Component],
   templateUrl: './dashboard.component.html',
-  styleUrl: './dashboard.component.css'
+  styleUrl: './dashboard.component.css',
 })
-export class DashboardComponent implements OnInit{
+export class DashboardComponent implements OnInit {
   expandedFolders: boolean[] = [];
   opened_file!:string;
   openedFolder!:number;
@@ -283,9 +283,11 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
   
   
 
-  tap_date(date:string, time:string){
-    console.log("started ", date, time);
-    const filter = this.main_table.filter(item=> item.date === date && item.time === time);
+  tap_date(date: string, time: string) {
+    console.log('started ', date, time);
+    const filter = this.main_table.filter(
+      (item) => item.date === date && item.time === time
+    );
     console.log(filter);
     const data = {
       id:filter[0].station_id,
@@ -368,14 +370,14 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
           this.expandedFolders[0] = true;
           this.openedFolder = firstFolder.folder_id;
           this.selected_folder_name = firstFolder.folder_name;
-  
+
           // Select file
           this.selectedFiles = [{
             file_name: firstFile,
             file_id: firstFolder.files[0].file_id
           }];
           this.opened_file = firstFile;
-  
+
           // Fetch data for the file
           this.open_file(firstFile, firstFolder.files[0].file_id);
         }
@@ -400,7 +402,7 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
     this.selected_folder_name = folder_name;
     this.isLive = true;
     // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
-    
+
     // if (isCtrlPressed) {
     //   this.isMulti = true;
     //   // If Ctrl/Cmd is pressed, toggle file selection
@@ -416,23 +418,25 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
     //     this.selectedFiles.splice(index, 1);  // Remove file from selection
     //   }
     // } else {
-      this.isMulti = false;
-      // If Ctrl/Cmd is not pressed, select this file and deselect all others
-      this.selectedFiles = [{
+    this.isMulti = false;
+    // If Ctrl/Cmd is not pressed, select this file and deselect all others
+    this.selectedFiles = [
+      {
         file_name: fileName,
-        file_id:file_id
-      }];  // Only keep the clicked file selected
-      this.open_file(fileName, file_id)
-      
+        file_id: file_id,
+      },
+    ]; // Only keep the clicked file selected
+    this.open_file(fileName, file_id);
+
     // }
   }
 
   getFileImage(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase();
-  
+
     switch (extension) {
       case 'csv':
-        return '../../assets/csv.png';  // Path to CSV image
+        return '../../assets/csv.png'; // Path to CSV image
       case 'xlsx':
         return '../../assets/xl.png'; // Path to Excel image
       default:
@@ -442,10 +446,10 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
   open_file(file_name:string, file_id:number){
     console.log("h")
     this.opened_file = file_name;
-    const data ={
-      folder_id:file_id,
-      file_name:file_name
-    }
+    const data = {
+      folder_id: file_id,
+      file_name: file_name,
+    };
     console.log(data);
     this.http.get(`http://localhost:3000/api/fetch_data_by_file/${file_id}`).subscribe(
       (response:any)=>{
@@ -456,23 +460,24 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
           setTimeout(() => {
             this.main_table = data;
             for (let index = 0; index < response.length; index++) {
-              this.main_table.push(response[index])
+              this.main_table.push(response[index]);
             }
-            console.log(this.main_table)
-            this.tap_date(this.main_table[0].date, this.main_table[0].time)
+            console.log(this.main_table);
+            this.tap_date(this.main_table[0].date, this.main_table[0].time);
           }, 100);
-        }else{
+        } else {
           this.main_table = [];
           setTimeout(() => {
-            this.main_table = response
+            this.main_table = response;
           }, 100);
         }
-      }
-    )
+      });
   }
   getFileClass(fileName: string, file_id: number): string {
     // Check if file is selected based on both file_name and file_id
-    const isSelected = this.selectedFiles.some(file => file.file_name === fileName && file.file_id === file_id);
+    const isSelected = this.selectedFiles.some(
+      (file) => file.file_name === fileName && file.file_id === file_id
+    );
     return isSelected ? 'file-item_active' : 'file-item';
   // }
 }

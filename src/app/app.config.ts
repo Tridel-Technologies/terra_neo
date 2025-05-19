@@ -7,14 +7,13 @@ import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideToastr } from 'ngx-toastr';
 
 export const appConfig: ApplicationConfig = {
-
   providers: [
-    provideAnimations(), // required animations providers
+    provideAnimations(),
     provideToastr(),
-    provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes),
-    provideZoneChangeDetection({ eventCoalescing: true }), provideRouter(routes), 
+    provideZoneChangeDetection({ eventCoalescing: true }),
+    provideRouter(routes),
     providePrimeNG({
-      theme: {preset: Aura}
-    })],
-
+      theme: { preset: Aura }
+    })
+  ]
 };

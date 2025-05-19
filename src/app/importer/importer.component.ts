@@ -159,6 +159,9 @@ changinglat(){
     // }
   }
   ngOnInit(): void {
+    window.addEventListener('storage', (e) => {
+      console.log('Storage event fired!', e);
+    });
     this.files_list = [];
     this.http.get('http://localhost:3000/api/files').subscribe(
       (response: any) => {
