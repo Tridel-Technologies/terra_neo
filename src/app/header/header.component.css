@@ -26,7 +26,7 @@ margin-left: 20px;
 .pages_item p{
     font-size: 18px;
     margin: 30px;
-    color: var(--font-color);
+    /* color: var(--font-color); */
 }
 
 .theme{
@@ -45,20 +45,44 @@ margin-left: 20px;
     justify-content: center;
     align-items: center;
     margin-right: 20px;
+    /* background-color: rgba(0, 0, 0, 0.707); */
 
 }
 .user img{
-    height: 50px;
-    width: 50px;
+    height: 20px;
+    width: 20px;
     border-radius: 50%;
+    margin-left: 3px;
+    color: white;
 
+}
+.user svg{
+    color: antiquewhite !important;
+    height: 18px;
+    margin-left: 2px;
+}
+.logouttt{
+    cursor: pointer;
+    height: 30px;
+    width: 30px;
+    border: 1px solid var(--font-color);
+    display: flex;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
 }
 .page{
     cursor: pointer;
+    color: var(--font-);
+}
+.page p{
+    cursor: pointer;
+    color: var(--font-color);
 }
 .page_active{
     border-bottom: 2px solid blue;
-cursor: pointer;
+    color: blue;
+    cursor: pointer;
 }
 .page:hover{
     border-bottom: 2px solid blue;

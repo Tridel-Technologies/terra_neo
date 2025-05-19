@@ -1,0 +1,72 @@
+<div class="fileCContainer" (contextmenu)="onContainerRightClick($event)">
+    <div class="newFolddr" *ngIf="showCreate">
+        <p>Folder name</p>
+        <input type="text">
+        <button>Create</button>
+    </div>
+    <h3>Explorer</h3>
+
+    <!-- FOLDER VIEW -->
+    <div class="files_cont" *ngIf="openedFile.length === 0">
+        <div class="Folder" *ngFor="let folder of files_list" (click)="Foldertaped(folder.files, folder)"
+            (contextmenu)="onFolderRightClick($event, folder)">
+            <img src="../../assets/file_closed.png" alt="">
+            <p>{{ folder.folder_name }}</p>
+        </div>
+    </div>
+    <h2 *ngIf="openedFile.length !== 0" (click)="back()"><- </h2>
+            <!-- FILE VIEW -->
+            <div class="files_list" *ngIf="openedFile.length !== 0">
+                <div class="Folder" *ngFor="let file of openedFile" (contextmenu)="onFileRightClick($event, file)">
+                    <img [src]="getFileClass(file.file_name)" alt="">
+                    <p>{{ file.file_name }}</p>
+                </div>
+            </div>
+
+            <!-- CONTEXT MENU -->
+            <div class="context-menu" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
+                [style.top.px]="contextMenu.y">
+                <ng-container *ngIf="contextMenu.type === 'file'">
+                    <div (click)="moveFile({file_name:'', file_id:2})">Move</div>
+                    <div (click)="cancelContext()">Cancel</div>
+                </ng-container>
+                <ng-container *ngIf="contextMenu.type === 'folder'">
+                    <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+                    <div (click)="cancelContext()">Cancel</div>
+                </ng-container>
+                <ng-container *ngIf="contextMenu.type === 'blank'">
+                    <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+                    <div (click)="cancelContext()">Cancel</div> -->
+                </ng-container>
+            </div>
+</div>
+
+<div class="units_container">
+
+    <h2>Sensor Settings</h2>
+
+    <h3>Set Units</h3>
+
+    <div *ngFor="let param of unitSettings" class="parameter-row">
+        <div class="parameter-card">
+            <div class="parameter-content">
+                <span class="parameter-icon">
+                    <i [ngClass]="param.iconClass"></i>
+                </span>
+                <span class="parameter-label">{{ param.label }}</span>
+            </div>
+        </div>
+
+        <div class="unit-selection">
+            <div class="tooltip-container" *ngFor="let unit of param.units">
+                <button class="unit-button" [class.selected]="selectedUnits[param.key] === unit"
+                    (click)="selectUnit(param.key, unit)">
+                    {{ unit }}
+                </button>
+                <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
+            </div>
+        </div>
+
+    </div>
+
+</div>

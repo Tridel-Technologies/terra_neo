@@ -10,6 +10,7 @@
   },
   "private": true,
   "dependencies": {
+    "@amcharts/amcharts5": "^5.12.2",
     "@angular/animations": "^19.2.10",
     "@angular/common": "^19.2.0",
     "@angular/compiler": "^19.2.0",
@@ -18,16 +19,14 @@
     "@angular/platform-browser": "^19.2.0",
     "@angular/platform-browser-dynamic": "^19.2.0",
     "@angular/router": "^19.2.0",
-
     "@fortawesome/fontawesome-free": "^6.7.2",
-    "fontawesome": "^5.6.3",
-    "ngx-toastr": "^19.0.0",
-
     "@primeng/themes": "^19.1.2",
     "echarts": "^5.6.0",
+    "fontawesome": "^5.6.3",
     "ngx-echarts": "^19.0.0",
+    "ngx-toastr": "^19.0.0",
+    "primeicons": "^7.0.0",
     "primeng": "^19.1.2",
-
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "xlsx": "^0.18.5",
