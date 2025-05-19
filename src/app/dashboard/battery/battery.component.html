@@ -1,0 +1,27 @@
+<div class="batt" [ngClass]="isLive?'batt':'batt-live'">
+    <svg class="stat-circle" width="160" viewBox="0 0 20 20">
+        <!-- Background Circle -->
+        <circle class="bg" cx="10" cy="10" r="8"></circle>
+
+        <!-- Progress Circle -->
+        <circle class="progress" cx="10" cy="10" r="8" [attr.stroke-dashoffset]="strokeDashoffset"
+            [attr.stroke]="batteryColor">
+        </circle>
+
+        <!-- Battery Icon in Center -->
+
+
+    </svg>
+    <div class="icon" [ngClass]="isLive? 'icon':'icon-live'">
+
+        <svg xmlns="http://www.w3.org/2000/svg" shape-rendering="geometricPrecision" text-rendering="geometricPrecision"
+            image-rendering="optimizeQuality" fill-rule="evenodd" clip-rule="evenodd" viewBox="0 0 512 309.465">
+            <g fill-rule="nonzero">
+                <path fill="#44403F"
+                    d="M472.065 240.298v-24.596h27.836c6.66 0 12.099-5.441 12.099-12.101v-97.758c0-6.633-5.468-12.1-12.099-12.1h-27.836V69.155c0-21.195-17.357-38.531-38.531-38.531H312.095l-4.671 25.462h123.344c8.697 0 15.835 7.122 15.835 15.834v165.613c0 8.685-7.15 15.835-15.835 15.835h-157.42l-15.873 25.461h176.059c21.215 0 38.531-17.315 38.531-38.531zM213.246 30.624H38.531C17.325 30.624 0 47.947 0 69.155v171.143c0 21.183 17.367 38.531 38.531 38.531h120.727l6.664-25.461H41.298c-8.712 0-15.835-7.131-15.835-15.835V71.92c0-8.673 7.161-15.834 15.835-15.834h156.278l15.67-25.462z" />
+                <path fill="#01A437"
+                    d="M264.058 120.22h37.735c8.01.031 12.569 8.977 8.233 15.47l-105.39 169.06c-5.671 9.273-20.325 3.79-18.181-7.102l28.719-109.712-44.767.755c-7.735.137-12.51-8.235-8.679-14.889L265.746 4.778c5.489-9.099 19.704-4.225 18.318 6.416L264.058 120.22z" />
+            </g>
+        </svg>
+    </div>
+</div>

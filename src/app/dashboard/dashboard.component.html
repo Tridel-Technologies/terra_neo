@@ -1,0 +1,439 @@
+<div class="dash_main">
+    <div class="files_container">
+        <h4 style="align-self: flex-start; margin-left: 20px;">Explorer</h4>
+
+        <div class="folder" *ngFor="let folder of files_list; let i = index">
+            <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
+                <img [src]="expandedFolders[i] ? 'assets/file_opened.png' : 'assets/file_closed.png'" alt="folder" />
+                <div class="folder-info">
+                    <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
+                </div>
+                <span class="arrow">{{ expandedFolders[i] ? '▾' : '▸' }}</span>
+            </div>
+
+            <div class="file-list" *ngIf="expandedFolders[i]">
+                <div [ngClass]="getFileClass(f.file_name, folder.folder_id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f.file_name, $event, folder.folder_id, folder.folder_name)">
+                    <img [src]="getFileImage(f.file_name)" alt="file" />
+                    <p>{{ f.file_name }}</p>
+                    <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="parent">
+        <div class="toggle" [style]="{'width':!isLive? '600px':'180px'}">
+            <p>Live</p>
+            <!-- <p-toggleswitch [(ngModel)]="isLive" (onChange)="toggle_tap()" /> -->
+            <div class="tog"
+                [ngStyle]="{'justify-content':isLive?'start':'end', 'background-color':!isLive?'#0fb981':'rgba(216, 216, 216, 0.853)'}"
+                (click)="toggle_tap()">
+                <div class="toggle_button"></div>
+
+            </div>
+            <p>+/- 6 hours</p>
+
+            <select name="hours" *ngIf="!isLive" [(ngModel)]="hours" (change)="changeTime(hours)">
+                <option [value]="6">6 hours</option>
+                <option [value]="5">5 hours</option>
+                <option [value]="4">4 hours</option>
+                <option [value]="3">3 hours</option>
+                <option [value]="2">2 hours</option>
+                <option [value]="1">1 hour</option>
+            </select>
+            <div class="af-bf" *ngIf="!isLive">
+                <p>After</p>
+                <p-toggleswitch [(ngModel)]="isbefore" />
+                <p>Before</p>
+            </div>
+
+        </div>
+        <div class="left" *ngIf="isLive">
+            <h4>{{selected_folder_name}} -> {{selectedFiles[0].file_name}}</h4>
+            <div class="content">
+                <p *ngFor="let dates of main_table" (click)="tap_date(dates.date, dates.time)" [ngStyle]="{
+                            'background-color': 
+                            selected_data.dateTime === dates.date
+                            ? 'rgba(165, 198, 240, 0.851)' : 'transparent'
+                        }">
+                    {{ dates.date | date :'yyyy-MM-dd HH:mm:ss' }} {{ dates.time }}
+                </p>
+            </div>
+        </div>
+        <div class="right" [ngStyle]="{'width':!isLive ?'98.5%':'76%'}">
+            <div class="ids">
+                <div class="station-id">
+                    <h5 class="title">Station ID</h5>
+                    <p class="sub-title">{{selected_data.id}}</p>
+                </div>
+                <div class="date-time">
+                    <h5 class="title">Date</h5>
+                    <p class="sub-title">{{selected_data.dateTime |date: 'yyyy-MM-dd HH:mm:ss'}}</p>
+                </div>
+                <div class="lat">
+                    <h5 class="title">Coordinates</h5>
+                    <p class="sub-title">Lon: {{selected_data.lon}} °<br> Lat: {{selected_data.lat}} °</p>
+                </div>
+                <div class="lon" [ngStyle]="{'background-color':isLive?'var(--background-secondary)':''}">
+                    <div class="separate-bat-depth" *ngIf="!isLive">
+                        <div class="bat">
+                            <h5>Battery Voltage</h5>
+                            <app-battery [isLive]="isLive" [percentage]="12"></app-battery>
+                            <p>34 {{units.battery}}</p>
+                        </div>
+                        <div class="depth">
+                            <h5>Depth</h5>
+                            <img src="../../assets/depth.png" alt="">
+                            <p>{{selected_data.depth}} {{units.depth}}</p>
+                        </div>
+                    </div>
+                    <h5 class="title" *ngIf="isLive">Depth</h5>
+                    <p class="sub-title" *ngIf="isLive">{{selected_data.depth}} {{units.depth}}</p>
+                </div>
+            </div>
+            <div class="centers">
+                <!--  @for (item of Array_item; track $index) {
+                <div class="tide_array">
+                    <div class="icon_tide"><img src="../../assets/tide.png" alt=""></div>
+                    <h4>Water Level <br> <span>1.23</span></h4>
+                </div>
+                } -->
+
+                <div class="tide" *ngIf="isLive">
+                    <h5 class="title-tide">Water Level</h5>
+                    <!-- <img src="../../assets/tide.png" alt=""> -->
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle -->
+                        <circle cx="60" cy="60" r="55" fill="#003366" stroke="#002244" stroke-width="3" />
+                        <!--  -->
+                        <!-- Moon -->
+                        <!-- <circle cx="90" cy="30" r="12" fill="#cccccc" stroke="#999999" stroke-width="2" /> -->
+
+                        <!-- Ocean Waves -->
+                        <path d="M20,80 Q30,70 40,80 T60,80 T80,80 T100,80" stroke="#00ccff" stroke-width="4"
+                            fill="none" />
+
+                        <path d="M20,90 Q30,80 40,90 T60,90 T80,90 T100,90" stroke="#00bfff" stroke-width="4"
+                            fill="none" />
+
+                        <!-- Arrows for Tidal Motion -->
+                        <polygon points="60,65 55,75 65,75" fill="white" />
+                        <polygon points="60,95 55,85 65,85" fill="white" />
+                    </svg>
+                    <p style="align-self: center;">{{ selected_data.tide}} {{units.waterLevel}}</p>
+                </div>
+                @if (!isLive) {
+                <div class="tide-not-live" *ngFor="let tide of filteredAvgData"
+                    [ngStyle]="{'height': dynamicHeight + '%', 'background-color':tide.name==='Current'?'rgba(182, 229, 243, 0.374)':''}">
+                    <!-- <img src="../../assets/tide.png" alt=""> -->
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle -->
+                        <circle cx="60" cy="60" r="55" fill="#003366" stroke="#002244" stroke-width="3" />
+
+                        <!-- Moon -->
+                        <!-- <circle cx="90" cy="30" r="12" fill="#cccccc" stroke="#999999" stroke-width="2" /> -->
+
+                        <!-- Ocean Waves -->
+                        <path d="M20,80 Q30,70 40,80 T60,80 T80,80 T100,80" stroke="#00ccff" stroke-width="4"
+                            fill="none" />
+
+                        <path d="M20,90 Q30,80 40,90 T60,90 T80,90 T100,90" stroke="#00bfff" stroke-width="4"
+                            fill="none" />
+
+                        <!-- Arrows for Tidal Motion -->
+                        <polygon *ngIf="isbefore && tide.name !=='Current'" points="60,65 55,75 65,75" fill="white" />
+                        <!-- Down Arrow -->
+                        <polygon *ngIf="!isbefore && tide.name !=='Current'" points="60,95 55,85 65,85" fill="white" />
+                        <!-- Up Arrow -->
+                    </svg>
+                    <h5 class="title-tide" style="margin-left: 20px;">{{tide.name ==='Current'?'': isLive ?'':
+                        isbefore?'Raising':'Falling'}} {{tide.name==='Current'? 'High Water time':'Water Level'}} <br>
+                        <p style="margin: 0; font-weight: 400;">{{tide.tide}}</p>
+                    </h5>
+                    <p style="align-self: center;"></p>
+                </div>
+                }
+
+                <!-- <div class="tide-not-live" *ngIf="!isLive">
+                    <img src="../../assets/tide.png" alt="">
+                    <h5 class="title-tide">Water Level</h5>
+                    <p style="align-self: center;">{{af_tide}}</p>
+                </div>
+                <div class="tide-not-live" *ngIf="!isLive">
+                    <img src="../../assets/tide.png" alt="">
+                    <h5 class="title-tide">Water Level</h5>
+                    <p style="align-self: center;">{{af_tide}}</p>
+                </div>
+                <div class="tide-not-live" *ngIf="!isLive">
+                    <img src="../../assets/tide.png" alt="">
+                    <h5 class="title-tide">Water Level</h5>
+                    <p style="align-self: center;">{{af_tide}}</p>
+                </div>
+                <div class="tide-not-live" *ngIf="!isLive">
+                    <img src="../../assets/tide.png" alt="">
+                    <h5 class="title-tide" style="font-size: 15px;">Water Level</h5>
+                    <p style="align-self: center;">{{af_tide}}</p>
+                </div>
+                <div class="tide-not-live" *ngIf="!isLive">
+                    <img src="../../assets/tide.png" alt="">
+                    <h5 class="title-tide">Water Level</h5>
+                    <p style="align-self: center;">{{af_tide}}</p>
+                </div> -->
+                <div class="battery" *ngIf="isLive">
+                    <h5 class="title-tide" style="margin-top: 30px;">Battery</h5>
+                    <div class="bat">
+                        <app-battery [isLive]="isLive" [percentage]="12"></app-battery>
+                    </div>
+                    <p style="align-self: center;">{{selected_data.battery}} {{units.battery}}</p>
+                </div>
+            </div>
+            <div class="currents">
+                <!--  <div class="currentspeed">f
+                    @for (item of Array_item; track $index) {
+                    <div class="tide_array">
+                        <div class="icon_speed"><img src="../../assets/speed.png" alt=""></div>
+                        <h4>Water Level <br> <span>1.23</span></h4>
+                    </div>
+                    }
+                </div>
+                <div class="currentdir">
+                    @for (item of Array_item; track $index) {
+                    <div class="tide_array">
+                        <div class="icon_speed"><img src="../../assets/dire.png" alt=""></div>
+                        <h4>Water Level <br> <span>1.23</span></h4>
+                    </div>
+                    }
+                </div> -->
+                <!-- @for (item of Array_item; track $index) {
+                <div class="tide_array">
+                    <div class="icon_tide"><img src="../../assets/tide.png" alt=""></div>
+                    <h4>Water Level <br> <span>1.23</span></h4>
+                </div>
+                } -->
+                <div class="current_speed" *ngIf="isLive">
+                    <h5 class="title-tide">Current Speed</h5>
+                    <!-- <img src="../../assets/speed.png" alt=""> -->
+                    <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                        <!-- Background Circle -->
+                        <circle cx="60" cy="60" r="55" fill="#001F3F" stroke="#003366" stroke-width="3" />
+
+                        <!-- Wave Path -->
+                        <path d="M20,75 Q35,65 50,75 T80,75 T110,75" stroke="#00BFFF" stroke-width="4" fill="none" />
+
+                        <!-- Swirling Current Arrows -->
+                        <path d="M30,45 C40,30 60,30 70,45" stroke="#00CED1" stroke-width="3" fill="none"
+                            marker-end="url(#arrowhead)" />
+                        <path d="M70,45 C80,60 100,60 90,40" stroke="#00CED1" stroke-width="3" fill="none"
+                            marker-end="url(#arrowhead)" />
+
+                        <!-- Arrowhead Definition -->
+                        <defs>
+                            <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                                <polygon points="0 0, 6 3, 0 6" fill="#00CED1" />
+                            </marker>
+                        </defs>
+                    </svg>
+
+
+                    <p style="align-self: center;">{{selected_data.current_speed}} {{units.currentSpeed}}</p>
+                </div>
+                <div class="current_direction" *ngIf="isLive">
+                    <h5 class="title-tide2">Current Direction</h5>
+                    <!-- <img src="../../assets/dire.png" alt=""> -->
+                    <app-direction1 *ngIf="dir" [direction]="selected_data.current_direction" id="Dir1"
+                        style="align-self: center;"></app-direction1>
+                    <p style="align-self: center; text-align: center;">{{selected_data.current_direction}}
+                        {{units.currentDirection}}
+                        <br> (Towards {{directionTo}})
+                    </p>
+                </div>
+                @if (!isLive) {
+                <div class="current1" *ngFor="let current of filteredAvgData"
+                    [ngStyle]="{'height': dynamicHeight + '%', 'background-color':current.name==='Current'?'rgba(182, 229, 243, 0.374)':''}">
+                    <!-- <h5 class="title-tide" style="margin-left: 10px;"> {{current.name==='Current'?'': current.name}}
+                    </h5> -->
+
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <!-- <img class="cbox-img" src="../../assets/speed.png" alt=""> -->
+                            <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+                                <!-- Background Circle -->
+                                <circle cx="60" cy="60" r="55" fill="#001F3F" stroke="#003366" stroke-width="3" />
+
+                                <!-- Wave Path -->
+                                <path d="M20,75 Q35,65 50,75 T80,75 T110,75" stroke="#00BFFF" stroke-width="4"
+                                    fill="none" />
+
+                                <!-- Swirling Current Arrows -->
+                                <path d="M30,45 C40,30 60,30 70,45" stroke="#00CED1" stroke-width="3" fill="none"
+                                    marker-end="url(#arrowhead)" />
+                                <path d="M70,45 C80,60 100,60 90,40" stroke="#00CED1" stroke-width="3" fill="none"
+                                    marker-end="url(#arrowhead)" />
+
+                                <!-- Arrowhead Definition -->
+                                <defs>
+                                    <marker id="arrowhead" markerWidth="6" markerHeight="6" refX="5" refY="3"
+                                        orient="auto">
+                                        <polygon  points="0 0, 6 3, 0 6" fill="#00CED1" />
+                                    </marker>
+                                </defs>
+                            </svg>
+                            <h5>Current Speed <br>
+                                <p>{{current.speed}}</p>
+                            </h5>
+                            <p></p>
+                        </div>
+                        <div class="cbox-right">
+                            <!-- <img class="cbox-img" src="../../assets/dire.png" alt=""> -->
+                            <div class="compass">
+                                <img [style.transform]="'rotate(' + current.direction + 'deg)'"
+                                    src="../../assets/Task_7518573_35103318.png" alt="">
+                            </div>
+                            <h5>Direction <br>
+                                <p>{{current.direction}}</p>
+                            </h5>
+                            <p></p>
+                        </div>
+                    </div>
+                </div>
+                }
+
+                <!-- <div class="current2" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current </h5>
+
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{selected_data.current_direction}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{selected_data.current_speed}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="current3" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours After</h5>
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{bf_c_speed}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{af_c_dir}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="current3" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours After</h5>
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{bf_c_speed}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{af_c_dir}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="current3" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours After</h5>
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{bf_c_speed}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{af_c_dir}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="current3" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours After</h5>
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{bf_c_speed}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{af_c_dir}}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="current3" *ngIf="!isLive">
+                    <h5 class="title-tide" style="margin-left: 10px;">Current 6 hours After</h5>
+                    <div class="c-box">
+                        <div class="cbox-left">
+                            <h6 style="align-self: flex-start;">Speed</h6>
+                            <img class="cbox-img" src="../../assets/speed.png" alt="">
+                            <p>{{bf_c_speed}}</p>
+                        </div>
+                        <div class="cbox-right">
+                            <h6 style="align-self: flex-start;">Direction</h6>
+                            <img class="cbox-img" src="../../assets/dire.png" alt="">
+                            <p>{{af_c_dir}}</p>
+                        </div>
+                    </div>
+                </div> -->
+
+                <!-- </div> -->
+
+                <!-- <div class="tableeee" *ngIf="!isLive">
+                    <table>
+                        <caption>Dual Axis Table: Parameters vs Labels</caption>
+                        <thead>
+                            <tr class="header_table">
+                                <th style="background-color: transparent;"></th>
+                                <th>Tide {{units.waterLevel}}</th>
+                                <th>Current Speed {{units.currentSpeed}}</th>
+                                <th>Current Direction {{units.currentDirection}}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let item of avgData"
+                                [style]="{'background-color':item.name === 'Current'? 'rgb(186, 213, 247)':''}"
+                                class="roww">
+                                <td class="row-header">
+                                    <p>{{item.name}}</p>
+                                </td>
+                                <td class="val">
+                                    <p
+                                        [style]="{'background-color':item.tide === 'N/A'?'rgb(247, 177, 177)':'','color':item.tide === 'N/A'?'red':''}">
+                                        {{item.tide}}</p>
+
+                                </td>
+                                <td class="val">
+                                    <p
+                                        [style]="{'background-color':item.speed === 'N/A'?'rgb(247, 177, 177)':'','color':item.speed === 'N/A'?'red':''}">
+                                        {{item.speed}}</p>
+                                </td>
+                                <td class="val">
+                                    <p
+                                        [style]="{'background-color':item.direction === 'N/A'?'rgb(247, 177, 177)':'','color':item.direction === 'N/A'?'red':''}">
+                                        {{item.direction}}
+                                    </p>
+
+                                </td>
+                            </tr>
+
+
+                        </tbody>
+                    </table>
+                </div> -->
+            </div>
+        </div>
+    </div>

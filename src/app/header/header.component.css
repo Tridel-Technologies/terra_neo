@@ -1,0 +1,84 @@
+
+/* topbar */
+.topbar{
+    height: 60px;
+    width: 100%;
+    background-color: var(--bar-bg);
+    display: flex;
+    flex-direction: row;
+    justify-content: start s;
+    align-items: center;
+}
+
+.topbar h1{
+font-size: 20px;
+color: var(--primary-color);
+margin-left: 20px;
+}
+.pages_item{
+    height: 100%;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: center;
+}
+.pages_item p{
+    font-size: 18px;
+    margin: 30px;
+}
+
+.theme{
+    height: 100%;
+    width: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--font-color);
+}
+
+.user{
+    height: 60px;
+    width: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 20px;
+    /* background-color: rgba(0, 0, 0, 0.707); */
+
+}
+.user img{
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    margin-left: 3px;
+    color: white;
+
+}
+.user svg{
+    color: antiquewhite !important;
+    height: 18px;
+    margin-left: 2px;
+}
+.logouttt{
+    cursor: pointer;
+    height: 30px;
+    width: 30px;
+    border: 1px solid var(--font-color);
+    display: flex;
+    border-radius: 50%;
+    justify-content: center;
+    align-items: center;
+}
+.page{
+    cursor: pointer;
+    color: var(--font-color);
+}
+.page_active{
+    border-bottom: 2px solid var(--primary-color);
+    color: var(--primary-color);
+    cursor: pointer;
+}
+.page:hover{
+    border-bottom: 2px solid var(--primary-color);
+}

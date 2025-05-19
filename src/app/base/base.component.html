@@ -1,0 +1,13 @@
+<div class="base-main">
+    <app-header [index]="index" class="nav"></app-header>
+    <div class="bodyy">
+
+        <app-importer *ngIf="index === 0"></app-importer>
+        <!-- <app-processing *ngIf="index ===1"> -->
+        <!-- <app-importer></app-importer> -->
+        <!-- </app-processing> -->
+        <app-dashboard *ngIf="index ===1"></app-dashboard>
+        <app-settings *ngIf="index ===4"></app-settings>
+
+    </div>
+</div>
