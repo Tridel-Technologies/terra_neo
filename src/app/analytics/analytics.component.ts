@@ -23,7 +23,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastrService } from 'ngx-toastr';
 import { SelectModule } from 'primeng/select';
 import { ColorPickerModule } from 'primeng/colorpicker';
-import { DatePickerModule } from 'primeng/datepicker';
+import { CalendarModule } from 'primeng/calendar';
 import { BehaviorSubject } from 'rxjs';
 import { BaseComponent } from '../base/base.component';
 import { CascadeSelectModule } from 'primeng/cascadeselect';
@@ -87,7 +87,7 @@ interface fileData {
     HttpClientModule,
     SelectModule,
     ColorPickerModule,
-    DatePickerModule,
+    CalendarModule,
     CascadeSelectModule,
   ],
   templateUrl: './analytics.component.html',
@@ -142,7 +142,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   // ];
   PolarSelectedInterVal = 60;
 
-  selectedPolarDate: Date = new Date(); // default to today
+  selectedPolarDateRange: Date[] = []; // Changed from single date to date range
   maxDate: Date = new Date(); // restrict future dates
 
   // Optional: disable unavailable dates
@@ -150,10 +150,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   viewMode: string = 'Single Axis';
   viewModes = [
-    { label: 'Single Axis', value: 'Single Axis' },
-    { label: 'Dual Axis', value: 'Dual Axis' },
-    { label: 'Tri Axis', value: 'Tri Axis' },
-    { label: 'Polar', value: 'Polar' },
+    { label: 'Single Axis (Line Plot)', value: 'Single Axis' },
+    { label: 'Dual Axis (Line Plot)', value: 'Dual Axis' },
+    { label: 'Tri Axis (Line Plot)', value: 'Tri Axis' },
+    { label: 'Polar Series', value: 'Polar' },
   ];
 
   totalRecords: number = 0;
@@ -290,6 +290,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               // Load initial page of data
               this.loadData({ first: 0, rows: 20 });
               if (this.fullData.length > 0) {
+                // Set default date range to 1 day from the first data point
+                const firstDate = new Date(this.fullData[0].date);
+                const endDate = new Date(firstDate);
+                endDate.setDate(endDate.getDate() + 1);
+                this.selectedPolarDateRange = [firstDate, endDate];
                 this.ngZone.runOutsideAngular(() => {
                   this.loadChart();
                 });
@@ -308,6 +313,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               // Load initial page of data
               this.loadData({ first: 0, rows: 20 });
               if (this.fullData.length > 0) {
+                // Set default date range to 1 day from the first data point
+                const firstDate = new Date(this.fullData[0].date);
+                const endDate = new Date(firstDate);
+                endDate.setDate(endDate.getDate() + 1);
+                this.selectedPolarDateRange = [firstDate, endDate];
                 this.ngZone.runOutsideAngular(() => {
                   this.loadChart();
                 });
@@ -329,7 +339,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       (file) => file.file_name === fileName && file.file_id === file_id
     );
     return isSelected ? 'file-item_active' : 'file-item';
-    // }
   }
 
   ngAfterViewInit(): void {
@@ -1575,7 +1584,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             // symbolSize: 14,
             // symbolOffset: [0, -7],
             // symbolRotate: (value: any) => value[1],
-            // label: { show: false },
+            // label: {
+            //   show: false,
+            //   fontSize: 12,
+            // },
             yAxisIndex: 1,
           },
           // {
@@ -1969,30 +1981,26 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   midpolar(): void {
-    // const selectedDate = '2025-04-01';
-    const selectedDate = this.formatDateToYMD(this.selectedPolarDate);
-    // Filter only data of that day
-    // const dayData = this.fullData.filter((d) => d.date === selectedDate);
-    console.log('Raw selected date from calendar:', this.selectedPolarDate);
-    console.log(
-      'Formatted selected date (YMD):',
-      this.formatDateToYMD(this.selectedPolarDate)
-    );
+    if (!this.selectedPolarDateRange || this.selectedPolarDateRange.length !== 2) {
+      this.toast.warning('Please select a date range');
+      return;
+    }
 
-    const intervalMinutes = this.PolarSelectedInterVal; // can be 30, 60, 360, 1440 for 30m, 1h, 6h, 24h
-    const groupedData = this.groupByIntervalWithinDay(
+    const startDate = this.formatDateToYMD(this.selectedPolarDateRange[0]);
+    const endDate = this.formatDateToYMD(this.selectedPolarDateRange[1]);
+
+    const intervalMinutes = this.PolarSelectedInterVal;
+    const groupedData = this.groupByIntervalWithinDateRange(
       this.fullData,
-      selectedDate,
+      startDate,
+      endDate,
       intervalMinutes
     );
     const averagedPolarData = this.computeAverages(groupedData);
 
     console.log('groupedData', groupedData);
-
     console.log('averagedPolarData', averagedPolarData);
 
-    // const chartType = this.selectedChart;
-    // this.loading = true;
     const polar2 = document.getElementById('midpolar')!;
 
     setTimeout(() => {
@@ -2004,30 +2012,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         const windRoseChart1 = echarts.init(polar2);
 
         const directionLabels = [
-          'N',
-          'NNE',
-          'NE',
-          'ENE',
-          'E',
-          'ESE',
-          'SE',
-          'SSE',
-          'S',
-          'SSW',
-          'SW',
-          'WSW',
-          'W',
-          'WNW',
-          'NW',
-          'NNW',
+          'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
+          'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
         ];
         const speedCategories = [
-          '<0.5 m/s',
-          '0.5-2 m/s',
-          '2-4 m/s',
-          '4-6 m/s',
-          '6-8 m/s',
-          '>8 m/s',
+          '<0.5 m/s', '0.5-2 m/s', '2-4 m/s', '4-6 m/s', '6-8 m/s', '>8 m/s'
         ] as const;
 
         const speedColors = [
@@ -2039,15 +2028,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           '#ffffe0', // lightest yellowish
         ];
 
-        // Blue to red gradient
-
-        // Type for speed categories
         type SpeedCategory = (typeof speedCategories)[number];
-
-        // Type for direction bins with each speed category as a key
         type DirectionBin = Record<SpeedCategory, number>;
 
-        // Function to bin speeds
         function categorizeSpeed(speed: number): SpeedCategory {
           if (speed < 0.5) return '<0.5 m/s';
           if (speed < 2) return '0.5-2 m/s';
@@ -2057,7 +2040,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           return '>8 m/s';
         }
 
-        // Initialize bins
         const dataBins: DirectionBin[] = directionLabels.map(() => ({
           '<0.5 m/s': 0,
           '0.5-2 m/s': 0,
@@ -2067,21 +2049,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           '>8 m/s': 0,
         }));
 
-        // const averagedPolarData = this.fullData.map((data) => {
-        //   return {
-        //     speed: parseFloat(data.speed),
-        //     direction: parseFloat(data.direction),
-        //   };
-        // });
-
-        // Map directions to labels and fill dataBins with counts
         averagedPolarData.forEach(({ speed, direction }) => {
           const directionIndex = Math.round(direction / 22.5) % 16;
           const speedCategory = categorizeSpeed(speed);
           dataBins[directionIndex][speedCategory] += 1;
         });
 
-        // Extract data for each speed category to use in series
         const seriesData = speedCategories.map((speedCategory, index) => ({
           name: speedCategory,
           type: 'bar',
@@ -2089,29 +2062,40 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           coordinateSystem: 'polar',
           data: dataBins.map((bin) => bin[speedCategory]),
           itemStyle: {
-            color: speedColors[index], // Assign color based on speed range
+            color: speedColors[index],
           },
         }));
 
-        // Set up the chart options
         const option = {
           title: {
-            text: 'Polar Binned', // Changed from 'Surface' to 'Low'
-            // left: '1%',
-            top: '18%',
+            text: `Polar Binned (${startDate} to ${endDate})`,
+            top: '0%',
+            left: 'center',
             textStyle: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
               fontSize: 20,
+              align: 'center',
             },
           },
-          polar: {},
+          polar: {
+            center: ['50%', '55%'],
+          },
+          legend: {
+            data: speedCategories,
+            orient: 'vertical',
+            right: '15%',
+            textStyle: {
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              fontSize: 14,
+            },
+          },
           angleAxis: {
             type: 'category',
             data: directionLabels,
             boundaryGap: true,
             startAngle: 100,
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white', // White axis labels
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
             },
             splitArea: {
               show: true,
@@ -2137,7 +2121,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             min: 0,
             axisLine: {
               lineStyle: {
-                color: this.base.chartFont === 'light' ? 'black' : 'white', // White radius axis line
+                color: this.base.chartFont === 'light' ? 'black' : 'white',
               },
             },
             axisLabel: {
@@ -2156,24 +2140,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             trigger: 'item',
             formatter: '{a}: {c}',
           },
-          //   toolbox: {
-          //     bottom: 0,
-          //     left: 0,
-          //     feature: {
-          //         dataZoom: {
-          //             yAxisIndex: 'none'
-          //         },
-          //         restore: {},
-          //          saveAsImage: {
-          //       backgroundColor: bgColor,
-          //       pixelRatio: 2,
-          //     }
-          //     },
-          //     iconStyle: {
-          //         borderColor: mainText
-          //     }
-          // },
-
           dataZoom: [
             {
               type: 'inside',
@@ -2185,35 +2151,29 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           animationDuration: 1000,
         };
 
-        // Render the chart and handle resizing
         windRoseChart1.setOption(option);
-
-        //console.table(dataBins);
-
-        // this.loading = false;
         window.addEventListener('resize', () => windRoseChart1.resize());
       } else {
         console.error("Element with id 'rose-plot' not found");
-        // this.loading = false;
       }
     }, 0);
   }
 
-  private groupByIntervalWithinDay(
+  private groupByIntervalWithinDateRange(
     data: ApiData[],
-    selectedDate: string,
+    startDate: string,
+    endDate: string,
     intervalMinutes: number
   ): Record<string, { speed: number; direction: number }[]> {
     const grouped: Record<string, { speed: number; direction: number }[]> = {};
 
-    const dateStart = new Date(`${selectedDate}T01:00:00`);
-    const dateEnd = new Date(`${selectedDate}T23:59:59`);
+    const dateStart = new Date(`${startDate}T00:00:00`);
+    const dateEnd = new Date(`${endDate}T23:59:59`);
 
     data.forEach((entry) => {
-      const localTime = this.toIST(entry.date); // entry.datetime = ISO string
+      const localTime = this.toIST(entry.date);
 
       if (localTime >= dateStart && localTime <= dateEnd) {
-        // Round down to nearest interval
         const roundedTime = new Date(
           Math.floor(localTime.getTime() / (intervalMinutes * 60 * 1000)) *
             intervalMinutes *
@@ -2221,7 +2181,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             1000
         );
 
-        const key = roundedTime.toISOString(); // Or use HH:mm if preferred
+        const key = roundedTime.toISOString();
 
         if (!grouped[key]) {
           grouped[key] = [];

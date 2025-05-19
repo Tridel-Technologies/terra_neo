@@ -219,7 +219,9 @@
     display: flex;
     flex-direction: column;
 }
-
+::ng-deep .p-toggleswitch{
+    margin-top: 8px;
+}
 .captionrow {
     /* width: 100%; */
     display: flex;
