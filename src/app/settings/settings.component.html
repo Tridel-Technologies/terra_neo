@@ -14,31 +14,35 @@
             <p>{{ folder.folder_name }}</p>
         </div>
     </div>
-    <h2 *ngIf="openedFile.length !== 0" (click)="back()"><- </h2>
-            <!-- FILE VIEW -->
-            <div class="files_list" *ngIf="openedFile.length !== 0">
-                <div class="Folder" *ngFor="let file of openedFile" (contextmenu)="onFileRightClick($event, file)">
-                    <img [src]="getFileClass(file.file_name)" alt="">
-                    <p>{{ file.file_name }}</p>
-                </div>
-            </div>
+    <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
+        *ngIf="openedFile.length !== 0" (click)="back()"><i class="fa-solid fa-arrow-left"
+            style="align-self: center;margin-top: 5px;font-size: 17px;"></i>
+        {{tappedFolder.folder_name}}/
+    </h2>
+    <!-- FILE VIEW -->
+    <div class="files_list" *ngIf="openedFile.length !== 0">
+        <div class="Folder" *ngFor="let file of openedFile" (contextmenu)="onFileRightClick($event, file)">
+            <img [src]="getFileClass(file.file_name)" alt="">
+            <p>{{ file.file_name }}</p>
+        </div>
+    </div>
 
-            <!-- CONTEXT MENU -->
-            <div class="context-menu" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
-                [style.top.px]="contextMenu.y">
-                <ng-container *ngIf="contextMenu.type === 'file'">
-                    <div (click)="moveFile({file_name:'', file_id:2})">Move</div>
-                    <div (click)="cancelContext()">Cancel</div>
-                </ng-container>
-                <ng-container *ngIf="contextMenu.type === 'folder'">
-                    <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
-                    <div (click)="cancelContext()">Cancel</div>
-                </ng-container>
-                <ng-container *ngIf="contextMenu.type === 'blank'">
-                    <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+    <!-- CONTEXT MENU -->
+    <div class="context-menu" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
+        [style.top.px]="contextMenu.y">
+        <ng-container *ngIf="contextMenu.type === 'file'">
+            <div (click)="moveFile({file_name:'', file_id:2})">Move</div>
+            <div (click)="cancelContext()">Cancel</div>
+        </ng-container>
+        <ng-container *ngIf="contextMenu.type === 'folder'">
+            <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+            <div (click)="cancelContext()">Cancel</div>
+        </ng-container>
+        <ng-container *ngIf="contextMenu.type === 'blank'">
+            <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
                     <div (click)="cancelContext()">Cancel</div> -->
-                </ng-container>
-            </div>
+        </ng-container>
+    </div>
 </div>
 
 <div class="units_container">

@@ -239,7 +239,8 @@ this.loginservice.login_user(user_name, password).subscribe({
       localStorage.removeItem('rememberedUsername');
       localStorage.removeItem('rememberedPassword');
     }
-
+    const loginTime = new Date().getTime();
+    localStorage.setItem('loginTime', loginTime.toString());
     this.router.navigate(['/base']);
   },
   error: (error) => {

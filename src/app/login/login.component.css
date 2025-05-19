@@ -1,10 +1,11 @@
 /* === Page Background and Layout === */
 .login-page {
   height: 100vh;
-  background: url("../../assets/earth1.jpg") no-repeat center center;
+  background: url("../../assets/login_background.png") no-repeat center center;
   /* background-size: cover; */
   background-repeat: no-repeat;
   background-position: center;
+  background-size: cover;
   display: flex;
   align-items: center;
   justify-content: center;

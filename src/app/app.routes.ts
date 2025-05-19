@@ -6,6 +6,7 @@ import { AnalyticsComponent } from './analytics/analytics.component';
 import { ReportsComponent } from './reports/reports.component';
 
 import { TestComponent } from './test/test.component';
+import { AuthGuard } from './auth.guard';
 
 
 export const routes: Routes = [
@@ -16,11 +17,12 @@ export const routes: Routes = [
     },
     {
         path:'login',
-        component:TestComponent
+        component:LoginComponent
     },
     {
         path:'base',
-        component:BaseComponent
+        component:BaseComponent,
+        canActivate:[AuthGuard]
     },
     {
       path: 'reports',
