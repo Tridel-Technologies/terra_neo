@@ -148,13 +148,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   // Optional: disable unavailable dates
   disabledPolarDates: Date[] = []; // populate if needed
 
-  viewMode: string = 'Single Axis';
-  viewModes = [
-    { label: 'Single Axis (Line Plot)', value: 'Single Axis' },
-    { label: 'Dual Axis (Line Plot)', value: 'Dual Axis' },
-    { label: 'Tri Axis (Line Plot)', value: 'Tri Axis' },
-    { label: 'Polar Series', value: 'Polar' },
-  ];
+  plot:any;
+  viewModes:any;  
 
   totalRecords: number = 0;
   lazyParams: any = {
@@ -215,8 +210,43 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('files:', response, this.files_list);
         this.expandedFolders = this.files_list.map(() => false);
       });
-  }
+      this.viewModes = [
+        {
+          name: 'Line Plot',
+          code: 'AU',
+          states: [
+              {
+                cname: 'Single Axis',
+                code: 'A-SY'
+              },
+              {
+                cname: 'Dual Axis',
+                code: 'A-BR'
+              },
+              {
+                cname: 'Tri Axis',
+                code: 'A-TO'
+              }
+          ]
+      },
+      {
+          name: 'Rose Vector',
+          code: 'CA',
+          states: [
+            {
+              cname: 'Rose Vector Chart',
+              code: 'A-RO'
+            }
+          ]
+      },
+      ];
+      this.plot = this.viewModes[0];
+      if (this.viewModes.length !== 0) {
+        this.show = true;
+      }
 
+  }
+show:boolean=false;
   updateField(item: any, field: string, event: Event) {
     const value = (event.target as HTMLInputElement).value;
     setTimeout(() => {
@@ -348,10 +378,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   loadChart() {
     // Ensure cleanup of existing charts
     this.cleanupCharts();
-
+  
     // Wait for DOM to be ready
     setTimeout(() => {
-      switch (this.viewMode) {
+      switch (this.plot.cname) {
         case 'Single Axis':
           this.Tide();
           this.currentSpeed();
@@ -363,13 +393,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         case 'Tri Axis':
           this.midSpeedDirection();
           break;
-        case 'Polar':
+        case 'Rose Vector Chart':
           this.midpolar();
           break;
       }
       this.loading = false;
     }, 100);
-  }
+  }  
 
   private cleanupCharts() {
     // Dispose of all chart instances
@@ -749,15 +779,15 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     // Set x-axis label based on time range
-    let xAxisLabel = 'DateTime';
+    let xAxisLabel = 'Hour';
     if (diffDays <= 1) {
-      xAxisLabel = 'DateTime';
+      xAxisLabel = 'Hour';
     } else if (diffDays <= 31) {
-      xAxisLabel = 'Date';
+      xAxisLabel = 'Day';
     } else if (diffDays <= 365) {
-      xAxisLabel = 'Monthly';
+      xAxisLabel = 'Month';
     } else {
-      xAxisLabel = 'Yearly';
+      xAxisLabel = 'Year';
     }
 
     (option.xAxis as any[])[0].name = xAxisLabel;
@@ -797,12 +827,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         xAxis: [
           {
             type: 'time',
-            name: 'DateTime',
+            name: 'Day',
             nameLocation: 'middle',
+            nameGap: 12,
             nameTextStyle: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
+              fontWeight: 'bold',
             },
             axisLabel: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
@@ -1022,12 +1054,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         xAxis: [
           {
             type: 'time',
-            name: 'DateTime',
+            name: 'Day',
             nameLocation: 'middle',
+            nameGap: 12,
             nameTextStyle: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
+              fontWeight: 'bold',
             },
             axisLabel: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
@@ -1224,12 +1258,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         xAxis: [
           {
             type: 'time',
-            name: 'DateTime',
+            name: 'Day',
             nameLocation: 'middle',
+            nameGap: 12,
             nameTextStyle: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
+              fontWeight: 'bold',
             },
             axisLabel: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
@@ -1470,12 +1506,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
         xAxis: {
           type: 'time',
-          name: 'DateTime',
+          name: 'Day',
           nameLocation: 'middle',
+          nameGap: 12,
           nameTextStyle: {
             color: this.base.chartFont === 'light' ? 'black' : 'white',
             padding: [44, 0, 0, 0],
             fontSize: 14,
+            fontWeight: 'bold',
           },
           axisLabel: {
             color: this.base.chartFont === 'light' ? 'black' : 'white',
@@ -1683,12 +1721,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         xAxis: [
           {
             type: 'time',
-            name: 'DateTime',
+            name: 'Day',
             nameLocation: 'middle',
+            nameGap: 12,
             nameTextStyle: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
               padding: [44, 0, 0, 0],
               fontSize: 14,
+              fontWeight: 'bold',
             },
             axisLabel: {
               color: this.base.chartFont === 'light' ? 'black' : 'white',
