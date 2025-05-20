@@ -14,7 +14,7 @@
 
             <div class="file-list" *ngIf="expandedFolders[i]">
                 <div *ngFor="let f of folder.files" style="cursor: pointer;"
-                    [ngClass]="getFileClass(f.file_name, folder.folder_id)" (click)="toggleFileSelection(f.file_id)">
+                    [ngClass]="getFileClass(f.file_name, f.file_id)" (click)="toggleFileSelection(f.file_id)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
                     <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem"
@@ -28,7 +28,7 @@
     <div class="tablecontainer">
         <p-table #dt [value]="showToggleTable ? toggleTableData : main_table"
             [columns]="showToggleTable ? summaryColumns : selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
-            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="10" responsiveLayout="scroll"
+            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="15" responsiveLayout="scroll"
             [rowsPerPageOptions]="[10,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
             [exportHeader]="'customExportHeader'" selectionMode="multiple"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [filterDelay]="0"
@@ -45,8 +45,12 @@
                             </div>
                         </div>
                         <div style="display: flex; align-items: center;">
+                            <div style="margin-right: 30px;">
+                                <p-dropdown [options]="dataTypeOptions" [(ngModel)]="selectedData" optionLabel="name"
+                                    placeholder="Select Data" (onChange)="onDataTypeChange()" />
+                            </div>
                             <label style="margin-right: 10px; font-weight: bold;">
-                                File
+                                Records
                             </label>
                             <p-toggleswitch [(ngModel)]="showToggleTable" (ngModelChange)="toggle_tap()">
                             </p-toggleswitch>
@@ -67,7 +71,7 @@
 
             <ng-template #header let-columns>
                 <tr>
-                    <th class="centered-cell">ID <p-sortIcon></p-sortIcon></th>
+                    <th class="centered-cell">Serial No <p-sortIcon></p-sortIcon></th>
                     <th *ngFor="let col of columns" [pSortableColumn]="col.field" class="centered-cell">
                         {{ col.header }} <p-sortIcon [field]="col.field"></p-sortIcon>
                     </th>
@@ -76,7 +80,7 @@
 
             <ng-template pTemplate="body" let-row let-columns="columns" let-i="rowIndex">
                 <tr [ngClass]="{ 'highlight-row': rowMatchesSearch(row, columns) }"
-                    [ngStyle]="{'background-color': row.high_water_level === 1 ? '#a5efd7':'' }">
+                    [ngStyle]="{'background-color': row.highlight ? '#ffeb3b' : (row.high_water_level === 1 ? '#a5efd7' : '') }">
                     <td class="centered-cell">{{ i + 1 }}</td>
                     <td *ngFor="let col of columns" class="centered-cell">
                         <ng-container [ngSwitch]="col.type">

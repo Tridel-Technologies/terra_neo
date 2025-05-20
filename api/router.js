@@ -1,10 +1,6 @@
 const express = require('express')
 
-// <<<<<<< HEAD
 const { importAll, getFiles, getDataByFolderIdAndFileName,getProcessedDataByFileId, updateValues, addNewRow, updateData, createFolderAndFile, getFoldersWithFiles, getUser, loginUser, signup, checkusername, forget_password, change_password, changeFolder, createFolder } = require('./controller')
-// =======
-// const { importAll, getFiles, getDataByFolderIdAndFileName, updateValues, addNewRow, updateData, createFolderAndFile, getFoldersWithFiles, getUser, loginUser, signup, checkusername, forget_password, change_password, changeFolder, createFolder, getProcessedDataByFileId } = require('./controller')
-// >>>>>>> 46ff99daa2b3dd5fc82c931c16981a8c6d7674c8
 
 const router = express.Router();
 

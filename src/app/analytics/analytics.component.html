@@ -26,18 +26,18 @@
 
     <div class="chartsContainer">
         <div class="view">
-            <!-- <p-select class="dateDrop" [options]="chartOptions" [(ngModel)]="selectedChart" placeholder="Select a chart"
-                (onChange)="onChartTypeChange()"></p-select> -->
+            <p-cascadeselect *ngIf="show" [(ngModel)]="plot" variant="filled" [options]="viewModes" optionLabel="cname" optionGroupLabel="name" 
+            [optionGroupChildren]="['states']" [style]="{ minWidth: '14rem' }" placeholder="Select a City"
+            (onChange)="loadChart()" />
             <label class="viewLabel">Raw Data</label>
             <p-toggleswitch [(ngModel)]="isProcessedData" (onChange)="onDataTypeChange()"></p-toggleswitch>
             <label style="margin-right: 15px;" class="viewLabel">Processed Data</label>
-            <p-select class="viewDrop" [options]="viewModes" [(ngModel)]="viewMode" placeholder="Select View Mode"
-                (onChange)="loadChart()">
-            </p-select>
-            <!-- <p-cascadeselect [(ngModel)]="viewMode" [options]="viewModes" optionLabel="cname" optionGroupLabel="name" [optionGroupChildren]="['states', 'cities']" [style]="{ minWidth: '14rem' }" placeholder="Select a Chart" /> -->
+            <!-- <p-select class="viewDrop" [options]="viewModess" [(ngModel)]="viewMode" placeholder="Select View Mode"
+                >
+            </p-select> -->
         </div>
 
-        <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+        <div class="chartContainer" *ngIf="plot.cname === 'Single Axis'">
             <div class="colorPickerContainer">
                 <p-colorPicker [(ngModel)]="tideChartColor"
                     (onChange)="onColorChange(tideChartColor, 'tideChartColor')">
@@ -46,7 +46,7 @@
             <div id="tide" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+        <div class="chartContainer" *ngIf="plot.cname === 'Single Axis'">
             <div class="colorPickerContainer">
                 <p-colorPicker [(ngModel)]="currentSpeedColor"
                     (onChange)="onColorChange(currentSpeedColor, 'currentSpeedColor')">
@@ -55,7 +55,7 @@
             <div id="currentSpeed" class="chart-diagram" style="width: 100%; height: 400px; flex-grow: 1;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="viewMode === 'Single Axis'">
+        <div class="chartContainer" *ngIf="plot.cname === 'Single Axis'">
             <div class="colorPickerContainer">
                 <p-colorPicker [(ngModel)]="currentDirectionColor"
                     (onChange)="onColorChange(currentDirectionColor, 'currentDirectionColor')">
@@ -64,15 +64,15 @@
             <div id="currentDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="viewMode === 'Dual Axis'">
+        <div class="chartContainer" *ngIf="plot.cname === 'Dual Axis'">
             <div id="currentSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="viewMode === 'Tri Axis'">
+        <div class="chartContainer" *ngIf="plot.cname === 'Tri Axis'">
             <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="viewMode === 'Polar'">
+        <div class="chartContainer" *ngIf="plot.cname === 'Rose Vector Chart'">
 
             <p-calendar [(ngModel)]="selectedPolarDateRange" (onSelect)="midpolar()" [showIcon]="true"
                 dateFormat="yy-mm-dd" [maxDate]="maxDate" [disabledDates]="disabledPolarDates"

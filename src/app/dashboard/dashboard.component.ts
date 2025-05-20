@@ -483,7 +483,7 @@ ccalculateAverage(entries: any[] = []): { pressure: number, speed: number, direc
 }
 
 avgData:any[]=[
-  { "name": "6 hours before", "tide": "1.2", "speed": "3.4", "direction": "234" },
+  { "name": "6 hours before1", "tide": "1.2", "speed": "3.4", "direction": "234" },
   { "name": "5 hours before", "tide": "1.4", "speed": "3.1", "direction": "240" },
   { "name": "4 hours before", "tide": "1.6", "speed": "3.6", "direction": "245" },
   { "name": "3 hours before", "tide": "1.8", "speed": "3.2", "direction": "250" },

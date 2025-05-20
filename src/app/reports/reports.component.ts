@@ -9,6 +9,7 @@ import { ToastrService } from 'ngx-toastr';
 import { Toast } from 'ngx-toastr';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputSwitchModule } from 'primeng/inputswitch';
+import { DropdownModule } from 'primeng/dropdown';
 
 interface Column {
   field: string;
@@ -80,6 +81,7 @@ interface fileData {
     MultiSelectModule,
     ToggleSwitchModule,
     InputSwitchModule,
+    DropdownModule,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
@@ -115,9 +117,15 @@ export class ReportsComponent implements OnInit {
 
   summaryColumns: Column[] = [
     { field: 'name', header: 'Time', type: 'text' },
-    { field: 'tide', header: 'Tide', type: 'text' },
+    { field: 'tide', header: 'Water Level', type: 'text' },
     { field: 'speed', header: 'Speed', type: 'text' },
     { field: 'direction', header: 'Direction', type: 'text' },
+  ];
+
+  selectedData: { name: string; value: string } = { name: 'Raw Data', value: 'raw' };
+  dataTypeOptions = [
+    { name: 'Raw Data', value: 'raw' },
+    { name: 'Processed Data', value: 'processed' }
   ];
 
   constructor(private http: HttpClient, private toast: ToastrService) {}
@@ -146,7 +154,7 @@ export class ReportsComponent implements OnInit {
     this.selectedColumns = this.cols;
     this.globalFilterFields = this.cols.map((col) => col.field);
   }
-
+  
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
     dt.filterGlobal(query, 'contains');
@@ -213,9 +221,11 @@ export class ReportsComponent implements OnInit {
     const data = {
       folder_id: file_id,
     };
-    console.log(data);
+    console.log('dd', this.selectedData);
     this.http
-      .get(`http://localhost:3000/api/fetch_data_by_file/${file_id}`)
+      .get(`http://localhost:3000/api/${
+        this.selectedData.value === 'processed' ? 'get_processed_data' : 'fetch_data_by_file'
+      }/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
 
@@ -231,7 +241,6 @@ export class ReportsComponent implements OnInit {
               this.main_table.push(response[index]);
             }
             console.log('Main table data ', this.main_table);
-            // this.tap_date(this.main_table[0].date, this.main_table[0].time);
           }, 100);
         } else {
           this.main_table = [];
@@ -352,7 +361,7 @@ export class ReportsComponent implements OnInit {
       // Before hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
         this.toggleTableData.push({
-          name: `${6 - i} hour${6 - i > 1 ? 's' : ''} before`,
+          name: `${6 - i} hr${6 - i > 1 ? 's' : ''} before`,
           tide: bf[i].length ? this.getAverageSpeed(bf[i], 'pressure') : NaN,
           speed: bf[i].length ? this.getAverageSpeed(bf[i], 'speed') : NaN,
           direction: bf[i].length
@@ -367,12 +376,13 @@ export class ReportsComponent implements OnInit {
         tide: currentData.pressure ?? NaN,
         speed: currentData.speed ?? NaN,
         direction: currentData.direction ?? NaN,
+        highlight: true
       });
 
       // After hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
         this.toggleTableData.push({
-          name: `${i + 1} hour${i + 1 > 1 ? 's' : ''} after`,
+          name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} after`,
           tide: af[i].length ? this.getAverageSpeed(af[i], 'pressure') : NaN,
           speed: af[i].length ? this.getAverageSpeed(af[i], 'speed') : NaN,
           direction: af[i].length
@@ -390,19 +400,10 @@ export class ReportsComponent implements OnInit {
     }
   }
 
-  avgData: any[] = [
-    { name: '6 hours before', tide: '1.2', speed: '3.4', direction: '234' },
-    { name: '5 hours before', tide: '1.4', speed: '3.1', direction: '240' },
-    { name: '4 hours before', tide: '1.6', speed: '3.6', direction: '245' },
-    { name: '3 hours before', tide: '1.8', speed: '3.2', direction: '250' },
-    { name: '2 hours before', tide: '2.0', speed: '3.0', direction: '255' },
-    { name: '1 hour before', tide: '2.2', speed: '3.5', direction: '260' },
-    { name: 'Current', tide: '2.5', speed: '3.8', direction: '265' },
-    { name: '1 hour after', tide: '2.4', speed: '3.7', direction: '270' },
-    { name: '2 hours after', tide: '2.1', speed: '3.3', direction: '275' },
-    { name: '3 hours after', tide: '1.9', speed: '3.1', direction: '280' },
-    { name: '4 hours after', tide: '1.7', speed: '3.2', direction: '285' },
-    { name: '5 hours after', tide: '1.5', speed: '3.0', direction: '290' },
-    { name: '6 hours after', tide: 'N/A', speed: 'N/A', direction: 'N/A' },
-  ];
+  onDataTypeChange() {
+    if (this.selectedFiles.length > 0) {
+      const fileId = this.selectedFiles[0].file_id;
+      this.open_file(fileId);
+    }
+  }
 }
