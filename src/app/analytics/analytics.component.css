@@ -327,21 +327,22 @@
     transition: width 0.3s ease;
 }
 
-
 .four_chart {
-    height: 82vh;
+    height: 100vh;
     width: 100%;
     /* background-color: #00ff00; */
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
+    /* justify-content: space-between; */
+    gap: 10px;
     align-items: center;
+    font-weight: bold;
 }
-
-
+ 
+ 
 .top_two,
 .bottom_two {
-    height: 40.5%;
+    height: 50%;
     width: 100%;
     /* background-color: #ff0000; */
     border-radius: 10px;
@@ -351,12 +352,12 @@
     align-items: center;
     /* padding: 20px; */
 }
-
+ 
 .left_c,
 .right_c {
     height: 100%;
     width: 49.5%;
-    /* background-color: #0000ff; */
+    background-color: #f1f2f3a2;
     border-radius: 10px;
 }
 

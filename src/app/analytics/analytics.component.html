@@ -29,7 +29,7 @@
             <p-cascadeselect *ngIf="show" [(ngModel)]="plot" variant="filled" [options]="viewModes" optionLabel="cname" optionGroupLabel="name" 
             [optionGroupChildren]="['states']" [style]="{ minWidth: '14rem' }" placeholder="Select a City"
             (onChange)="loadChart()" />
-            <label class="viewLabel">Raw Data</label>
+            <label style="margin-left: 20px;" class="viewLabel">Raw Data</label>
             <p-toggleswitch [(ngModel)]="isProcessedData" (onChange)="onDataTypeChange()"></p-toggleswitch>
             <label style="margin-right: 15px;" class="viewLabel">Processed Data</label>
             <!-- <p-select class="viewDrop" [options]="viewModess" [(ngModel)]="viewMode" placeholder="Select View Mode"
@@ -72,22 +72,51 @@
             <div id="midSpeedDirection" class="chart-diagram" style="width: 100%; height: 400px;"></div>
         </div>
 
-        <div class="chartContainer" *ngIf="plot.cname === 'Rose Vector Chart'">
-
+        <div class="chartContainer" *ngIf="plot.cname === 'Rose Plot'">
+ 
             <p-calendar [(ngModel)]="selectedPolarDateRange" (onSelect)="midpolar()" [showIcon]="true"
                 dateFormat="yy-mm-dd" [maxDate]="maxDate" [disabledDates]="disabledPolarDates"
                 [placeholder]="'Select Date Range'" selectionMode="range" [showButtonBar]="false">
             </p-calendar>
-
+ 
             <p-select [options]="[
                         {label: '30 Min', value: 30},
                         {label: '1 Hour', value: 60},
                         {label: '6 Hours', value: 360},
-                        {label: '24 Hours', value: 1440}
+                        {label: '24 Hours', value: 1440},
+                        {label: 'All', value: 'all'}
                         ]" [(ngModel)]="PolarSelectedInterVal" (onChange)="midpolar()"></p-select>
-
-            <div id="midpolar" class="chart-diagram" style="width: 100%; height: 700px;"></div>
+ 
+            <div *ngIf="PolarSelectedInterVal !== 'all'">
+                <div id="midpolar" class="chart-diagram" style="width: 100%; height: 500px;"></div>
+            </div>
+ 
+            <div *ngIf="PolarSelectedInterVal === 'all'">
+                <div class="four_chart">
+                    <div class="top_two">
+                        <div class="left_c">
+                            <p>30 Min</p>
+                            <div id="midpolar_30" class="chart-diagram" style="width: 100%; height: 350px;"></div>
+                        </div>
+                        <div class="right_c">
+                            <p>60 Min</p>
+                            <div id="midpolar_60" class="chart-diagram" style="width: 100%; height: 350px;"></div>
+                        </div>
+                    </div>
+                    <div class="bottom_two">
+                        <div class="left_c">
+                            <p>360 Min</p>
+                            <div id="midpolar_360" class="chart-diagram" style="width: 100%; height: 350px;"></div>
+                        </div>
+                        <div class="right_c">
+                            <p>1440 Min</p>
+                            <div id="midpolar_1440" class="chart-diagram" style="width: 100%; height: 350px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+ 
     </div>
 
     <p-dialog [(visible)]="visible" [style]="{width: '30vw', height: '100%', maxHeight: '100%'}" [draggable]="false"

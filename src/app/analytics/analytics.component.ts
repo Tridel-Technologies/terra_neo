@@ -135,12 +135,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   private midChartInstance?: EChartsType;
 
   selectedChart: string = 'line';
-  // chartOptions = [
-  //   { label: 'Line Plot', value: 'line' },
-  //   { label: 'Scatter Series', value: 'scatter' },
-  //   { label: 'Bar Plot', value: 'bar' },
-  // ];
-  PolarSelectedInterVal = 60;
+  PolarSelectedInterVal: number | 'all' = 60;
 
   selectedPolarDateRange: Date[] = []; // Changed from single date to date range
   maxDate: Date = new Date(); // restrict future dates
@@ -230,14 +225,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           ]
       },
       {
-          name: 'Rose Vector',
+          cname: 'Rose Plot',
           code: 'CA',
-          states: [
-            {
-              cname: 'Rose Vector Chart',
-              code: 'A-RO'
-            }
-          ]
       },
       ];
       this.plot = this.viewModes[0].states[0];
@@ -393,7 +382,7 @@ show:boolean=false;
         case 'Tri Axis':
           this.midSpeedDirection();
           break;
-        case 'Rose Vector Chart':
+        case 'Rose Plot':
           this.midpolar();
           break;
       }
@@ -2021,182 +2010,200 @@ show:boolean=false;
   }
 
   midpolar(): void {
-    if (!this.selectedPolarDateRange || this.selectedPolarDateRange.length !== 2) {
+    if (
+      !this.selectedPolarDateRange ||
+      this.selectedPolarDateRange.length !== 2
+    ) {
       this.toast.warning('Please select a date range');
       return;
     }
-
+ 
     const startDate = this.formatDateToYMD(this.selectedPolarDateRange[0]);
     const endDate = this.formatDateToYMD(this.selectedPolarDateRange[1]);
-
-    const intervalMinutes = this.PolarSelectedInterVal;
-    const groupedData = this.groupByIntervalWithinDateRange(
-      this.fullData,
-      startDate,
-      endDate,
-      intervalMinutes
-    );
-    const averagedPolarData = this.computeAverages(groupedData);
-
-    console.log('groupedData', groupedData);
-    console.log('averagedPolarData', averagedPolarData);
-
-    const polar2 = document.getElementById('midpolar')!;
-
-    setTimeout(() => {
-      if (polar2) {
-        const existingInstance = echarts.getInstanceByDom(polar2);
-        if (existingInstance) {
-          existingInstance.dispose();
-        }
-        const windRoseChart1 = echarts.init(polar2);
-
-        const directionLabels = [
-          'N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE',
-          'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'
-        ];
-        const speedCategories = [
-          '<0.5 m/s', '0.5-2 m/s', '2-4 m/s', '4-6 m/s', '6-8 m/s', '>8 m/s'
-        ] as const;
-
-        const speedColors = [
-          '#440154', // dark purple
-          '#3b528b', // blue
-          '#21918c', // teal-green
-          '#5ec962', // light green
-          '#fde725', // bright yellow
-          '#ffffe0', // lightest yellowish
-        ];
-
-        type SpeedCategory = (typeof speedCategories)[number];
-        type DirectionBin = Record<SpeedCategory, number>;
-
-        function categorizeSpeed(speed: number): SpeedCategory {
-          if (speed < 0.5) return '<0.5 m/s';
-          if (speed < 2) return '0.5-2 m/s';
-          if (speed < 4) return '2-4 m/s';
-          if (speed < 6) return '4-6 m/s';
-          if (speed < 8) return '6-8 m/s';
-          return '>8 m/s';
-        }
-
-        const dataBins: DirectionBin[] = directionLabels.map(() => ({
-          '<0.5 m/s': 0,
-          '0.5-2 m/s': 0,
-          '2-4 m/s': 0,
-          '4-6 m/s': 0,
-          '6-8 m/s': 0,
-          '>8 m/s': 0,
-        }));
-
-        averagedPolarData.forEach(({ speed, direction }) => {
-          const directionIndex = Math.round(direction / 22.5) % 16;
-          const speedCategory = categorizeSpeed(speed);
-          dataBins[directionIndex][speedCategory] += 1;
+ 
+    if (this.PolarSelectedInterVal === 'all') {
+      const intervals = [30, 60, 360, 1440];
+ 
+      setTimeout(() => {
+        intervals.forEach((interval) => {
+          const groupedData = this.groupByIntervalWithinDateRange(
+            this.fullData,
+            startDate,
+            endDate,
+            interval
+          );
+          const averagedData = this.computeAverages(groupedData);
+          this.renderPolarChart(
+            `midpolar_${interval}`,
+            averagedData,
+            startDate,
+            endDate,
+            interval
+          );
         });
-
-        const seriesData = speedCategories.map((speedCategory, index) => ({
-          name: speedCategory,
-          type: 'bar',
-          stack: 'wind-speed',
-          coordinateSystem: 'polar',
-          data: dataBins.map((bin) => bin[speedCategory]),
-          itemStyle: {
-            color: speedColors[index],
-          },
-        }));
-
-        const option = {
-          title: {
-            text: `Polar Binned (${startDate} to ${endDate})`,
-            top: '0%',
-            left: 'center',
-            textStyle: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
-              fontSize: 20,
-              align: 'center',
-            },
-          },
-          polar: {
-            center: ['50%', '55%'],
-          },
-          legend: {
-            data: speedCategories,
-            orient: 'vertical',
-            right: '15%',
-            textStyle: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
-              fontSize: 14,
-            },
-          },
-          angleAxis: {
-            type: 'category',
-            data: directionLabels,
-            boundaryGap: true,
-            startAngle: 100,
-            axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
-            },
-            splitArea: {
-              show: true,
-              areaStyle: {
-                color: ['rgba(255, 255, 255, 0.1)', 'rgba(200, 200, 200, 0.1)'],
-              },
-              axisLine: {
-                lineStyle: {
-                  color: this.base.chartFont === 'light' ? 'black' : 'white',
-                },
-              },
-            },
-            splitLine: {
-              show: true,
-              lineStyle: {
-                color: '#cccccc',
-                width: 1,
-                type: 'dashed',
-              },
-            },
-          },
-          radiusAxis: {
-            min: 0,
-            axisLine: {
-              lineStyle: {
+      }, 100);
+    } else {
+      const interval = this.PolarSelectedInterVal;
+ 
+      setTimeout(() => {
+        const groupedData = this.groupByIntervalWithinDateRange(
+          this.fullData,
+          startDate,
+          endDate,
+          interval
+        );
+        const averagedData = this.computeAverages(groupedData);
+        this.renderPolarChart(
+          'midpolar',
+          averagedData,
+          startDate,
+          endDate,
+          interval
+        );
+      }, 100);
+    }
+  }
+ 
+  private renderPolarChart(
+    elementId: string,
+    averagedPolarData: { speed: number; direction: number }[],
+    startDate: string,
+    endDate: string,
+    interval: number
+  ): void {
+    const element = document.getElementById(elementId);
+    if (!element) {
+      console.error(`Element with id '${elementId}' not found`);
+      return;
+    }
+ 
+    const existingInstance = echarts.getInstanceByDom(element);
+    if (existingInstance) {
+      existingInstance.dispose();
+    }
+ 
+    const chart = echarts.init(element);
+ 
+    const directionLabels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+ 
+    const speedCategories = [
+      '<0.5 m/s',
+      '0.5-2 m/s',
+      '2-4 m/s',
+      '4-6 m/s',
+      '6-8 m/s',
+      '>8 m/s',
+    ] as const;
+    const speedColors = [
+      '#0000FF',
+      '#3399FF',
+      '#66CCFF',
+      '#FFFF66',
+      '#FF9933',
+      '#FF3300',
+    ];
+ 
+    type SpeedCategory = (typeof speedCategories)[number];
+    type DirectionBin = Record<SpeedCategory, number>;
+ 
+    const categorizeSpeed = (speed: number): SpeedCategory => {
+      if (speed < 0.5) return '<0.5 m/s';
+      if (speed < 2) return '0.5-2 m/s';
+      if (speed < 4) return '2-4 m/s';
+      if (speed < 6) return '4-6 m/s';
+      if (speed < 8) return '6-8 m/s';
+      return '>8 m/s';
+    };
+ 
+    const dataBins: DirectionBin[] = directionLabels.map(() => ({
+      '<0.5 m/s': 0,
+      '0.5-2 m/s': 0,
+      '2-4 m/s': 0,
+      '4-6 m/s': 0,
+      '6-8 m/s': 0,
+      '>8 m/s': 0,
+    }));
+ 
+    averagedPolarData.forEach(({ speed, direction }) => {
+      // const directionIndex = Math.round(direction / 22.5) % 16;
+ 
+      const directionIndex = Math.round(direction / 45) % 8;
+      const speedCategory = categorizeSpeed(speed);
+      dataBins[directionIndex][speedCategory] += 1;
+    });
+ 
+    const seriesData = speedCategories.map((speedCategory, index) => ({
+      name: speedCategory,
+      type: 'bar',
+      stack: 'wind-speed',
+      coordinateSystem: 'polar',
+      data: dataBins.map((bin) => bin[speedCategory]),
+      itemStyle: {
+        color: speedColors[index],
+      },
+    }));
+ 
+    const option = {
+      title: {
+        // text: this.PolarSelectedInterVal,
+        text: this.PolarSelectedInterVal !== 'all' ? `${interval} min` : '',
+        top: '0%',
+        left: 'center',
+        textStyle: {
+          color: this.base.chartFont === 'light' ? 'black' : 'white',
+          fontSize: 18,
+        },
+      },
+      polar: { center: ['50%', '55%'] },
+      legend:
+        this.PolarSelectedInterVal === 'all'
+          ? {
+              show: interval == 60,
+              // data: ['30 min', '60 min', '360 min', '1440 min'],
+              orient: 'vertical',
+              right: '0%',
+              textStyle: {
                 color: this.base.chartFont === 'light' ? 'black' : 'white',
+                fontSize: 12,
               },
-            },
-            axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
-              formatter: '{value}',
-            },
-            splitLine: {
+            }
+          : {
               show: true,
-              lineStyle: {
+              data: speedCategories,
+              orient: 'vertical',
+              right: '0%',
+              textStyle: {
                 color: this.base.chartFont === 'light' ? 'black' : 'white',
-                type: 'dashed',
+                fontSize: 12,
               },
             },
-          },
-          tooltip: {
-            trigger: 'item',
-            formatter: '{a}: {c}',
-          },
-          dataZoom: [
-            {
-              type: 'inside',
-              start: 0,
-              end: 100,
-            },
-          ],
-          series: seriesData,
-          animationDuration: 1000,
-        };
-
-        windRoseChart1.setOption(option);
-        window.addEventListener('resize', () => windRoseChart1.resize());
-      } else {
-        console.error("Element with id 'rose-plot' not found");
-      }
-    }, 0);
+ 
+      angleAxis: {
+        type: 'category',
+        data: directionLabels,
+        boundaryGap: true,
+        startAngle: 100,
+        axisLabel: {
+          color: this.base.chartFont === 'light' ? 'black' : 'white',
+        },
+      },
+      radiusAxis: {
+        min: 0,
+        axisLabel: {
+          color: this.base.chartFont === 'light' ? 'black' : 'white',
+          formatter: '{value}',
+        },
+      },
+      tooltip: {
+        trigger: 'item',
+        formatter: '{a}: {c}',
+      },
+      series: seriesData,
+      animationDuration: 800,
+    };
+ 
+    chart.setOption(option);
+    window.addEventListener('resize', () => chart.resize());
   }
 
   private groupByIntervalWithinDateRange(
