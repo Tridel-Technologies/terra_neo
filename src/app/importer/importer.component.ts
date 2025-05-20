@@ -16,6 +16,7 @@ interface Folders {
 interface fileData{
   file_id:number,
   file_name:string,
+  is_processed: boolean
 }
 
 @Component({

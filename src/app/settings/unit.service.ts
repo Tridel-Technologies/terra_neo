@@ -7,6 +7,7 @@ export interface UnitSettings {
   currentDirection: string;
   battery: string;
   depth: string;
+  latandlong: string;
 }
  
 @Injectable({
@@ -19,7 +20,8 @@ export class UnitService {
     currentSpeed: 'm/s',
     currentDirection: '°',
     battery: '%',
-    depth: 'm'
+    depth: 'm',
+    latandlong:'DD',
   };
  
   private unitsSubject = new BehaviorSubject<UnitSettings>(this.defaultUnits);

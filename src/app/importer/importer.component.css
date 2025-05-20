@@ -61,6 +61,7 @@
   .file-list {
     padding-left: 36px;
     padding-bottom: 5px;
+    cursor: pointer;
   }
   
   .file-item {
@@ -285,13 +286,16 @@
     /* border-radius: 8px 8px; */
    }
    .styled-table {
-    width: 100%;
+    width: 80%;
+    height: 100%;
     border-collapse: collapse;
     margin-top: 15px;
+    margin-left: 22%;
     font-size: 13px;
     text-align: left;
-    color: var(--font-color)
-    ;
+    color: var(--font-color);
+    overflow: hidden;
+    overflow-y: auto;
 
   }
   
@@ -351,10 +355,10 @@
 
   /* configs */
   .coordinates{
-    height: 100%;
-    width: 25%;
+    height: fit-content;
+    width: 20%;
     margin-top: 5%;
-    position: sticky;
+    position: absolute;
     display: flex;
     justify-content: flex-start;
     align-items: start;
@@ -369,7 +373,7 @@
   }
   .coordinates input{
     height: 30px;
-    width: 90%;
+    width: 80%;
     border: 1.5px solid grey;
     border-radius: 10px;
     padding-left: 10px;
@@ -404,7 +408,7 @@
 .spacer{
     /* height: 40%;
     width: 100%; */
-    flex-grow: 0.7;
+    flex-grow: 0.5;
 }
   .update{
     height: 30px;
@@ -412,6 +416,8 @@
     border-radius: 10px;
     border: none;
     background-color: var(--button-bg);
+    margin-top: 10%;
+    margin-left: 8%;
     /* color: var(--font-color); */
     color: var(--button-text-color);
   }

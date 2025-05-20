@@ -17,7 +17,8 @@ interface Files {
 }
 interface fileData{
   file_id:number,
-  file_name:string
+  file_name:string,
+  is_processed: boolean
 }
 interface dashdata{
   id:string,
@@ -74,8 +75,14 @@ dir:boolean = false;
     currentSpeed: '',
     currentDirection: '',
     battery: '',
-    depth: ''
+    depth: '',
+    latandlong:''
   };
+
+truncate(value: string | number): number {
+  return Math.floor(parseFloat(value as string));
+}
+
 
   toggle_tap() {
     // try {
