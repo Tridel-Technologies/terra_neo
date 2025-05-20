@@ -19,6 +19,8 @@
                     (click)="toggleFileSelection(f.file_name, $event, f.file_id)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
+                    <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem"
+                        title="Processed File"></i>
 
                 </div>
             </div>
@@ -119,18 +121,17 @@
                         Latitude must be between -90° and +90°.
                     </div>
 
-
-
                     <h4 *ngIf="!isMulti">Select High Water Time</h4>
-                    <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti">
+                    <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti" readonly>
                     <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
-                <option value="1">-- Please Select High Water Level from Table - -></option>
-                <option value="2">one</option>
-                <option value="3">two</option>
-            </select> -->
-                    <div class="spacer"></div>
-                    <button class="update" style="align-self: center;" (click)="update_Values()">Update</button>
+                        <option value="1">-- Please Select High Water Level from Table - -></option>
+                        <option value="2">one</option>
+                        <option value="3">two</option>
+                    </select> -->
+                    <!-- <div class="spacer"></div> -->
+                    <button class="update" (click)="update_Values()">Update</button>
                 </div>
+
                 <table class="styled-table">
                     <thead>
                         <tr>

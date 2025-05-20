@@ -266,6 +266,12 @@ onContainerRightClick(event: MouseEvent) {
     label: 'Depth',
     iconClass: 'fas fa-arrows-down-to-line',
     units: ['m', 'ft']
+  },
+  {
+    key: 'latandlong',
+    label: 'Latitude and Longitude',
+    iconClass: 'fas fa-map-marker-alt',
+    units: ['DD', 'DMS']
   }
 ];
  
@@ -303,6 +309,10 @@ getTooltip(paramKey: string, unit: string): string {
     depth: {
       m: 'Meters',
       ft: 'Feet'
+    },
+    latandlong: {
+      'DD': 'Decimal Degrees',
+      'DMS': 'Degrees, Minutes, Seconds'
     }
   };
  

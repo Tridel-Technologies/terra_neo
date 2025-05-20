@@ -8,7 +8,7 @@
     align-items: center;
 }
  
-.files_containerr {
+/* .files_containerr {
     width: 50%;
     height: 100%;
     display: flex;
@@ -17,7 +17,7 @@
     justify-content: flex-start;
     background-color: var(--background-secondary);
     color: var(--font-color);
-}
+} */
  
 .units_container {
     width: 50%;
@@ -153,8 +153,11 @@
 .fileCContainer{
     height: 100%;
     width: 60%;
+    padding: 10px;
     color: var(--font-color);
     position: relative;
+    overflow: hidden;
+    overflow-y: auto;
 }
 
 .newFolddr{
@@ -237,6 +240,8 @@
 }
 .Folder p{
     margin: 0;
+    font-size: 14px;
+    text-align: center;
 }
 
 

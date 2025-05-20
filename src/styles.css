@@ -52,6 +52,9 @@ body, html{
   --circuit-hover2: #00000121;
   --text-color: #000;
   --button-text-color:white;
+
+  /* Toggle */
+  --toggle-color: #007bff;
 }
 
 /* Dark theme override */
@@ -92,6 +95,9 @@ body, html{
   --circuit-hover2: #09f6fe21;
   --text-color: #ffffff;
   --button-text-color:black;
+
+    /* Toggle */
+  --toggle-color: aqua;
  
 }
 

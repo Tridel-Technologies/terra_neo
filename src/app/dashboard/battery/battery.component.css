@@ -36,8 +36,8 @@
     width: 180px;
     justify-content: center;
     align-items: center;
-    margin-left: 55%;
-    margin-top: 20%;
+    margin-left: 40%;
+    /* margin-top: 5%; */
     align-self: center;
   }
   .icon{
@@ -51,8 +51,8 @@
   .batt-live{
     position: relative;
     display: flex;
-    height: 100px;
-    width: 100px;
+    height: 85px;
+    width: 85px;
     justify-content: center;
     align-items: center;
     /* margin-left: 40px; */

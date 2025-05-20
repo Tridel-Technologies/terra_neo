@@ -16,6 +16,8 @@
                     (click)="toggleFileSelection(f.file_name, $event, folder.folder_id, folder.folder_name)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
+                    <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem"
+                        title="Processed File"></i>
                     <!-- <span class="view-btn" (click)="open_file(f)">View</span> -->
                 </div>
             </div>
@@ -26,7 +28,7 @@
             <p>Live</p>
             <!-- <p-toggleswitch [(ngModel)]="isLive" (onChange)="toggle_tap()" /> -->
             <div class="tog"
-                [ngStyle]="{'justify-content':isLive?'start':'end', 'background-color':!isLive?'var(--)':'rgba(216, 216, 216, 0.853)'}"
+                [ngStyle]="{'justify-content':isLive?'start':'end', 'background-color':!isLive?'var(--toggle-color)':'rgba(216, 216, 216, 0.853)'}"
                 (click)="toggle_tap()">
                 <div class="toggle_button"></div>
 
@@ -43,7 +45,7 @@
             </select>
             <div class="af-bf" *ngIf="!isLive">
                 <p>After</p>
-                <p-toggleswitch [(ngModel)]="isbefore" />
+                <p-toggleswitch [(ngModel)]="isbefore" [ngStyle]="{'color':!isbefore?'var(--toggle-color)':'rgba(216, 216,216, 0.853)'}"/>
                 <p>Before</p>
             </div>
 
@@ -57,7 +59,7 @@
                             ? 'rgba(165, 198, 240, 0.851)' : 'transparent'
                         }">
                     {{ dates.date | date :'yyyy-MM-dd HH:mm:ss' }} {{ dates.time }}
-                </p>
+                </p> 
             </div>
         </div>
         <div class="right" [ngStyle]="{'width':!isLive ?'98.5%':'76%'}">
@@ -67,7 +69,7 @@
                     <p class="sub-title">{{selected_data.id}}</p>
                 </div>
                 <div class="date-time">
-                    <h5 class="title">Date</h5>
+                    <h5 class="title">Date & Time</h5>
                     <p class="sub-title">{{selected_data.dateTime |date: 'yyyy-MM-dd HH:mm:ss'}}</p>
                 </div>
                 <div class="lat">
@@ -79,7 +81,7 @@
                         <div class="bat">
                             <h5>Battery Voltage</h5>
                             <app-battery [isLive]="isLive" [percentage]="12"></app-battery>
-                            <p>34</p>
+                            <p style="align-self: center;" >{{ truncate(selected_data.battery) }} {{units.battery}}</p>
                         </div>
                         <div class="depth">
                             <h5>Depth</h5>
@@ -180,11 +182,11 @@
                     <p style="align-self: center;">{{af_tide}}</p>
                 </div> -->
                 <div class="battery" *ngIf="isLive">
-                    <h5 class="title-tide" style="margin-top: 12px;">Battery</h5>
+                    <h5 class="title-tide" style="margin-top: 8%;">Battery</h5>
                     <div class="bat-live">
                         <app-battery [isLive]="isLive" [percentage]="12"></app-battery>
                     </div>
-                    <p style="align-self: center;">{{selected_data.battery}} {{units.battery}}</p>
+                    <p style="align-self: center;">{{ truncate(selected_data.battery) }} {{units.battery}}</p>
                 </div>
             </div>
             <div class="currents">
@@ -238,11 +240,11 @@
                     <p style="align-self: center;">{{selected_data.current_speed}} {{units.currentSpeed}}</p>
                 </div>
                 <div class="current_direction" *ngIf="isLive">
-                    <h5 class="title-tide">Current Direction</h5>
+                    <h5 class="title-tide" style="margin-top: 8%;">Current Direction</h5>
                     <!-- <img src="../../assets/dire.png" alt=""> -->
                     <app-direction1 *ngIf="dir" [direction]="selected_data.current_direction" id="Dir1"
                         style="align-self: center;"></app-direction1>
-                    <p style="align-self: center; text-align: center;">{{selected_data.current_direction}}
+                    <p style="align-self: center; text-align: center; margin-top: -1%;">{{truncate(selected_data.current_direction)}}
                         {{units.currentDirection}}
                         <br> (Towards {{directionTo}})
                     </p>
