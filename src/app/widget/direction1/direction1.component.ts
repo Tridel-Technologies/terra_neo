@@ -71,14 +71,16 @@ export class Direction1Component implements AfterViewInit {
     let createLabel = (text: string, value: number, tickOpacity: number) => {
       let axisDataItem = xAxis.makeDataItem({ value });
       xAxis.createAxisRange(axisDataItem);
-
+ const cssColor = getComputedStyle(document.documentElement).getPropertyValue('--font-color').trim();
       let label = axisDataItem.get('label');
       if (label) {
-        label.setAll({ text, fill: am5.color(0x000), forceHidden: false, inside: true, fontSize:8 });
+        label.setAll({ text, fill: am5.color(cssColor), forceHidden: false, inside: true, fontSize:8 });
       }
+      // Get the CSS variable value
+     
 
       axisRenderer.setAll({
-        stroke: am5.color(0x000), // Fixed typo: "0xfffffff" to "0xffffff"
+        stroke: am5.color(cssColor), // Fixed typo: "0xfffffff" to "0xffffff"
         strokeOpacity: 1,
         strokeWidth: 2,
         minGridDistance: 5,
@@ -88,7 +90,7 @@ export class Direction1Component implements AfterViewInit {
       if (axis) {
         axis.setAll({
           forceHidden: false,
-          fill: am5.color(0xff000),
+          fill: am5.color(cssColor),
           strokeOpacity: tickOpacity,
           length: 12 * tickOpacity,
           visible: true,

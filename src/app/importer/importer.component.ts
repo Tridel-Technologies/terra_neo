@@ -5,6 +5,7 @@ import * as XLSX from 'xlsx';
 import { GlobalConfig } from '../global/app.global';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { LandingComponent } from "./landing/landing.component";
 
 interface Folders {
   folder_id: number,
@@ -19,7 +20,7 @@ interface fileData{
 
 @Component({
   selector: 'app-importer',
-  imports: [CommonModule, HttpClientModule, FormsModule],
+  imports: [CommonModule, HttpClientModule, FormsModule, LandingComponent],
   templateUrl: './importer.component.html',
   styleUrl: './importer.component.css',
   providers:[DatePipe]
@@ -63,6 +64,12 @@ fileWiseUploadData: { [fileName: string]: any[] } = {};
   }
   
   update_Values(){
+    if (this.latitude ===null && this.lon === null) {
+      this.toast.warning("Please enter coordinates", "Error", {
+        timeOut:1000,
+      })
+        return;
+    }
     console.log(this.selectedFiles);
     const files = [];
     for (let index = 0; index < this.selectedFiles.length; index++) {
@@ -73,7 +80,12 @@ fileWiseUploadData: { [fileName: string]: any[] } = {};
       file_name:files, lat:this.latitude, lon:this.lon, high_water_level:this.high_water_level
     }
     console.log("sendingData", data);
-    this.http.post('http://localhost:3000/api/update_values',data).subscribe(
+    this.update(data);
+   
+  }
+
+  update(data:any){
+ this.http.post('http://localhost:3000/api/update_values',data).subscribe(
       (response:any)=>{
         console.log(response);
         this.toast.success("Update successful", "Success");
@@ -101,11 +113,19 @@ fileWiseUploadData: { [fileName: string]: any[] } = {};
               this.main_table.push(response[index])
             }
             console.log(this.main_table)
+            this.latitude = this.main_table[0].lat;
+            this.lon = this.main_table[0].lon;
           }, 100);
         }else{
           this.main_table = [];
           setTimeout(() => {
             this.main_table = response
+             this.latitude = this.main_table[0].lat;
+            this.lon = this.main_table[0].lon;
+            const high = this.main_table.filter(item=> item.high_water_level === 1);
+            console.log(high)
+            console.log()
+            this.high_water_level = high[0].date;
           }, 100);
         }
       }
@@ -356,7 +376,7 @@ changinglat(){
     this.toast.warning("Please Enter Folder name", "Warning");
     return;
   }
-
+this.files_list =[];
   const file = {
     folder_name: this.FileName,
     file_name: Object.keys(this.fileWiseUploadData),
@@ -381,7 +401,7 @@ changinglat(){
             this.expandedFolders = this.files_list.map(() => false);
           }
         );
-      }, 100);
+      }, 900);
     }
   );
 }

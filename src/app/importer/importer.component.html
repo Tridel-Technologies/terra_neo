@@ -3,7 +3,7 @@
     <button class="import_button" (click)="on_openImport()">import</button>
 
     <div class="files_container">
-        <h4 style="align-self: flex-start; margin-left: 20px;">Explorer</h4>
+        <h4 style="align-self: flex-start; margin-left: 20px; color: var(--font-color);">Explorer</h4>
 
         <div class="folder" *ngFor="let folder of files_list; let i = index">
             <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
@@ -16,7 +16,7 @@
 
             <div class="file-list" *ngIf="expandedFolders[i]">
                 <div *ngFor="let f of folder.files" [ngClass]="getFileClass(f.file_name, folder.folder_id)"
-                    (click)="toggleFileSelection(f.file_name, $event, folder.folder_id)">
+                    (click)="toggleFileSelection(f.file_name, $event, f.file_id)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
 
@@ -29,35 +29,7 @@
 
     <div class="main_section">
 
-        <div class="coordinates">
 
-            <h4>Longitude</h4>
-            <input type="number" step="any" min="-180" max="180" placeholder="Longitude (-180 to 180)" [(ngModel)]="lon"
-                name="longitude" #long="ngModel">
-            <div *ngIf="long.invalid" class="error">
-                Longitude must be between -180° and +180°.
-            </div>
-
-            <h4>Latitude</h4>
-            <input type="number" step="any" min="-90" max="90" placeholder="Latitude (-90 to 90)" [(ngModel)]="latitude"
-                name="latitude" #lat="ngModel" (change)="changinglat()">
-            <div *ngIf="lat.invalid" class="error1">
-                Latitude must be between -90° and +90°.
-            </div>
-
-
-
-            <h4 *ngIf="!isMulti">Select High Water Time</h4>
-            <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti">
-            <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
-                <option value="1">-- Please Select High Water Level from Table - -></option>
-                <option value="2">one</option>
-                <option value="3">two</option>
-            </select> -->
-            <div class="spacer"></div>
-            <button class="update" style="align-self: flex-end; margin-right: 15px;"
-                (click)="update_Values()">Update</button>
-        </div>
         <!-- <div class="dashboard">
             <div class="widget">
                 <h3>Station ID</h3>
@@ -125,8 +97,40 @@
             </div>
         </div> -->
         <div class="table_container" *ngIf="!isMulti">
-            <p *ngIf="main_table.length === 0">No Files Selected</p>
+            <!-- <p *ngIf="main_table.length === 0">No Files Selected</p> -->
+            <div *ngIf="main_table.length === 0" class="land">
+                <app-landing></app-landing>
+                <!-- <p class="chip-text">Advance Processing of Oceanographic Current Profilers</p> -->
+            </div>
             <div class="bod" *ngIf="main_table.length > 0">
+                <div class="coordinates">
+
+                    <h4>Longitude</h4>
+                    <input type="number" step="any" min="-180" max="180" placeholder="Longitude (-180 to 180)"
+                        [(ngModel)]="lon" name="longitude" #long="ngModel">
+                    <div *ngIf="long.invalid" class="error">
+                        Longitude must be between -180° and +180°.
+                    </div>
+
+                    <h4>Latitude</h4>
+                    <input type="number" step="any" min="-90" max="90" placeholder="Latitude (-90 to 90)"
+                        [(ngModel)]="latitude" name="latitude" #lat="ngModel" (change)="changinglat()">
+                    <div *ngIf="lat.invalid" class="error1">
+                        Latitude must be between -90° and +90°.
+                    </div>
+
+
+
+                    <h4 *ngIf="!isMulti">Select High Water Time</h4>
+                    <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti">
+                    <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
+                <option value="1">-- Please Select High Water Level from Table - -></option>
+                <option value="2">one</option>
+                <option value="3">two</option>
+            </select> -->
+                    <div class="spacer"></div>
+                    <button class="update" style="align-self: center;" (click)="update_Values()">Update</button>
+                </div>
                 <table class="styled-table">
                     <thead>
                         <tr>
@@ -164,7 +168,7 @@
                     <tbody>
                         <tr *ngFor="let row of historyData; let i=index">
                             <td>{{ row.station_id }}</td>
-                            <td>{{ row.DateTime | date:'yyyy MM dd HH:mm:ss'}}</td>
+                            <td>{{ row.date | date:'yyyy MM dd HH:mm:ss'}}</td>
                             <!-- <td>{{ row.Time }}</td> -->
                             <td>{{ row.speed }}</td>
                             <td>{{ row.direction }}</td>

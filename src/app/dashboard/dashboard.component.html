@@ -26,7 +26,7 @@
             <p>Live</p>
             <!-- <p-toggleswitch [(ngModel)]="isLive" (onChange)="toggle_tap()" /> -->
             <div class="tog"
-                [ngStyle]="{'justify-content':isLive?'start':'end', 'background-color':!isLive?'#0fb981':'rgba(216, 216, 216, 0.853)'}"
+                [ngStyle]="{'justify-content':isLive?'start':'end', 'background-color':!isLive?'var(--)':'rgba(216, 216, 216, 0.853)'}"
                 (click)="toggle_tap()">
                 <div class="toggle_button"></div>
 
@@ -54,7 +54,7 @@
                 <p *ngFor="let dates of main_table" (click)="tap_date(dates.date, dates.time)" [ngStyle]="{
                             'background-color': 
                             selected_data.dateTime === dates.date
-                            ? '#d1e7dd' : 'transparent'
+                            ? 'rgba(165, 198, 240, 0.851)' : 'transparent'
                         }">
                     {{ dates.date | date :'yyyy-MM-dd HH:mm:ss' }} {{ dates.time }}
                 </p>
@@ -180,8 +180,8 @@
                     <p style="align-self: center;">{{af_tide}}</p>
                 </div> -->
                 <div class="battery" *ngIf="isLive">
-                    <h5 class="title-tide">Battery</h5>
-                    <div class="bat">
+                    <h5 class="title-tide" style="margin-top: 12px;">Battery</h5>
+                    <div class="bat-live">
                         <app-battery [isLive]="isLive" [percentage]="12"></app-battery>
                     </div>
                     <p style="align-self: center;">{{selected_data.battery}} {{units.battery}}</p>

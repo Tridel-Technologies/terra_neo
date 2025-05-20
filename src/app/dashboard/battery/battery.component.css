@@ -32,11 +32,13 @@
   .batt{
     position: relative;
     display: flex;
-    height: 200px;
-    width: 200px;
+    height: 180px;
+    width: 180px;
     justify-content: center;
     align-items: center;
-    margin-left: 35%;
+    margin-left: 55%;
+    margin-top: 20%;
+    align-self: center;
   }
   .icon{
     height: 40px;

@@ -16,6 +16,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
+    overflow: hidden;
+    overflow-y: auto;
     background-color: var(--background-secondary);
   }
   
@@ -53,6 +55,7 @@
   .arrow {
     margin-left: auto;
     font-size: 18px;
+    color: var(--font-color);
   }
   
   .file-list {
@@ -135,14 +138,30 @@
 }
 .table_container{
     height: 80%;
-    width: 70%;
+    width: 100%;
     margin-top: 5%;
     /* background-color: var(--background-secondary); */
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
-}.file_upload_container {
+}
+.land{
+  height: 100vh;
+  width: 100%;
+}
+.chip-text {
+  position: absolute;
+  bottom: 15px;
+  right: 50px;
+  color: var(--font-color);
+  font-weight: bold;
+  font-size: 24px;
+  text-align: center;
+  line-height: 1.4;
+  pointer-events: none;
+}
+.file_upload_container {
     height: 100%;
     width: 20%;
     /* max-width: 300px; */
@@ -179,7 +198,8 @@
     justify-content: center;
     align-items: center;
     background-color: var(--button-bg);
-    color: white;
+    color: var(--button-text-color);
+    /* color: white; */
     border: none;
     border-radius: 10px;
     position: absolute;
@@ -242,6 +262,7 @@
 .bod{
     height: 100%;
     width: 100%;
+    display: flex;
     overflow-y: auto;
 }
 .head{
@@ -333,6 +354,7 @@
     height: 100%;
     width: 25%;
     margin-top: 5%;
+    position: sticky;
     display: flex;
     justify-content: flex-start;
     align-items: start;
@@ -391,7 +413,7 @@
     border: none;
     background-color: var(--button-bg);
     /* color: var(--font-color); */
-    color: white;
+    color: var(--button-text-color);
   }
   /* dashboard */
   .dashboard {

@@ -127,7 +127,7 @@
     align-items: end;
     position: absolute;
     top:60px;
-    right: 10px;
+    right: 0px;
 
     /* background-color: antiquewhite; */
   }
@@ -298,7 +298,19 @@ font-size: 12px;
     margin-left: 30px;
     color: var(--font-color);
   }
-  .tide, .battery{
+  .tide{
+    height: 49.5%;
+    width: 100%;
+    border-radius: 10px;
+    background-color: var(--background-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: start;
+    justify-content: space-evenly;
+    color: var(--font-color);
+  }
+
+  .battery{
     height: 49.5%;
     width: 100%;
     border-radius: 10px;
@@ -321,7 +333,15 @@ font-size: 12px;
   }
   .title-tide{
     font-size: 18px;
-    margin: 0px;
+    margin: 5px;
+    font-weight: 500;
+    margin-left: 30px;
+    color: var(--font-color);
+  }
+
+    .title-tide2{
+    font-size: 18px;
+    margin: 5px;
     font-weight: 500;
     margin-left: 30px;
     color: var(--font-color);
@@ -348,13 +368,24 @@ font-size: 12px;
     align-items: center;
     padding: 10px;
     color: var(--font-color);
-    
+  }
+  .bat-live{
+       height: 70%;
+    width: 49.5%;
+    background-color: var(--background-secondary);
+    border-radius: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: center;
+    /* padding: 10px; */
+    color: var(--font-color);
   }
   .bat h5{
-    /* margin-top: 20px; */
+    /* margin-bottom: 20px; */
     align-self: flex-start;
-    margin-left: 10px;
-    margin: 0;
+    margin: 0px;
+    /* margin-left: 10px; */
   }
   .depth h5{
     align-self: flex-start;
@@ -412,12 +443,12 @@ font-size: 12px;
     display: flex;
     flex-direction: column;
     align-items: start;
-    justify-content: center;
+    justify-content: space-evenly;
     color: var(--font-color);
   }
   .current_speed svg{
     height: 50%;
-    width: 60%;
+    width: 50%;
     align-self: center;
   }
   .current_speed img{
@@ -484,8 +515,8 @@ font-size: 12px;
     width: 100px;
 }
 .cbox-left svg{
-  height: 50px;
-  width: 50px;
+  height: 50%;
+  width: 40%;
 }
 
 /* test array ui */
@@ -555,7 +586,7 @@ font-size: 12px;
   /* margin-bottom: 10px; */
 }
 .tide-not-live svg{
-  height: 50%;
+  height: 35%;
   width: 20%;
 }
 .tide-not-live img{
@@ -669,8 +700,8 @@ p-toggleswitch{
 }
 
 .compass{
-  height: 80px;
-  width: 80px;
+  height: 50%;
+  width: 50%;
   /* background-color: antiquewhite; */
   display: flex;
   justify-content: center;

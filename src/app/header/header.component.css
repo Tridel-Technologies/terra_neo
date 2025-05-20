@@ -12,7 +12,7 @@
 
 .topbar h1{
 font-size: 20px;
-color: var(--primary-color);
+color: var(--circuit-color-pulse);
 margin-left: 20px;
 }
 .pages_item{
@@ -73,17 +73,16 @@ margin-left: 20px;
 }
 .page{
     cursor: pointer;
-    color: var(--font-);
+    color: var(--font-color);
 }
 .page p{
     cursor: pointer;
-    color: var(--font-color);
 }
 .page_active{
-    border-bottom: 2px solid blue;
-    color: blue;
+    border-bottom: 2px solid var(--button-bg);
+    color: var(--button-bg);
     cursor: pointer;
 }
 .page:hover{
-    border-bottom: 2px solid blue;
+    border-bottom: 2px solid var(--button-bg);
 }

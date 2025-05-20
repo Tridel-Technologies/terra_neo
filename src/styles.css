@@ -39,6 +39,19 @@ body, html{
   /* Bars */
   --bar-bg: #e9ecef;
   --bar-foreground: var(--primary-color);
+
+  /* Tooltip */
+  --tooltip-bg: #333;
+  --tooltip-text: #fff;
+ 
+  /* Circuit */
+  --circuit-color: #000000;
+  --circuit-color-pulse: #007bff;
+  --circuit-border-color: #00000075;
+  --circuit-hover: #00000021;
+  --circuit-hover2: #00000121;
+  --text-color: #000;
+  --button-text-color:white;
 }
 
 /* Dark theme override */
@@ -61,11 +74,25 @@ body, html{
 
   --highlight-color: #2c2c2c;
 
-  --button-bg: var(--primary-color);
+  --button-bg: aqua;
   --button-color: #ffffff;
 
   --bar-bg: #343a40;
   --bar-foreground: var(--primary-color);
+
+      /* Tooltip */
+  --tooltip-bg: #eee;
+  --tooltip-text: #000;
+ 
+    /* Circuit */
+  --circuit-color: aqua;
+  --circuit-color-pulse: aqua;
+  --circuit-border-color: #00f7ff7c;
+  --circuit-hover: #00f7ff21;
+  --circuit-hover2: #09f6fe21;
+  --text-color: #ffffff;
+  --button-text-color:black;
+ 
 }
 
 
