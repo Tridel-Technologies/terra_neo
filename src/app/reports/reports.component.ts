@@ -10,12 +10,18 @@ import { Toast } from 'ngx-toastr';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { InputSwitchModule } from 'primeng/inputswitch';
 import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
+import * as XLSX from 'xlsx';
+import { saveAs } from 'file-saver';
+import * as FileSaver from 'file-saver';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 interface Column {
   field: string;
   header: string;
   type: string;
-  customExportHeader?: string;
+  // customExportHeader?: string;
 }
 
 interface Files {
@@ -82,6 +88,7 @@ interface fileData {
     ToggleSwitchModule,
     InputSwitchModule,
     DropdownModule,
+    SelectModule,
   ],
   templateUrl: './reports.component.html',
   styleUrl: './reports.component.css',
@@ -123,11 +130,21 @@ export class ReportsComponent implements OnInit {
     { field: 'direction', header: 'Direction', type: 'text' },
   ];
 
-  selectedData: { name: string; value: string } = { name: 'Raw Data', value: 'raw' };
+  selectedData: { name: string; value: string } = {
+    name: 'Raw Data',
+    value: 'raw',
+  };
   dataTypeOptions = [
     { name: 'Raw Data', value: 'raw' },
-    { name: 'Processed Data', value: 'processed' }
+    { name: 'Processed Data', value: 'processed' },
   ];
+
+  exportOptions = [
+    { label: 'Export to CSV', value: 'csv' },
+    { label: 'Export to Excel', value: 'excel' },
+    { label: 'Export to PDF', value: 'pdf' },
+  ];
+  nameOfStation!: string;
 
   constructor(private http: HttpClient, private toast: ToastrService) {}
 
@@ -147,7 +164,7 @@ export class ReportsComponent implements OnInit {
       { field: 'date', header: 'Time Stamp', type: 'shortDate' },
       { field: 'lat', header: 'LAT', type: 'text' },
       { field: 'lon', header: 'LON', type: 'text' },
-      { field: 'dept', header: 'Depth', type: 'text' },
+      { field: 'depth', header: 'Depth', type: 'text' },
       { field: 'pressure', header: 'Water Level', type: 'text' },
       { field: 'speed', header: 'Current Speed', type: 'text' },
       { field: 'direction', header: 'Current Direction', type: 'text' },
@@ -155,7 +172,7 @@ export class ReportsComponent implements OnInit {
     this.selectedColumns = this.cols;
     this.globalFilterFields = this.cols.map((col) => col.field);
   }
-  
+
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
     // Remove the global filter since we're using custom filtering
@@ -166,8 +183,12 @@ export class ReportsComponent implements OnInit {
     if (!this.searchQuery) return value;
 
     // Ensure the value is treated as a string
-    const stringValue = value !== null && value !== undefined ? String(value) : '';
-    const escapedSearchQuery = this.searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+    const stringValue =
+      value !== null && value !== undefined ? String(value) : '';
+    const escapedSearchQuery = this.searchQuery.replace(
+      /[-\/\\^$*+?.()|[\]{}]/g,
+      '\\$&'
+    );
     const regex = new RegExp(`(${escapedSearchQuery})`, 'gi');
     return stringValue.replace(regex, '<span class="highlight">$1</span>');
   }
@@ -184,7 +205,7 @@ export class ReportsComponent implements OnInit {
     return columns.some((col) => {
       const value = rowData[col.field];
       if (value === null || value === undefined) return false;
-      
+
       const stringValue = String(value).toLowerCase().trim();
       return stringValue.includes(search);
     });
@@ -223,9 +244,13 @@ export class ReportsComponent implements OnInit {
     };
     console.log('dd', this.selectedData);
     this.http
-      .get(`http://localhost:3000/api/${
-        this.selectedData.value === 'processed' ? 'get_processed_data' : 'fetch_data_by_file'
-      }/${file_id}`)
+      .get(
+        `http://localhost:3000/api/${
+          this.selectedData.value === 'processed'
+            ? 'get_processed_data'
+            : 'fetch_data_by_file'
+        }/${file_id}`
+      )
       .subscribe((response: any) => {
         console.log('response', response);
 
@@ -361,8 +386,10 @@ export class ReportsComponent implements OnInit {
       // Before hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
         const timestamp = new Date(bf[i][0]?.date);
-        const formattedDate = timestamp ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00` : '';
-        
+        const formattedDate = timestamp
+          ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00`
+          : '';
+
         this.toggleTableData.push({
           name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} before`,
           timestamp: formattedDate,
@@ -382,14 +409,16 @@ export class ReportsComponent implements OnInit {
         tide: currentData.pressure ?? NaN,
         speed: currentData.speed ?? NaN,
         direction: currentData.direction ?? NaN,
-        highlight: true
+        highlight: true,
       });
 
       // After hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
         const timestamp = new Date(af[i][0]?.date);
-        const formattedDate = timestamp ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00` : '';
-        
+        const formattedDate = timestamp
+          ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00`
+          : '';
+
         this.toggleTableData.push({
           name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} after`,
           timestamp: formattedDate,
@@ -414,6 +443,222 @@ export class ReportsComponent implements OnInit {
     if (this.selectedFiles.length > 0) {
       const fileId = this.selectedFiles[0].file_id;
       this.open_file(fileId);
+    }
+  }
+
+  onExportOptionSelect(event: any, dt2: any) {
+    const selectedOption = event.value;
+    switch (selectedOption) {
+      case 'csv':
+        this.exportCSV(dt2);
+        break;
+      case 'excel':
+        this.exportExcel(dt2);
+        break;
+      case 'pdf':
+        this.exportPDF(dt2);
+        break;
+      default:
+        break;
+    }
+  }
+
+  exportCSV(dt: any) {
+    const filteredData = dt.filteredValue || dt.value;
+
+    if (filteredData && filteredData.length > 0) {
+      const csv = this.convertToCSV(filteredData);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      FileSaver.saveAs(blob, 'buoy_data.csv');
+    } else {
+      // Handle case where no data is available
+      //console.warn('No data available for CSV export');
+    }
+  }
+
+  // Helper method to convert JSON to CSV format
+  convertToCSV(data: any[]): string {
+    const fixedHeaders = ['S No'];
+    const fixedFields: string[] = [];
+
+    const dynamicHeaders = this.selectedColumns.map((col) => col.header);
+    const dynamicFields = this.selectedColumns.map((col) => col.field);
+
+    const headers = [...fixedHeaders, ...dynamicHeaders];
+    const fields = [...fixedFields, ...dynamicFields];
+
+    const csvRows = [
+      headers.join(','), // Header row
+      ...data.map((row, index) => {
+        const values = [
+          index + 1, // S No
+          ...fields.map((field) => {
+            const value = row[field];
+
+            // Format ISO string to 'YYYY-MM-DD HH:mm:ss'
+            if (
+              typeof value === 'string' &&
+              value.match(/^\d{4}-\d{2}-\d{2}T/)
+            ) {
+              const date = new Date(value);
+              const formattedDate =
+                date.getFullYear() +
+                '-' +
+                String(date.getMonth() + 1).padStart(2, '0') +
+                '-' +
+                String(date.getDate()).padStart(2, '0') +
+                ' ' +
+                String(date.getHours()).padStart(2, '0') +
+                ':' +
+                String(date.getMinutes()).padStart(2, '0') +
+                ':' +
+                String(date.getSeconds()).padStart(2, '0');
+              return formattedDate;
+            }
+
+            return value ?? '';
+          }),
+        ];
+
+        return values.map((cell) => `"${cell}"`).join(',');
+      }),
+    ];
+
+    return csvRows.join('\r\n');
+  }
+
+  exportExcel(dt: any) {
+    const filteredData = dt.value;
+
+    if (filteredData && filteredData.length > 0) {
+      const fixedHeaders = ['S No'];
+      const dynamicHeaders = this.selectedColumns.map((col) => col.header);
+      const dynamicFields = this.selectedColumns.map((col) => col.field);
+      const headers = [...fixedHeaders, ...dynamicHeaders];
+
+      const dataToExport = filteredData.map((row: any, index: number) => {
+        const selectedRow: any = {};
+        selectedRow['S No'] = index + 1;
+
+        dynamicFields.forEach((field) => {
+          const value = row[field];
+
+          // Check if value is an ISO date string and format it
+          if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+            const date = new Date(value);
+            const formattedDate =
+              date.getFullYear() +
+              '-' +
+              String(date.getMonth() + 1).padStart(2, '0') +
+              '-' +
+              String(date.getDate()).padStart(2, '0') +
+              ' ' +
+              String(date.getHours()).padStart(2, '0') +
+              ':' +
+              String(date.getMinutes()).padStart(2, '0') +
+              ':' +
+              String(date.getSeconds()).padStart(2, '0');
+            selectedRow[field] = formattedDate;
+          } else {
+            selectedRow[field] = value;
+          }
+        });
+
+        return selectedRow;
+      });
+
+      const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
+      const workbook: XLSX.WorkBook = {
+        Sheets: { data: worksheet },
+        SheetNames: ['data'],
+      };
+      const excelBuffer: any = XLSX.write(workbook, {
+        bookType: 'xlsx',
+        type: 'array',
+      });
+      this.saveAsExcelFile(excelBuffer, this.nameOfStation);
+    }
+  }
+
+  saveAsExcelFile(buffer: any, fileName: string): void {
+    const EXCEL_TYPE =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+    const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
+    saveAs(data, `${this.nameOfStation}.xlsx`);
+  }
+
+  exportPDF(dt: any) {
+    const filteredData: any[] = dt.value;
+
+    if (filteredData && filteredData.length > 0) {
+      const fixedHeaders = ['S No'];
+      const fixedFields: string[] = [];
+
+      const dynamicHeaders = this.selectedColumns.map((col) => col.header);
+      const dynamicFields = this.selectedColumns.map((col) => col.field);
+
+      const headers = [...fixedHeaders, ...dynamicHeaders];
+      const fields = [...fixedFields, ...dynamicFields];
+
+      const data = filteredData.map((row: any, index: number) => {
+        const rowData: (string | number)[] = [index + 1];
+
+        fields.forEach((field) => {
+          const value = row[field];
+
+          if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+            // Parse the ISO string and format as 'YYYY-MM-DD HH:mm:ss'
+            const date = new Date(value);
+            const formattedDate =
+              date.getFullYear() +
+              '-' +
+              String(date.getMonth() + 1).padStart(2, '0') +
+              '-' +
+              String(date.getDate()).padStart(2, '0') +
+              ' ' +
+              String(date.getHours()).padStart(2, '0') +
+              ':' +
+              String(date.getMinutes()).padStart(2, '0') +
+              ':' +
+              String(date.getSeconds()).padStart(2, '0');
+            rowData.push(formattedDate);
+          } else {
+            rowData.push(value || '');
+          }
+        });
+
+        return rowData;
+      });
+
+      const doc = new jsPDF('landscape');
+      autoTable(doc, {
+        head: [headers],
+        body: data,
+        styles: {
+          fontSize: 8,
+          cellPadding: 1,
+          overflow: 'linebreak',
+          valign: 'middle',
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: [255, 255, 255],
+          halign: 'center',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          halign: 'center',
+        },
+        columnStyles: {
+          0: { cellWidth: 20 },
+        },
+        pageBreak: 'auto',
+        showHead: 'everyPage',
+      });
+
+      doc.save(`${this.nameOfStation}.pdf`);
+    } else {
+      console.warn('No data available for PDF export');
     }
   }
 }

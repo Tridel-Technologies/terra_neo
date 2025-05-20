@@ -31,7 +31,7 @@ const importAll = async (req, res) => {
 
       // Optional: Validate each item before insert
       if (
-        !item.station_id || !item.DateTime  ||
+        !item.station_id || !item.DateTime ||
         item.speed == null || item.direction == null ||
         item.depth == null || item.pressure == null || item.battery == null
       ) {
@@ -70,18 +70,18 @@ const importAll = async (req, res) => {
 };
 
 
-const getFiles = async(req, res)=>{
-    try {
-        const result = await pool.query(`SELECT * FROM tb_folders`);
-        res.status(200).json({
-            data:result.rows
-        })
-    } catch (error) {
-        res.status(500).json({message:`Error: ${error}`})
-    }
+const getFiles = async (req, res) => {
+  try {
+    const result = await pool.query(`SELECT * FROM tb_folders`);
+    res.status(200).json({
+      data: result.rows
+    })
+  } catch (error) {
+    res.status(500).json({ message: `Error: ${error}` })
+  }
 }
 
- const updateValues = async (req, res) => {
+const updateValues = async (req, res) => {
   const { file_name, lat, lon, high_water_level } = req.body;
 
   if (!file_name || !Array.isArray(file_name) || file_name.length === 0) {
@@ -214,7 +214,7 @@ const createFolderAndFile = async (req, res) => {
           high_water_level INTEGER,
           file_id INTEGER REFERENCES tb_file(id)
         )`;
-      const tblperocessed =  `
+      const tblperocessed = `
         CREATE TABLE ${tableName}_processed (
           id SERIAL PRIMARY KEY,
           station_id TEXT,
@@ -242,7 +242,7 @@ const createFolderAndFile = async (req, res) => {
         INSERT INTO ${tableName} (
           station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
-         const insertQuery_processed = `
+      const insertQuery_processed = `
         INSERT INTO ${tableName}_processed (
           station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
@@ -286,50 +286,50 @@ const createFolderAndFile = async (req, res) => {
 
 
 
-  // login page api
+// login page api
 //get the count of the users
 const getUser = async (req, res) => {
-    try {
-      const result = await pool.query("SELECT COUNT(*) FROM user_tb");
-      res.json(result.rows);
-    } catch (err) {
-      res.status(500).send(err.message);
-    }
-  };
+  try {
+    const result = await pool.query("SELECT COUNT(*) FROM user_tb");
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).send(err.message);
+  }
+};
 
 //check for the matches
-const checkusername=async(req,res)=>{
-const{user_name, email_id}=req.body
-    try {
-      const result = await pool.query(
-        'SELECT COUNT(*) AS count FROM user_tb WHERE user_name = $1',
-        [user_name]
-      );
-      const email_result = await pool.query(
-        'SELECT COUNT(*) AS count FROM user_tb WHERE email_id = $1',
-        [email_id]
-      );
-      res.json({
+const checkusername = async (req, res) => {
+  const { user_name, email_id } = req.body
+  try {
+    const result = await pool.query(
+      'SELECT COUNT(*) AS count FROM user_tb WHERE user_name = $1',
+      [user_name]
+    );
+    const email_result = await pool.query(
+      'SELECT COUNT(*) AS count FROM user_tb WHERE email_id = $1',
+      [email_id]
+    );
+    res.json({
       usernameExists: result.rows[0].count > 0,
       emailExists: email_result.rows[0].count > 0
     });
-    } catch (error) {
-      console.error('Error in checkUsername:', error);
-      res.status(500).json({ message: 'Error checking username.' });
-    }
+  } catch (error) {
+    console.error('Error in checkUsername:', error);
+    res.status(500).json({ message: 'Error checking username.' });
+  }
 };
 
 
 //Add the user
 const signup = async (req, res) => {
-  const { user_name,password,email_id } = req.body;
+  const { user_name, password, email_id } = req.body;
   console.log('Incoming user:', req.body);
   const encrypt_password = await bcrypt.hash(password, 10);
 
   try {
     await pool.query(
       'INSERT INTO user_tb (user_name,password,email_id) VALUES ($1, $2, $3)',
-      [user_name,encrypt_password,email_id ]
+      [user_name, encrypt_password, email_id]
     );
     res.status(201).send('User added');
   } catch (err) {
@@ -398,11 +398,11 @@ const forget_password = async (req, res) => {
 
 //change the password
 
-const change_password=async(req,res)=>{
-   const { user_name, newPassword } = req.body;
+const change_password = async (req, res) => {
+  const { user_name, newPassword } = req.body;
   const encrypt_password = await bcrypt.hash(newPassword, 10);
 
-   console.log("res",req.body)
+  console.log("res", req.body)
   try {
     await pool.query(
       'UPDATE user_tb SET password = $1 WHERE user_name = $2',
@@ -521,7 +521,7 @@ const getDataByFolderIdAndFileName = async (req, res) => {
       `SELECT
          *
        FROM
-         tb_${file_id}
+         tb_${file_id} ORDER BY date ASC
        `,
     );
     res.status(200).json(result.rows);
@@ -540,7 +540,7 @@ const getProcessedDataByFileId = async (req, res) => {
       `SELECT
          *
        FROM
-         tb_${file_id}_processed
+         tb_${file_id}_processed ORDER BY date ASC
        `,
     );
     res.status(200).json(result.rows);
@@ -594,8 +594,8 @@ const getFoldersWithFiles = async (req, res) => {
 
 
 
-const changeFolder = async(req, res)=>{
-   const { file_id, folder_id } = req.body;
+const changeFolder = async (req, res) => {
+  const { file_id, folder_id } = req.body;
 
   if (!file_id || !folder_id) {
     return res.status(400).json({ message: 'file_id and folder_id are required.' });
@@ -623,8 +623,8 @@ const changeFolder = async(req, res)=>{
 }
 
 
-const createFolder = async(req, res)=>{
-   const { folder_name } = req.body;
+const createFolder = async (req, res) => {
+  const { folder_name } = req.body;
 
   if (!folder_name) {
     return res.status(400).json({ message: 'Folder name is required' });

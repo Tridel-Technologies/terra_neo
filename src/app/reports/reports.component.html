@@ -22,15 +22,14 @@
                 </div>
             </div>
         </div>
-
     </div>
 
     <div class="tablecontainer">
         <p-table #dt [value]="showToggleTable ? toggleTableData : main_table"
             [columns]="showToggleTable ? summaryColumns : selectedColumns" [tableStyle]="{ 'min-width': '50rem' }"
-            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="15" responsiveLayout="scroll"
+            [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="10" responsiveLayout="scroll"
             [rowsPerPageOptions]="[10,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
-            [exportHeader]="'customExportHeader'" selectionMode="multiple"
+            [exportHeader]="'exportHeader'" selectionMode="multiple"
             currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [filterDelay]="0"
             [tableStyle]="{'min-width': '50rem'}" responsiveLayout="stack" [breakpoint]="'960px'" stripedRows="tr"
             rowHover="true" showCurrentPageReport="true">
@@ -38,6 +37,45 @@
             <ng-template #caption>
                 <div class="caption">
                     <div class="captionrow">
+                        <div id="search">
+                            <input type="search" placeholder="Search"
+                                (input)="onSearch($any($event).target.value, dt)" />
+                        </div>
+                        <div class="filter">
+                            <p-multiselect display="chip" [options]="cols" [(ngModel)]="selectedColumns"
+                                optionLabel="header" selectedItemsLabel="{0} columns selected"
+                                [style]="{ 'min-width': '200px' }" placeholder="Choose Columns" [filter]="false"
+                                [showToggleAll]="false" [maxSelectedLabels]="9" />
+                        </div>
+                    </div>
+
+
+                    <div class="captionrow">
+                        <p-select class="export" [options]="exportOptions" placeholder="Export"
+                            (onChange)="onExportOptionSelect($event, dt)">
+                            <ng-template let-option pTemplate="selectedItem">
+                                <span>{{ option.label }}</span>
+                            </ng-template>
+                        </p-select>
+                        <div class="captionrowinrow">
+                            <div style="margin-right: 30px;">
+                                <p-dropdown [options]="dataTypeOptions" [(ngModel)]="selectedData" optionLabel="name"
+                                    placeholder="Select Data" (onChange)="onDataTypeChange()" />
+                            </div>
+                            <label style="margin-right: 10px;margin-top: 10px; font-weight: bold;">
+                                Records
+                            </label>
+                            <p-toggleswitch [(ngModel)]="showToggleTable" (ngModelChange)="toggle_tap()">
+                            </p-toggleswitch>
+                            <label style="margin-left: 10px;margin-top: 10px; font-weight: bold;">
+                                -/+ 6 hours
+                            </label>
+                        </div>
+                    </div>
+
+
+
+                    <!-- <div class="captionrow">
                         <div class="captionrowinrow">
                             <div id="search">
                                 <input type="search" placeholder="Search"
@@ -64,7 +102,7 @@
                                 [style]="{ 'min-width': '200px' }" placeholder="Choose Columns" [filter]="false"
                                 [showToggleAll]="false" [maxSelectedLabels]="9" />
                         </div>
-                    </div>
+                    </div> -->
                 </div>
             </ng-template>
 

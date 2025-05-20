@@ -17,6 +17,8 @@
     align-items: center;
     justify-content: flex-start;
     background-color: var(--background-secondary);
+    overflow: hidden;
+    overflow-y: auto;
 }
 
 .folder {
@@ -126,21 +128,14 @@
     color: var(--main-text);
 }
 
-.chartsContainers {
-    height: 90%;
-    width: 100%;
-    /* background-color: aqua; */
-}
-
-.viewLabel{
+.viewLabel {
     color: var(--font-color);
 }
 
 .chartsContainer {
     /* flex: 8.2; */
-    width: 80%;
-    max-width: 100%;
-    height: auto;
+    width: 78%;
+    height: 100%;
     /* overflow-y: auto; */
     display: flex;
     flex-direction: column;
@@ -150,8 +145,8 @@
     color: var(--main-text);
     border-radius: 20px;
     margin: 0px 10px 0px 10px;
-    /* padding: 20px; */
-    min-height: 100vh;
+    overflow: hidden;
+    overflow-y: auto;
 
 
 }
@@ -159,7 +154,6 @@
 @media (max-width: 1200px) {
     .chartContainer {
         min-width: 800px;
-        /* Adjust width for smaller screens */
         height: 100%;
     }
 }
@@ -174,9 +168,7 @@
 @media (max-width: 768px) {
     .chartContainer {
         min-width: 800px;
-        /* Full width on mobile */
         height: 100%;
-        /* Adjust height to content */
     }
 }
 
@@ -186,10 +178,8 @@
     border-radius: 8px;
     box-shadow: var(--box-shadow);
     margin: 20px;
-    /* display: flex; */
     position: relative;
     align-items: center;
-    /* flex: 1; */
     min-height: 500px;
 }
 
@@ -198,37 +188,6 @@
     left: 0;
     z-index: 1;
 }
-
-.chartCompare {
-    background-color: var(--secbackground-color);
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: var(--box-shadow);
-    margin: 20px;
-    display: flex;
-    align-items: center;
-    flex: 1;
-    /* Allow each chart container to grow equally */
-    min-height: 400px;
-}
-
-.chartContainer2 {
-    /* background-color: rgb(0, 0, 0); */
-    background-color: var(--secbackground-color);
-    padding: 10px;
-    border-radius: 8px;
-    box-shadow: var(--box-shadow);
-    margin: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    position: relative;
-    min-height: 80vh;
-}
-
-
-
-
 
 
 
@@ -337,8 +296,8 @@
     font-weight: bold;
     gap: 20px;
 }
- 
- 
+
+
 .top_two,
 .bottom_two {
     height: 50%;
@@ -352,7 +311,7 @@
     align-items: center;
     /* padding: 20px; */
 }
- 
+
 .left_c,
 .right_c {
     height: 100%;
@@ -360,6 +319,3 @@
     background-color: #f1f2f3a2;
     border-radius: 10px;
 }
-
-
-
