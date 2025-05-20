@@ -14,7 +14,7 @@
 
             <div class="file-list" *ngIf="expandedFolders[i]">
                 <div *ngFor="let f of folder.files" style="cursor: pointer;"
-                    [ngClass]="getFileClass(f.file_name, folder.folder_id)" (click)="toggleFileSelection(f.file_id)">
+                    [ngClass]="getFileClass(f.file_name, f.file_id)" (click)="toggleFileSelection(f.file_id)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
                     <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem"

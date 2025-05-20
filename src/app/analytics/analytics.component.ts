@@ -240,7 +240,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           ]
       },
       ];
-      this.plot = this.viewModes[0];
+      this.plot = this.viewModes[0].states[0];
       if (this.viewModes.length !== 0) {
         this.show = true;
       }
