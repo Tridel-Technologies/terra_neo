@@ -116,6 +116,7 @@ export class ReportsComponent implements OnInit {
   searchQuery: string = '';
 
   summaryColumns: Column[] = [
+    { field: 'timestamp', header: 'Date', type: 'text' },
     { field: 'name', header: 'Time', type: 'text' },
     { field: 'tide', header: 'Water Level', type: 'text' },
     { field: 'speed', header: 'Speed', type: 'text' },
@@ -157,19 +158,16 @@ export class ReportsComponent implements OnInit {
   
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
-    dt.filterGlobal(query, 'contains');
+    // Remove the global filter since we're using custom filtering
+    // dt.filterGlobal(query, 'contains');
   }
 
   highlightSearchText(value: any): string {
     if (!this.searchQuery) return value;
 
     // Ensure the value is treated as a string
-    const stringValue =
-      value !== null && value !== undefined ? String(value) : '';
-    const escapedSearchQuery = this.searchQuery.replace(
-      /[-\/\\^$*+?.()|[\]{}]/g,
-      '\\$&'
-    );
+    const stringValue = value !== null && value !== undefined ? String(value) : '';
+    const escapedSearchQuery = this.searchQuery.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
     const regex = new RegExp(`(${escapedSearchQuery})`, 'gi');
     return stringValue.replace(regex, '<span class="highlight">$1</span>');
   }
@@ -177,15 +175,18 @@ export class ReportsComponent implements OnInit {
   rowMatchesSearch(rowData: any, columns: any[]): boolean {
     if (!this.searchQuery) return false;
 
-    const search = this.searchQuery.toLowerCase();
+    const search = this.searchQuery.toLowerCase().trim();
+
+    if (rowData.name && rowData.name.toLowerCase().includes(search)) {
+      return true;
+    }
 
     return columns.some((col) => {
       const value = rowData[col.field];
-      return (
-        value !== null &&
-        value !== undefined &&
-        String(value).toLowerCase().includes(search)
-      );
+      if (value === null || value === undefined) return false;
+      
+      const stringValue = String(value).toLowerCase().trim();
+      return stringValue.includes(search);
     });
   }
 
@@ -196,12 +197,11 @@ export class ReportsComponent implements OnInit {
 
   toggleFileSelection(file_id: number) {
     this.isMulti = false;
-    // If Ctrl/Cmd is not pressed, select this file and deselect all others
     this.selectedFiles = [
       {
         file_id: file_id,
       },
-    ]; // Only keep the clicked file selected
+    ];
     this.open_file(file_id);
   }
 
@@ -360,8 +360,12 @@ export class ReportsComponent implements OnInit {
 
       // Before hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
+        const timestamp = new Date(bf[i][0]?.date);
+        const formattedDate = timestamp ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00` : '';
+        
         this.toggleTableData.push({
-          name: `${6 - i} hr${6 - i > 1 ? 's' : ''} before`,
+          name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} before`,
+          timestamp: formattedDate,
           tide: bf[i].length ? this.getAverageSpeed(bf[i], 'pressure') : NaN,
           speed: bf[i].length ? this.getAverageSpeed(bf[i], 'speed') : NaN,
           direction: bf[i].length
@@ -370,9 +374,11 @@ export class ReportsComponent implements OnInit {
         });
       }
 
-      // Current hour — single data point
+      const currentTimestamp = new Date(currentData.date);
+      const currentFormattedDate = `${currentTimestamp.toLocaleDateString()} ${currentTimestamp.getHours()}:00`;
       this.toggleTableData.push({
         name: 'High Water Time',
+        timestamp: currentFormattedDate,
         tide: currentData.pressure ?? NaN,
         speed: currentData.speed ?? NaN,
         direction: currentData.direction ?? NaN,
@@ -381,8 +387,12 @@ export class ReportsComponent implements OnInit {
 
       // After hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
+        const timestamp = new Date(af[i][0]?.date);
+        const formattedDate = timestamp ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00` : '';
+        
         this.toggleTableData.push({
           name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} after`,
+          timestamp: formattedDate,
           tide: af[i].length ? this.getAverageSpeed(af[i], 'pressure') : NaN,
           speed: af[i].length ? this.getAverageSpeed(af[i], 'speed') : NaN,
           direction: af[i].length
