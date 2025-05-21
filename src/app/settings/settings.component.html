@@ -8,31 +8,34 @@
     <h5>Processed Data</h5>
 
     <!-- FOLDER VIEW -->
-    <div class="files_cont" *ngIf="openedFile.length === 0">
-        <div class="Folder" *ngFor="let folder of files_list" (click)="Foldertaped(folder.files, folder)"
-            (contextmenu)="onFolderRightClick($event, folder)">
-            <img src="../../assets/file_closed.png" alt="">
-            <p>{{ folder.folder_name }}</p>
-        </div>
+    <div class="files_cont" *ngIf="openedFile2.length === 0">
+        <ng-container *ngFor="let folder of non_processed">
+            <div class="Folder" (click)="Foldertaped2(folder.files, folder)"
+                *ngIf="folder.files && folder.files.length > 0">
+                <img src="../../assets/file_closed.png" alt="">
+                <p>{{ folder.folder_name }}</p>
+            </div>
+        </ng-container>
     </div>
     <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
-        *ngIf="openedFile.length !== 0" (click)="back()"><i class="fa-solid fa-arrow-left"
+        *ngIf="openedFile2.length !== 0" (click)="back2()"><i class="fa-solid fa-arrow-left"
             style="align-self: center;margin-top: 5px;font-size: 17px;"></i>
-        {{tappedFolder.folder_name}}/
+        {{tappedFolder2.folder_name}}/
     </h2>
+
     <!-- FILE VIEW -->
-    <div class="files_list" *ngIf="openedFile.length !== 0">
-        <div class="Folder" *ngFor="let file of openedFile" (contextmenu)="onFileRightClick($event, file)">
+    <div class="files_list" *ngIf="openedFile2.length !== 0">
+        <div class="Folder" *ngFor="let file of openedFile2" (contextmenu)="onFileRightClick($event, file)">
             <img [src]="getFileClass(file.file_name)" alt="">
             <p>{{ file.file_name }}</p>
         </div>
     </div>
 
     <!-- CONTEXT MENU -->
-    <div class="context-menu" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
+    <div class="context-menu2" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
         [style.top.px]="contextMenu.y">
         <ng-container *ngIf="contextMenu.type === 'file'">
-            <div (click)="moveFile({file_name:'', file_id:2})">Move</div>
+            <div (click)="moveFile({file_name:'', file_id:2, is_processed:true})">Move</div>
             <div (click)="cancelContext()">Cancel</div>
         </ng-container>
         <ng-container *ngIf="contextMenu.type === 'folder'">
@@ -48,11 +51,14 @@
     <h5>Raw Data</h5>
     <!-- FOLDER VIEW -->
     <div class="files_cont" *ngIf="openedFile.length === 0">
-        <div class="Folder" *ngFor="let folder of files_list" (click)="Foldertaped(folder.files, folder)"
-            (contextmenu)="onFolderRightClick($event, folder)">
-            <img src="../../assets/file_closed.png" alt="">
-            <p>{{ folder.folder_name }}</p>
-        </div>
+        <ng-container *ngFor="let folder of processedFiles">
+            <div class="Folder" *ngIf="folder.files && folder.files.length > 0"
+                (click)="Foldertaped(folder.files, folder)" (contextmenu)="onFolderRightClick($event, folder)">
+                <img src="../../assets/file_closed.png" alt="">
+                <p>{{ folder.folder_name }}</p>
+            </div>
+        </ng-container>
+
     </div>
     <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
         *ngIf="openedFile.length !== 0" (click)="back()"><i class="fa-solid fa-arrow-left"
@@ -71,7 +77,7 @@
     <div class="context-menu" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
         [style.top.px]="contextMenu.y">
         <ng-container *ngIf="contextMenu.type === 'file'">
-            <div (click)="moveFile({file_name:'', file_id:2})">Move</div>
+            <div (click)="moveFile({file_name:'', file_id:2, is_processed:true})">Move</div>
             <div (click)="cancelContext()">Cancel</div>
         </ng-container>
         <ng-container *ngIf="contextMenu.type === 'folder'">
@@ -86,11 +92,8 @@
 </div>
 
 <div class="units_container">
-
     <h2>Sensor Settings</h2>
-
     <h3>Set Units</h3>
-
     <div *ngFor="let param of unitSettings" class="parameter-row">
         <div class="parameter-card">
             <div class="parameter-content">
@@ -100,7 +103,6 @@
                 <span class="parameter-label">{{ param.label }}</span>
             </div>
         </div>
-
         <div class="unit-selection">
             <div class="tooltip-container" *ngFor="let unit of param.units">
                 <button class="unit-button" [class.selected]="selectedUnits[param.key] === unit"
@@ -110,7 +112,5 @@
                 <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
             </div>
         </div>
-
     </div>
-
 </div>

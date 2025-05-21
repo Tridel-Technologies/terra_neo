@@ -587,7 +587,21 @@ font-size: 12px;
   justify-content:start;
   border-radius: 10px;
   align-items: center;
+  position: relative;
   /* margin-bottom: 10px; */
+}
+.tide-not-live span{
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  margin: 0;
+  font-size: 14px;
+  height: 25px;
+  background-color: var(--info-color);
+  padding: 3px;
+  color: var(--font-color);
+  border-radius: 6px;
+
 }
 .tide-not-live svg{
   height: 35%;
@@ -713,7 +727,7 @@ p-toggleswitch{
   transform: rotate(45deg);
 }
 .compass img{
-  height: 50%;
-  width: 50%;
+  height:40px;
+  width: 40px;
   transition: transform 0.5s ease-in-out;
 }

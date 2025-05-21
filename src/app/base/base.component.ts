@@ -17,6 +17,6 @@ import { AnalyticsComponent } from '../analytics/analytics.component';
   styleUrl: './base.component.css',
 })
 export class BaseComponent {
-  index: number = 0;
+  index: number = 1;
   chartFont:string = 'light';
 }

@@ -6,7 +6,8 @@
         <h4 style="align-self: flex-start; margin-left: 20px; color: var(--font-color);">Explorer</h4>
 
         <div class="folder" *ngFor="let folder of files_list; let i = index">
-            <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
+            <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)"
+                *ngIf="folder.files && folder.files.length !== 0">
                 <img [src]="expandedFolders[i] ? 'assets/file_opened.png' : 'assets/file_closed.png'" alt="folder" />
                 <div class="folder-info">
                     <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>

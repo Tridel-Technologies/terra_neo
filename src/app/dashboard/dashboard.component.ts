@@ -118,7 +118,7 @@ truncate(value: string | number): number {
                    itemDate.getDate() === afterHour.getDate() &&
                    itemDate.getHours() === afterHour.getHours();
           });
-  
+          console.log("befiore hours", beforeHour, afterHour)
           bf.push([...beforeHourData]);
           af.push([...afterHourData]);
           // for (let index = 0; index < bf.length; index++) {
@@ -198,6 +198,7 @@ for (let i = 6; i >= 1; i--) {
     tide: avg.pressure.toFixed(2),
     speed: avg.speed.toFixed(2),
     direction: avg.direction.toFixed(2),
+    date:entries[0].date
   });
 }
 
@@ -206,6 +207,7 @@ this.avgData.push({
   tide: this.currentData.pressure?.toString() || 'N/A',
   speed: this.currentData.speed?.toString() || 'N/A',
   direction: this.currentData.direction?.toString() || 'N/A',
+  date:this.currentData.date
 });
 
 for (let i = 1; i <= 6; i++) {
@@ -216,6 +218,7 @@ for (let i = 1; i <= 6; i++) {
     tide: avg.pressure.toFixed(2),
     speed: avg.speed.toFixed(2),
     direction: avg.direction.toFixed(2),
+    date:entries[0].date
   });
 }
 

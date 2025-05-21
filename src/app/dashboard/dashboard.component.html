@@ -45,7 +45,8 @@
             </select>
             <div class="af-bf" *ngIf="!isLive">
                 <p>After</p>
-                <p-toggleswitch [(ngModel)]="isbefore" [ngStyle]="{'color':!isbefore?'var(--toggle-color)':'rgba(216, 216,216, 0.853)'}"/>
+                <p-toggleswitch [(ngModel)]="isbefore"
+                    [ngStyle]="{'color':!isbefore?'var(--toggle-color)':'rgba(216, 216,216, 0.853)'}" />
                 <p>Before</p>
             </div>
 
@@ -59,7 +60,7 @@
                             ? 'rgba(165, 198, 240, 0.851)' : 'transparent'
                         }">
                     {{ dates.date | date :'yyyy-MM-dd HH:mm:ss' }} {{ dates.time }}
-                </p> 
+                </p>
             </div>
         </div>
         <div class="right" [ngStyle]="{'width':!isLive ?'98.5%':'76%'}">
@@ -70,18 +71,23 @@
                 </div>
                 <div class="date-time">
                     <h5 class="title">Date & Time</h5>
-                    <p class="sub-title">{{selected_data.dateTime |date: 'yyyy-MM-dd HH:mm:ss'}}</p>
+                    <p class="sub-title">
+                        {{ isLive ? (selected_data.dateTime | date: 'yyyy-MM-dd HH:mm:ss' :'UTC') : (currentData.date |
+                        date:
+                        'yyyy-MM-dd HH:mm:ss' : 'UTC') }}
+                    </p>
+
                 </div>
                 <div class="lat">
                     <h5 class="title">Coordinates</h5>
-                    <p class="sub-title">Lon: {{selected_data.lon}} °<br> Lat: {{selected_data.lat}} °</p>
+                    <p class="sub-title">Long: {{selected_data.lon}} °<br> Lat: {{selected_data.lat}} °</p>
                 </div>
                 <div class="lon" [ngStyle]="{'background-color':isLive?'var(--background-secondary)':''}">
                     <div class="separate-bat-depth" *ngIf="!isLive">
                         <div class="bat">
                             <h5>Battery Voltage</h5>
                             <app-battery [isLive]="isLive" [percentage]="12"></app-battery>
-                            <p style="align-self: center;" >{{ truncate(selected_data.battery) }} {{units.battery}}</p>
+                            <p style="align-self: center;">{{ truncate(selected_data.battery) }} {{units.battery}}</p>
                         </div>
                         <div class="depth">
                             <h5>Depth</h5>
@@ -127,6 +133,7 @@
                 @if (!isLive) {
                 <div class="tide-not-live" *ngFor="let tide of filteredAvgData"
                     [ngStyle]="{'height': dynamicHeight + '%', 'background-color':tide.name==='Current'?'rgba(182, 229, 243, 0.374)':''}">
+                    <span>{{tide.date | date:'yyyy-MM-dd HH:mm:ss':'UTC'}}</span>
                     <!-- <img src="../../assets/tide.png" alt=""> -->
                     <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
                         <!-- Background Circle -->
@@ -244,7 +251,8 @@
                     <!-- <img src="../../assets/dire.png" alt=""> -->
                     <app-direction1 *ngIf="dir" [direction]="selected_data.current_direction" id="Dir1"
                         style="align-self: center;"></app-direction1>
-                    <p style="align-self: center; text-align: center; margin-top: -1%;">{{truncate(selected_data.current_direction)}}
+                    <p style="align-self: center; text-align: center; margin-top: -1%;">
+                        {{truncate(selected_data.current_direction)}}
                         {{units.currentDirection}}
                         <br> (Towards {{directionTo}})
                     </p>
@@ -289,10 +297,11 @@
                             <!-- <img class="cbox-img" src="../../assets/dire.png" alt=""> -->
                             <div class="compass">
                                 <img [style.transform]="'rotate(' + current.direction + 'deg)'"
-                                    src="../../assets/Task_7518573_35103318.png" alt="">
+                                    src="../../assets/Task_7518573_35103318.png" alt=""
+                                    [ngStyle]="{'width':hours <3?'65px':'40px', 'height':hours <3?'65px':'40px'}">
                             </div>
                             <h5>Direction <br>
-                                <p>{{current.direction}}</p>
+                                <p>{{truncate(current.direction)}} ° {{directionValue(current.direction)}}</p>
                             </h5>
                             <p></p>
                         </div>

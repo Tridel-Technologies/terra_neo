@@ -13,6 +13,7 @@ import { ToastrService } from 'ngx-toastr';
 interface fileData{
   file_id:number,
   file_name:string,
+  is_processed:boolean
 }
 @Component({
   selector: 'app-settings',
@@ -26,21 +27,33 @@ export class SettingsComponent {
   openedFolder!:number;
   selectedFiles: any[] = []; 
   isMulti:boolean= false;
-    files_list: Folders[] = [];
-contextMenuVisible = false;
-contextMenuPosition = { x: 0, y: 0 };
-isMoveMode = false;
-filesToMove: any[] = [];
-targetFolderId: number | null = null;
-
-openedFile:fileData[]= []
-movingFile!:fileData;
-tappedFolder!:Folders;
+  files_list: Folders[] = [];
+  non_processed:Folders[]=[];
+  processedFiles:Folders[]=[];
+  contextMenuVisible = false;
+  contextMenuPosition = { x: 0, y: 0 };
+  isMoveMode = false;
+  filesToMove: any[] = [];
+  targetFolderId: number | null = null;
+  openedFile:fileData[]= []
+  openedFile2:fileData[]=[];
+  movingFile!:fileData;
+  tappedFolder!:Folders;
+  tappedFolder2!:Folders;
 Foldertaped(file:fileData[], folder:Folders){
   this.openedFile = [];
   setTimeout(() => {
     this.openedFile = file;
     this.tappedFolder = folder;
+      console.log(this.openedFile)
+  }, 100);
+}
+
+Foldertaped2(file:fileData[], folder:Folders){
+  this.openedFile2 = [];
+  setTimeout(() => {
+    this.openedFile2 = file;
+    this.tappedFolder2 = folder;
       console.log(this.openedFile)
   }, 100);
 }
@@ -111,6 +124,7 @@ onFileRightClick(event: MouseEvent, file: any) {
 }
 
 
+
 onFolderRightClick(event: MouseEvent, folder: any) {
   event.preventDefault();
   event.stopPropagation(); // Stop bubbling to container
@@ -122,6 +136,8 @@ onFolderRightClick(event: MouseEvent, folder: any) {
     folder: folder
   };
 }
+
+
 
 
 moveFile(file:fileData) {
@@ -203,6 +219,9 @@ cancelContext() {
 }
 back(){
   this.openedFile = [];
+}
+back2(){
+  this.openedFile2 = [];
 }
 
 onContainerRightClick(event: MouseEvent) {
@@ -384,6 +403,11 @@ selectUnit(paramKey: string, unit: string) {
         (response: any) => {
           this.files_list = response['data'];
           console.log('files:', response, this.files_list);
+          const non_procces = this.files_list.filter(item=> item.files.every(ite=>ite.is_processed===true));
+          console.log("non_proccessed", non_procces);
+          this.non_processed = non_procces;
+          const procces = this.files_list.filter(item=> item.files.every(ite=>ite.is_processed===false));
+          this.processedFiles = procces;
           this.expandedFolders = this.files_list.map(() => false);
   
         }
