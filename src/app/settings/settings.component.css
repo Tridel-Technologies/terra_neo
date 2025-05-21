@@ -7,7 +7,7 @@
     justify-content: start;
     align-items: center;
 }
- 
+
 /* .files_containerr {
     width: 50%;
     height: 100%;
@@ -18,7 +18,7 @@
     background-color: var(--background-secondary);
     color: var(--font-color);
 } */
- 
+
 .units_container {
     width: 50%;
     height: 100%;
@@ -28,18 +28,20 @@
     justify-content: flex-start;
     background-color: var(--background-secondary);
     color: var(--font-color);
+    overflow: hidden;
+    overflow-y: auto;
 }
- 
+
 .units_container h3 {
     margin-bottom: 20px;
 }
- 
+
 .units_container h2 {
     text-align: center;
-    margin-bottom: -10px;
+    margin-bottom: 20px;
     font-size: 24px;
 }
- 
+
 .parameter-row {
     display: flex;
     align-items: center;
@@ -48,7 +50,7 @@
     gap: 16px;
     margin-bottom: 20px;
 }
- 
+
 .parameter-card {
     flex: 1;
     background-color: var(--background-color);
@@ -58,7 +60,7 @@
     display: flex;
     align-items: center;
 }
- 
+
 .parameter-content {
     display: flex;
     align-items: center;
@@ -67,12 +69,12 @@
     font-size: 18px;
     font-weight: 600;
 }
- 
+
 .parameter-icon {
     font-size: 22px;
-    color: #007bff;
+    color: var(--button-bg);
 }
- 
+
 .unit-selection {
     flex: 1;
     display: flex;
@@ -80,7 +82,7 @@
     gap: 10px;
     justify-content: flex-end;
 }
- 
+
 .unit-button {
     padding: 8px 16px;
     border: 2px solid #ccc;
@@ -91,23 +93,23 @@
     font-size: 14px;
     transition: 0.3s ease;
 }
- 
+
 .unit-button:hover {
-    border-color: #007bff;
-    color: #007bff;
+    border-color: var(--button-bg);
+    color: var(--button-bg);
 }
- 
+
 .unit-button.selected {
-    background-color: #007bff;
-    color: white;
-    border-color: #007bff;
+    background-color: var(--button-bg);
+    color: var(--tooltip-text);
+    border-color: var(--button-bg);
 }
- 
+
 .tooltip-container {
     position: relative;
     display: inline-block;
 }
- 
+
 .tooltip-text {
     visibility: hidden;
     width: max-content;
@@ -127,12 +129,12 @@
     transition: opacity 0.3s;
     white-space: nowrap;
 }
- 
+
 .tooltip-container:hover .tooltip-text {
     visibility: visible;
     opacity: 1;
 }
- 
+
 /* Optional arrow */
 .tooltip-text::after {
     content: '';
@@ -145,12 +147,12 @@
     border-style: solid;
     border-color: var(--tooltip-bg, #333) transparent transparent transparent;
 }
- 
+
 
 
 
 /* Files */
-.fileCContainer{
+.fileCContainer {
     height: 100%;
     width: 60%;
     padding: 10px;
@@ -160,13 +162,13 @@
     overflow-y: auto;
 }
 
-.newFolddr{
+.newFolddr {
     height: 150px;
     width: 300px;
     position: absolute;
     top: 40%;
     left: 40%;
-    background-color:var(--background-secondary);
+    background-color: var(--background-secondary);
     border-radius: 10px;
     box-shadow: 2px 2px 6px rgba(186, 185, 185, 0.499);
     display: flex;
@@ -176,12 +178,14 @@
     color: var(--font-color);
     padding: 20px;
 }
-.newFolddr p{
+
+.newFolddr p {
     margin: 0;
     /* margin-left: 25px;
     margin-top: 10px; */
 }
-.newFolddr input{
+
+.newFolddr input {
     height: 30px;
     width: 90%;
     /* margin-left: 30px; */
@@ -191,7 +195,8 @@
     border: 1px solid rgb(179, 177, 177);
     color: var(--font-color);
 }
-.newFolddr button{
+
+.newFolddr button {
     height: 25px;
     width: 100px;
     background-color: var(--button-bg);
@@ -202,23 +207,24 @@
     margin-right: 25px;
 
 }
+
 .files_cont {
     align-self: self-start;
     height: auto;
     width: 100%;
     /* background-color: #333; */
     display: grid;
-    grid-template-columns: repeat(7, 1fr); 
-    gap: 10px; 
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
     padding: 10px;
-    overflow-y: auto; 
+    overflow-y: auto;
     color: var(--font-color);
     align-items: start;
 }
 
 
 .Folder {
-    background-color:var(--background-secondary);
+    background-color: var(--background-secondary);
     height: 100px;
     width: 100%;
     margin: 0;
@@ -231,53 +237,56 @@
     border-radius: 10px;
     color: var(--font-color);
 }
-.Folder:hover{
+
+.Folder:hover {
     background-color: rgba(205, 203, 203, 0.598);
 }
-.Folder img{
+
+.Folder img {
     height: 50%;
     width: 50%;
 }
-.Folder p{
+
+.Folder p {
     margin: 0;
     font-size: 14px;
     text-align: center;
 }
 
 
-.files_list{
-        align-self: self-start;
+.files_list {
+    align-self: self-start;
     height: auto;
     width: 100%;
     /* background-color: #333; */
     display: grid;
-    grid-template-columns: repeat(7, 1fr); 
-    gap: 10px; 
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
     padding: 10px;
-    overflow-y: auto; 
+    overflow-y: auto;
     align-items: start;
 }
 
 .context-menu {
-  position: absolute;
-  background: white;
-  border: 1px solid #ccc;
-  z-index: 1000;
-  padding: 5px 0;
-  width: 120px;
-  border-radius: 10px;
-  color: var(--font-color);
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+    padding: 5px 0;
+    width: 120px;
+    border-radius: 10px;
+    color: var(--font-color);
 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .context-menu div {
-  padding: 8px 12px;
-  cursor: pointer;
+    padding: 8px 12px;
+    cursor: pointer;
 }
 
 .context-menu div:hover {
-  background-color: #eee;
+    background-color: #eee;
 }
 
 
@@ -285,23 +294,23 @@
 
 
 .context-menu2 {
-  position: absolute;
-  background: white;
-  border: 1px solid #ccc;
-  z-index: 1000;
-  padding: 5px 0;
-  width: 120px;
-  border-radius: 10px;
-  color: var(--font-color);
+    position: absolute;
+    background: white;
+    border: 1px solid #ccc;
+    z-index: 1000;
+    padding: 5px 0;
+    width: 120px;
+    border-radius: 10px;
+    color: var(--font-color);
 
-  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .context-menu2 div {
-  padding: 8px 12px;
-  cursor: pointer;
+    padding: 8px 12px;
+    cursor: pointer;
 }
 
 .context-menu2 div:hover {
-  background-color: #eee;
+    background-color: #eee;
 }

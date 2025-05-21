@@ -170,6 +170,7 @@
   color: var(--font-color);
   background-color: var(--background-secondary);
   border: 1.5px solid rgba(128, 128, 128, 0.285);
+  cursor: pointer;
 }
 
 .toggle p {
@@ -188,6 +189,7 @@
   justify-content: start;
   align-items: center;
   padding: 2px;
+  cursor: pointer;
 }
 
 .toggle_button {
@@ -234,6 +236,7 @@
   width: 100%;
   /* background-color: rgba(0, 140, 255, 0.503); */
   border-radius: 5px;
+  cursor: pointer;
 
 }
 

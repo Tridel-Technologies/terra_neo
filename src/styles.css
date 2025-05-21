@@ -1,10 +1,11 @@
 @import "primeicons/primeicons.css";
 
-body, html{
+body,
+html {
   margin: 0;
-  height: 100vh;
+  height: 99vh;
   width: 100vw;
-  transform: scale(1);
+  /* transform: scale(1); */
 }
 
 /* Define default light theme */
@@ -44,7 +45,7 @@ body, html{
   /* Tooltip */
   --tooltip-bg: #333;
   --tooltip-text: #fff;
- 
+
   /* Circuit */
   --circuit-color: #000000;
   --circuit-color-pulse: #007bff;
@@ -52,16 +53,16 @@ body, html{
   --circuit-hover: #00000021;
   --circuit-hover2: #00000121;
   --text-color: #000;
-  --button-text-color:white;
+  --button-text-color: white;
 
   /* Toggle */
   --toggle-color: #007bff;
 
   /* folder */
-  --folder-color1:#4194FF;
+  --folder-color1: #4194FF;
   --folder-color2: #376CFB;
 
-    /* reporttable */
+  /* reporttable */
   --tablebgcolor: #f5faff;
 }
 
@@ -94,33 +95,33 @@ body, html{
   --bar-bg: #343a40;
   --bar-foreground: var(--primary-color);
 
-      /* Tooltip */
+  /* Tooltip */
   --tooltip-bg: #eee;
   --tooltip-text: #000;
- 
-    /* Circuit */
+
+  /* Circuit */
   --circuit-color: aqua;
   --circuit-color-pulse: #00ffff;
   --circuit-border-color: #00f7ff7c;
   --circuit-hover: #00f7ff21;
   --circuit-hover2: #09f6fe21;
   --text-color: #ffffff;
-  --button-text-color:black;
+  --button-text-color: black;
 
-    /* Toggle */
+  /* Toggle */
   --toggle-color: aqua;
 
-    /* folder */
-  --folder-color1:#00ffff;
+  /* folder */
+  --folder-color1: #00ffff;
   --folder-color2: #00b3b3;
 
-    /* reporttable */
+  /* reporttable */
   --tablebgcolor: #000;
- 
+
 }
 
 
 
-*{
+* {
   font-family: "Jost", sans-serif;
 }
