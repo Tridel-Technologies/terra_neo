@@ -55,6 +55,7 @@
 .arrow {
     margin-left: auto;
     font-size: 18px;
+    color: var(--font-color);
 }
 
 .file-list {
@@ -132,21 +133,20 @@
 
 
 .tablecontainer {
-    height: 100%;
-    width: 78%;
+    height: 97%;
+    width: 80%;
     border-radius: 20px;
     border: 1px solid #BDDDFC;
     margin: 10px;
-    background-color: #fdfefe;
+    /* background-color: #fdfefe; */
     box-shadow: 0 4px 12px rgba(189, 221, 252, 0.5);
     overflow: hidden;
     overflow-y: auto;
-
 }
 
 ::ng-deep .p-datatable-header {
-    background-color: #f5faff !important;
-    color: #1a1a1a !important;
+    background-color: var(--tablebgcolor) !important;
+    color: var(--font-secondary-color) !important;
     border-radius: 20px 20px 0 0;
     padding: 24px;
     border-bottom: 1px solid #BDDDFC;
@@ -157,8 +157,8 @@
 }
 
 ::ng-deep .p-datatable-thead th {
-    background-color: #f1f7fd !important;
-    color: #2c3e50 !important;
+    background-color: var(--tablebgcolor) !important;
+    color: var(--font-color) !important;
     font-size: 17px;
     font-weight: 600;
     text-align: center;
@@ -167,8 +167,9 @@
 }
 
 ::ng-deep .p-datatable-tbody td {
-    /* background-color: #F9F9F9 !important; */
-    color: #2f2f2f !important;
+    /* background-color: #9f1414 !important; */
+    background-color: var(--tablebgcolor) !important;
+    color: var(--font-color) !important;
     font-size: 16px;
     padding: 14px;
     text-align: center;
@@ -180,7 +181,7 @@
 
 /* Paginator Container */
 ::ng-deep .p-paginator {
-    background-color: #f5faff !important;
+    background-color: var(--tablebgcolor) !important;
     color: #333 !important;
     border-top: 1px solid #BDDDFC;
     box-shadow: inset 0 2px 8px rgba(189, 221, 252, 0.4);
@@ -296,6 +297,15 @@
 
 .export {
     width: 250px;
+}
+
+::ng-deep .custom-toggle .p-toggleswitch .p-toggleswitch-slider {
+    background-color: var(--toggle-color) !important;
+    transition: background-color 0.3s ease;
+}
+
+::ng-deep .custom-toggle .p-toggleswitch-checked .p-toggleswitch-slider {
+    background-color: #e0f7fa;
 }
 
 

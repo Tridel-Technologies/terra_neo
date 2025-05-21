@@ -11,14 +11,18 @@
 
 .files_container {
     width: 20%;
-    height: 100%;
+    height: 98%;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
-    background-color: var(--background-secondary);
     overflow: hidden;
     overflow-y: auto;
+    justify-content: flex-start;
+    background-color: var(--background-secondary);
+}
+
+.files_container h4 {
+    color: var(--font-color);
 }
 
 .folder {
@@ -26,6 +30,7 @@
     margin: 10px 0;
     background-color: var(--background-color);
     border-radius: 8px;
+    cursor: pointer;
 }
 
 .folder-header {
@@ -53,6 +58,7 @@
 }
 
 .arrow {
+    color: var(--font-color);
     margin-left: auto;
     font-size: 18px;
 }
@@ -60,7 +66,18 @@
 .file-list {
     padding-left: 36px;
     padding-bottom: 5px;
+    cursor: pointer;
 }
+
+/* .file-list:focus {
+    display: flex;
+    align-items: center;
+    margin-top: 6px;
+    height: 30px;
+    padding: 5px;
+    border-radius: 8px;
+    background-color: rgba(165, 198, 240, 0.851);
+} */
 
 .file-item {
     display: flex;
@@ -114,6 +131,11 @@
     cursor: pointer;
 }
 
+
+
+
+
+
 .view {
     display: flex;
     justify-content: flex-end;
@@ -132,15 +154,25 @@
     color: var(--font-color);
 }
 
+::ng-deep .custom-toggle .p-toggleswitch .p-toggleswitch-slider {
+    background-color: var(--toggle-color) !important;
+    transition: background-color 0.3s ease;
+}
+
+::ng-deep .custom-toggle .p-toggleswitch-checked .p-toggleswitch-slider {
+    background-color: #e0f7fa;
+}
+
+
 .chartsContainer {
     /* flex: 8.2; */
-    width: 78%;
+    width: 80%;
     height: 100%;
     /* overflow-y: auto; */
     display: flex;
     flex-direction: column;
-    flex-wrap: wrap;
-    background-color: var(--background-color);
+    /* flex-wrap: wrap; */
+    background-color: var(--background-secondary);
     /* background-color: aqua; */
     color: var(--main-text);
     border-radius: 20px;
@@ -173,19 +205,18 @@
 }
 
 .chartContainer {
-    background-color: var(--secbackground-color);
-    padding: 10px;
+    background-color: var(--background-color);
+    padding: 20px;
     border-radius: 8px;
     box-shadow: var(--box-shadow);
     margin: 20px;
     position: relative;
     align-items: center;
-    min-height: 500px;
+    min-height: 400px;
 }
 
 .colorPickerContainer {
     position: absolute;
-    left: 0;
     z-index: 1;
 }
 
@@ -209,7 +240,8 @@
 :host ::ng-deep .p-inputtext {
     width: 100%;
     border: 1px solid transparent;
-    background: transparent;
+    border-color: #94A3B8;
+    /* background: transparent; */
 }
 
 :host ::ng-deep .p-inputtext:focus {
@@ -281,7 +313,7 @@
 }
 
 :host {
-    display: block;
+    /* display: block; */
     width: 100%;
     transition: width 0.3s ease;
 }
@@ -316,6 +348,26 @@
 .right_c {
     height: 100%;
     width: 49.5%;
-    background-color: #f1f2f3a2;
+    background-color: var(--background-secondary);
     border-radius: 10px;
+}
+
+.selectionOption {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.date-picker {
+    display: flex;
+    width: 364px;
+    height: 40px;
+    background-color: #F1F5F9;
+    border-radius: 5px;
+    align-items: center;
+    justify-content: center;
+}
+
+::ng-deep .custom-date-input .p-datepicker-input {
+    width: 220px !important;
 }

@@ -1,68 +1,70 @@
 .stat-circle {
-    display: block;
-  }
-  
-  circle.bg {
-    fill: none;
-    stroke: #f1f1f1;
-    stroke-width: 2;
-  }
-  
-  circle.progress {
-    fill: none;
-    stroke: #2ecc71;
-    stroke-width: 2;
-    stroke-dasharray: 51 51;
-    stroke-linecap: round;
-    transition: stroke 0.3s ease-in-out, stroke-dashoffset 0.5s ease-in-out; /* Smooth animation */
-  }
-  
-  text {
-    font-size: 3px;
-    text-anchor: middle;
-    fill: #555;
-  }
-  
+  display: block;
+}
 
-  .stat-circle svg{
-    height: 20px !important;
-    width: 20px !important;
-  }
+circle.bg {
+  fill: none;
+  stroke: #f1f1f1;
+  stroke-width: 2;
+}
 
-  .batt{
-    position: relative;
-    display: flex;
-    height: 180px;
-    width: 180px;
-    justify-content: center;
-    align-items: center;
-    margin-left: 40%;
-    /* margin-top: 5%; */
-    align-self: center;
-  }
-  .icon{
-    height: 40px;
-    width: 40px;
-    position: absolute;
-    top: 45%;
-    left: 40%;
-  }
+circle.progress {
+  fill: none;
+  stroke: #2ecc71;
+  stroke-width: 2;
+  stroke-dasharray: 51 51;
+  stroke-linecap: round;
+  transition: stroke 0.3s ease-in-out, stroke-dashoffset 0.5s ease-in-out;
+  /* Smooth animation */
+}
 
-  .batt-live{
-    position: relative;
-    display: flex;
-    height: 85px;
-    width: 85px;
-    justify-content: center;
-    align-items: center;
-    /* margin-left: 40px; */
+text {
+  font-size: 3px;
+  text-anchor: middle;
+  fill: #555;
+}
 
-  }
-  .icon-live{
-    height: 20px;
-    width: 20px;
-    position: absolute;
-    top: 40%;
-    left: 40%;
-  }
-  
+
+.stat-circle svg {
+  height: 20px !important;
+  width: 20px !important;
+}
+
+.batt {
+  position: relative;
+  display: flex;
+  height: 180px;
+  width: 180px;
+  justify-content: center;
+  align-items: center;
+  margin-left: 40%;
+  /* margin-top: 5%; */
+  align-self: center;
+}
+
+.icon {
+  height: 40px;
+  width: 40px;
+  position: absolute;
+  top: 45%;
+  left: 40%;
+}
+
+.batt-live {
+  position: relative;
+  display: flex;
+  height: 85px;
+  width: 85px;
+  justify-content: center;
+  align-items: center;
+  /* margin-left: 40px; */
+
+}
+
+.icon-live {
+  height: 20px;
+  width: 20px;
+  position: absolute;
+  top: 40%;
+  left: 40%;
+}

@@ -1,6 +1,5 @@
-
 /* topbar */
-.topbar{
+.topbar {
     height: 60px;
     width: 100%;
     background-image: url('/assets/bg.png');
@@ -9,7 +8,7 @@
     background-position: center;
 }
 
-.shadow{
+.shadow {
     width: 100%;
     height: 60px;
     background: rgba(255, 255, 255, 0.05);
@@ -22,12 +21,13 @@
     align-items: center;
 }
 
-.topbar h1{
-font-size: 20px;
-color: var(--circuit-color-pulse);
-margin-left: 20px;
+.topbar h1 {
+    font-size: 20px;
+    color: var(--circuit-color-pulse);
+    margin-left: 20px;
 }
-.pages_item{
+
+.pages_item {
     height: 100%;
     flex-grow: 1;
     display: flex;
@@ -35,22 +35,24 @@ margin-left: 20px;
     justify-content: center;
     align-items: center;
 }
-.pages_item p{
+
+.pages_item p {
     font-size: 18px;
     margin: 30px;
     /* color: var(--font-color); */
 }
 
-.theme{
+.theme {
     height: 100%;
     width: 60px;
     display: flex;
     justify-content: center;
     align-items: center;
+    cursor: pointer;
     /* color: var(--font-color); */
 }
 
-.user{
+.user {
     height: 60px;
     width: 50px;
     display: flex;
@@ -60,7 +62,8 @@ margin-left: 20px;
     /* background-color: rgba(0, 0, 0, 0.707); */
 
 }
-.user img{
+
+.user img {
     height: 20px;
     width: 20px;
     border-radius: 50%;
@@ -68,12 +71,14 @@ margin-left: 20px;
     color: white;
 
 }
-.user svg{
+
+.user svg {
     color: antiquewhite !important;
     height: 18px;
     margin-left: 2px;
 }
-.logouttt{
+
+.logouttt {
     cursor: pointer;
     height: 30px;
     width: 30px;
@@ -83,30 +88,37 @@ margin-left: 20px;
     justify-content: center;
     align-items: center;
 }
-.logouttt svg{
+
+.logouttt svg {
     color: white;
     stroke: white;
 }
-.logouttt:hover{
+
+.logouttt:hover {
     border: 1px solid var(--button-bg);
     stroke: var(--button-bg);
 }
-.logouttt svg:hover{
+
+.logouttt svg:hover {
     /* color: #007bff; */
     stroke: var(--button-bg);
 }
-.page{
+
+.page {
     cursor: pointer;
     /* color: var(--font-color); */
 }
-.page p{
+
+.page p {
     cursor: pointer;
 }
-.page_active{
+
+.page_active {
     border-bottom: 2px solid var(--button-bg);
     color: var(--button-bg);
     cursor: pointer;
 }
-.page:hover{
+
+.page:hover {
     border-bottom: 2px solid var(--button-bg);
 }

@@ -215,15 +215,44 @@ export class ReportsComponent implements OnInit {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
   }
+  toggleFileSelection(
+    fileName: string,
+    event: MouseEvent,
+    file_id: number,
+    folder_name: string
+  ) {
+    // this.dir = false;
+    console.log(fileName, file_id);
+    this.selected_folder_name = folder_name;
+    this.isLive = true;
+    // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
-  toggleFileSelection(file_id: number) {
+    // if (isCtrlPressed) {
+    //   this.isMulti = true;
+    //   // If Ctrl/Cmd is pressed, toggle file selection
+    //   const index = this.selectedFiles.indexOf(fileName);
+    //   if (index === -1) {
+    //     this.selectedFiles.push({
+    //       file_name: fileName,
+    //       file_id:file_id
+    //     });  // Add file to selection
+    //     console.log(this.selectedFiles)
+    //     this.open_file(fileName, file_id)
+    //   } else {
+    //     this.selectedFiles.splice(index, 1);  // Remove file from selection
+    //   }
+    // } else {
     this.isMulti = false;
+    // If Ctrl/Cmd is not pressed, select this file and deselect all others
     this.selectedFiles = [
       {
+        file_name: fileName,
         file_id: file_id,
       },
-    ];
+    ]; // Only keep the clicked file selected
     this.open_file(file_id);
+
+    // }
   }
 
   getFileImage(fileName: string): string {

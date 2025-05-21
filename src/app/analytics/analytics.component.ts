@@ -24,9 +24,12 @@ import { ToastrService } from 'ngx-toastr';
 import { SelectModule } from 'primeng/select';
 import { ColorPickerModule } from 'primeng/colorpicker';
 import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 import { BehaviorSubject } from 'rxjs';
 import { BaseComponent } from '../base/base.component';
 import { CascadeSelectModule } from 'primeng/cascadeselect';
+import { ThemeService } from '../theme_service/theme.service';
+import { UnitService, UnitSettings } from '../settings/unit.service';
 
 interface Files {
   id: number;
@@ -89,6 +92,7 @@ interface fileData {
     ColorPickerModule,
     CalendarModule,
     CascadeSelectModule,
+    DatePickerModule,
   ],
   templateUrl: './analytics.component.html',
   styleUrl: './analytics.component.css',
@@ -143,8 +147,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   // Optional: disable unavailable dates
   disabledPolarDates: Date[] = []; // populate if needed
 
-  plot:any;
-  viewModes:any;  
+  plot: any;
+  viewModes: any;
 
   totalRecords: number = 0;
   lazyParams: any = {
@@ -157,7 +161,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   currentSpeedColor: string =
     localStorage.getItem('currentSpeedColor') ?? '#ff00c1';
   currentDirectionColor: string =
-    localStorage.getItem('currentDirectionColor') ?? '#000000';
+    localStorage.getItem('currentDirectionColor') ?? '#02f557';
+
+  units: UnitSettings = {
+    waterLevel: '',
+    currentSpeed: '',
+    currentDirection: '',
+    battery: '',
+    depth: '',
+    latandlong: '',
+  };
 
   onColorChange(color: string, type: string): void {
     if (type === 'tideChartColor') {
@@ -188,8 +201,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private toast: ToastrService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
-    private base:BaseComponent
+    private base: BaseComponent,
+    private themeService: ThemeService,
+    private unitSerive: UnitService
   ) {}
+
   ngOnInit(): void {
     // Load saved data type preference
     const savedDataType = localStorage.getItem('isProcessedData');
@@ -205,37 +221,42 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         console.log('files:', response, this.files_list);
         this.expandedFolders = this.files_list.map(() => false);
       });
-      this.viewModes = [
-        {
-          name: 'Line Plot',
-          code: 'AU',
-          states: [
-              {
-                cname: 'Single Axis',
-                code: 'A-SY'
-              },
-              {
-                cname: 'Dual Axis',
-                code: 'A-BR'
-              },
-              {
-                cname: 'Tri Axis',
-                code: 'A-TO'
-              }
-          ]
+    this.viewModes = [
+      {
+        name: 'Line Plot',
+        code: 'AU',
+        states: [
+          {
+            cname: 'Single Axis',
+            code: 'A-SY',
+          },
+          {
+            cname: 'Dual Axis',
+            code: 'A-BR',
+          },
+          {
+            cname: 'Tri Axis',
+            code: 'A-TO',
+          },
+        ],
       },
       {
-          cname: 'Rose Plot',
-          code: 'CA',
+        cname: 'Rose Plot',
+        code: 'CA',
       },
-      ];
-      this.plot = this.viewModes[0].states[0];
-      if (this.viewModes.length !== 0) {
-        this.show = true;
-      }
+    ];
+    this.plot = this.viewModes[0].states[0];
+    if (this.viewModes.length !== 0) {
+      this.show = true;
+    }
+    this.subscribeToThemeChanges();
 
+    this.unitSerive.units$.subscribe((u) => {
+      this.units = u;
+    });
   }
-show:boolean=false;
+
+  show: boolean = false;
   updateField(item: any, field: string, event: Event) {
     const value = (event.target as HTMLInputElement).value;
     setTimeout(() => {
@@ -251,14 +272,44 @@ show:boolean=false;
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
   }
-  toggleFileSelection(file_id: number) {
+  toggleFileSelection(
+    fileName: string,
+    event: MouseEvent,
+    file_id: number,
+    folder_name: string
+  ) {
+    // this.dir = false;
+    console.log(fileName, file_id);
+    this.selected_folder_name = folder_name;
+    this.isLive = true;
+    // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
+
+    // if (isCtrlPressed) {
+    //   this.isMulti = true;
+    //   // If Ctrl/Cmd is pressed, toggle file selection
+    //   const index = this.selectedFiles.indexOf(fileName);
+    //   if (index === -1) {
+    //     this.selectedFiles.push({
+    //       file_name: fileName,
+    //       file_id:file_id
+    //     });  // Add file to selection
+    //     console.log(this.selectedFiles)
+    //     this.open_file(fileName, file_id)
+    //   } else {
+    //     this.selectedFiles.splice(index, 1);  // Remove file from selection
+    //   }
+    // } else {
     this.isMulti = false;
+    // If Ctrl/Cmd is not pressed, select this file and deselect all others
     this.selectedFiles = [
       {
+        file_name: fileName,
         file_id: file_id,
       },
-    ];
+    ]; // Only keep the clicked file selected
     this.open_file(file_id);
+
+    // }
   }
 
   getFileImage(fileName: string): string {
@@ -358,6 +409,7 @@ show:boolean=false;
       (file) => file.file_name === fileName && file.file_id === file_id
     );
     return isSelected ? 'file-item_active' : 'file-item';
+    // }
   }
 
   ngAfterViewInit(): void {
@@ -367,7 +419,6 @@ show:boolean=false;
   loadChart() {
     // Ensure cleanup of existing charts
     this.cleanupCharts();
-  
     // Wait for DOM to be ready
     setTimeout(() => {
       switch (this.plot.cname) {
@@ -388,7 +439,18 @@ show:boolean=false;
       }
       this.loading = false;
     }, 100);
-  }  
+  }
+
+  subscribeToThemeChanges(): void {
+    this.themeService.currentTheme$.subscribe(() => {
+      this.Tide();
+      this.currentSpeed();
+      this.currentDirection();
+      this.currentSpeedAndDirection();
+      this.midSpeedDirection();
+      this.midpolar();
+    });
+  }
 
   private cleanupCharts() {
     // Dispose of all chart instances
@@ -456,7 +518,7 @@ show:boolean=false;
 
     // Handle new rows
     if (newRows.length > 0) {
-      const newRowsPromises = newRows.map(newRow => {
+      const newRowsPromises = newRows.map((newRow) => {
         // Parse the date string to get hours and minutes
         const date = new Date(newRow.date);
         const hours = date.getHours().toString().padStart(2, '0');
@@ -788,11 +850,17 @@ show:boolean=false;
     this.loading = true;
     const tide = document.getElementById('tide');
 
+    const computedStyle = getComputedStyle(document.body);
+    const bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    const mainText = computedStyle.getPropertyValue('--text-color').trim();
+    const subText = computedStyle.getPropertyValue('--icon-color').trim();
+    // const text = computedStyle.getPropertyValue('--circuit-color-pulse').trim();
+
     // Load saved color from localStorage or use default
-    const savedColor = localStorage.getItem('tideChartColor');
-    if (savedColor) {
-      this.tideChartColor = savedColor;
-    }
+    // const savedColor = localStorage.getItem('tideChartColor');
+    // if (savedColor) {
+    //   this.tideChartColor = savedColor;
+    // }
 
     if (tide) {
       const existingInstance = echarts.getInstanceByDom(tide);
@@ -804,9 +872,11 @@ show:boolean=false;
       const option = {
         title: {
           text: 'Water Level',
-          left: '1%',
+          left: '2%',
           textStyle: {
-            color: localStorage.getItem('theme') === 'light' ? 'black' : 'white',
+            // color:
+            //   localStorage.getItem('theme') === 'light' ? 'black' : 'white',
+            color: mainText,
             fontSize: 20,
           },
         },
@@ -820,13 +890,13 @@ show:boolean=false;
             nameLocation: 'middle',
             nameGap: 12,
             nameTextStyle: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
               fontWeight: 'bold',
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               rotate: 45,
             },
             axisLine: {
@@ -853,7 +923,7 @@ show:boolean=false;
         yAxis: [
           {
             type: 'value',
-            name: 'Water Level (m)',
+            name: `Water Level (${this.units.waterLevel})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.tideChartColor, // Use selected color
@@ -861,7 +931,7 @@ show:boolean=false;
               fontSize: 16,
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
             },
             axisLine: {
               show: true,
@@ -906,12 +976,12 @@ show:boolean=false;
             },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
+              backgroundColor: bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
+            borderColor: mainText,
           },
         },
         dataZoom: [
@@ -957,7 +1027,7 @@ show:boolean=false;
             itemStyle: {
               color: '#ff0000',
               borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
-              borderWidth: 2,
+              // borderWidth: 2,
             },
             label: {
               show: true,
@@ -1015,12 +1085,17 @@ show:boolean=false;
 
   currentSpeed(): void {
     const chartType = this.selectedChart;
+    // this.loading = true;
     const speed = document.getElementById('currentSpeed');
 
-    const savedColor = localStorage.getItem('currentSpeedColor');
-    if (savedColor) {
-      this.currentSpeedColor = savedColor;
-    }
+    const computedStyle = getComputedStyle(document.body);
+    const bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    const mainText = computedStyle.getPropertyValue('--text-color').trim();
+
+    // const savedColor = localStorage.getItem('currentSpeedColor');
+    // if (savedColor) {
+    //   this.currentSpeedColor = savedColor;
+    // }
 
     if (speed) {
       const existingInstance = echarts.getInstanceByDom(speed);
@@ -1032,9 +1107,9 @@ show:boolean=false;
       const option = {
         title: {
           text: 'Current Speed',
-          left: '1%',
+          left: '2%',
           textStyle: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
+            color: mainText,
             fontSize: 20,
           },
         },
@@ -1047,13 +1122,13 @@ show:boolean=false;
             nameLocation: 'middle',
             nameGap: 12,
             nameTextStyle: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
               fontWeight: 'bold',
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               rotate: 45,
             },
             axisLine: {
@@ -1084,14 +1159,16 @@ show:boolean=false;
         yAxis: [
           {
             type: 'value',
-            name: 'Current speed (m/s)',
+            name: `Current speed (${this.units.currentSpeed})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.currentSpeedColor,
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
+            axisLabel: {
+              color: mainText,
+            },
             axisLine: {
               show: true,
               // lineStyle: { color: '#00ff00' },
@@ -1137,12 +1214,12 @@ show:boolean=false;
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
+              backgroundColor: bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
+            borderColor: mainText,
           },
         },
 
@@ -1201,7 +1278,7 @@ show:boolean=false;
           }
         }
       });
-      this.loading = false;
+      // this.loading = false;
       window.addEventListener('resize', () => {
         currentSpeed.resize();
       });
@@ -1220,10 +1297,14 @@ show:boolean=false;
     const chartType = this.selectedChart;
     const direction = document.getElementById('currentDirection');
 
-    const savedColor = localStorage.getItem('currentDirectionColor');
-    if (savedColor) {
-      this.currentDirectionColor = savedColor;
-    }
+    const computedStyle = getComputedStyle(document.body);
+    const bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    const mainText = computedStyle.getPropertyValue('--text-color').trim();
+
+    // const savedColor = localStorage.getItem('currentDirectionColor');
+    // if (savedColor) {
+    //   this.currentDirectionColor = savedColor;
+    // }
 
     if (direction) {
       const existingInstance = echarts.getInstanceByDom(direction);
@@ -1235,9 +1316,9 @@ show:boolean=false;
       const option = {
         title: {
           text: 'Current Direction',
-          left: '1%',
+          left: '2%',
           textStyle: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
+            color: mainText,
             fontSize: 20,
           },
         },
@@ -1251,13 +1332,13 @@ show:boolean=false;
             nameLocation: 'middle',
             nameGap: 12,
             nameTextStyle: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
               fontWeight: 'bold',
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               rotate: 45,
             },
             axisLine: {
@@ -1288,14 +1369,16 @@ show:boolean=false;
         yAxis: [
           {
             type: 'value',
-            name: 'Current Direction (°)',
+            name: `Current Direction (${this.units.currentDirection})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.currentDirectionColor,
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
+            axisLabel: {
+              color: this.base.chartFont === 'light' ? 'black' : 'white',
+            },
             axisLine: {
               show: true,
               // lineStyle: { color: '#00ff00' },
@@ -1344,12 +1427,12 @@ show:boolean=false;
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
+              backgroundColor: bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
+            borderColor: mainText,
           },
         },
 
@@ -1398,7 +1481,7 @@ show:boolean=false;
             data: this.fullData.map((item) => [item.date, 0]), // fix Y at bottom
             type: 'scatter', // use scatter so it doesn't draw a line
             // itemStyle: { color: '#1f77b4' },
-            itemStyle: { color: this.currentDirectionColor },
+            itemStyle: { color: mainText },
             symbol:
               'path://M122.88,61.217L59.207,122.433V83.029H0V39.399H59.207V0L122.88,61.217Z',
             symbolSize: 14,
@@ -1460,6 +1543,10 @@ show:boolean=false;
     // const mainText = '#000000';
     // const subText = '#666666';
 
+    const computedStyle = getComputedStyle(document.body);
+    const bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    const mainText = computedStyle.getPropertyValue('--text-color').trim();
+
     if (chartContainer) {
       const existingInstance = echarts.getInstanceByDom(chartContainer);
       if (existingInstance) {
@@ -1471,9 +1558,9 @@ show:boolean=false;
       const option = {
         title: {
           text: 'Dual Axis',
-          left: '1%',
+          left: '2%',
           textStyle: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
+            color: mainText,
             fontSize: 20,
           },
         },
@@ -1499,13 +1586,13 @@ show:boolean=false;
           nameLocation: 'middle',
           nameGap: 12,
           nameTextStyle: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
+            color: mainText,
             padding: [44, 0, 0, 0],
             fontSize: 14,
             fontWeight: 'bold',
           },
           axisLabel: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
+            color: mainText,
             rotate: 45,
           },
           axisLine: { show: true },
@@ -1513,27 +1600,31 @@ show:boolean=false;
         yAxis: [
           {
             type: 'value',
-            name: 'Current Speed (m/s)',
+            name: `Current Speed (${this.units.currentSpeed})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.currentSpeedColor,
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
+            axisLabel: {
+              color: mainText,
+            },
             axisLine: { show: true },
             splitLine: { show: true },
           },
           {
             type: 'value',
-            name: 'Current Direction (°)',
+            name: `Current Direction (${this.units.currentDirection})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.currentDirectionColor,
               padding: [30, 0, 0, 0],
               fontSize: 16,
             },
-            axisLabel: { color: this.base.chartFont === 'light' ? 'black' : 'white' },
+            axisLabel: {
+              color: mainText,
+            },
             axisLine: { show: true },
             splitLine: { show: false },
           },
@@ -1555,26 +1646,43 @@ show:boolean=false;
           },
         ],
         legend: {
-          // data: ['Current Speed'],
+          data: ['Current Speed', 'Current Direction'],
           orient: 'vertical',
           right: '15%',
           top: '2%',
           textStyle: {
-            color: this.currentDirectionColor,
-            fontSize: 14,
+            rich: {
+              speed: {
+                color: this.currentSpeedColor,
+                fontSize: 14,
+              },
+              direction: {
+                color: this.currentDirectionColor,
+                fontSize: 14,
+              },
+            },
+          },
+          formatter: (name: string) => {
+            if (name === 'Current Speed') {
+              return '{speed|Current Speed}';
+            } else if (name === 'Current Direction') {
+              return '{direction|Current Direction}';
+            }
+            return name;
           },
         },
+
         toolbox: {
           feature: {
             dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
+              backgroundColor: bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
+            borderColor: mainText,
           },
         },
 
@@ -1680,6 +1788,10 @@ show:boolean=false;
     const chartType = this.selectedChart;
     const mid = document.getElementById('midSpeedDirection');
 
+    const computedStyle = getComputedStyle(document.body);
+    const bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    const mainText = computedStyle.getPropertyValue('--text-color').trim();
+
     if (mid) {
       const existingInstance = echarts.getInstanceByDom(mid);
       if (existingInstance) {
@@ -1695,7 +1807,7 @@ show:boolean=false;
           left: '1%',
           // top: '0%',
           textStyle: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
+            color: mainText,
             fontSize: 20,
           },
         },
@@ -1714,13 +1826,13 @@ show:boolean=false;
             nameLocation: 'middle',
             nameGap: 12,
             nameTextStyle: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               padding: [44, 0, 0, 0],
               fontSize: 14,
               fontWeight: 'bold',
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
               rotate: 45,
             },
             axisLine: {
@@ -1747,7 +1859,7 @@ show:boolean=false;
         yAxis: [
           {
             type: 'value',
-            name: 'Current Speed (m/s)',
+            name: `Current Speed (${this.units.currentSpeed})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.currentSpeedColor,
@@ -1773,7 +1885,7 @@ show:boolean=false;
           },
           {
             type: 'value',
-            name: 'Water Level (m)',
+            name: `Water Level (${this.units.waterLevel})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.tideChartColor,
@@ -1781,7 +1893,7 @@ show:boolean=false;
               fontSize: 16,
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
             },
             axisLine: {
               show: true,
@@ -1801,7 +1913,7 @@ show:boolean=false;
           },
           {
             type: 'value',
-            name: 'Current Direction (°)',
+            name: `Current Direction (${this.units.currentDirection})`,
             nameLocation: 'middle',
             nameTextStyle: {
               color: this.currentDirectionColor,
@@ -1809,7 +1921,7 @@ show:boolean=false;
               fontSize: 16,
             },
             axisLabel: {
-              color: this.base.chartFont === 'light' ? 'black' : 'white',
+              color: mainText,
             },
             axisLine: {
               show: true,
@@ -1835,8 +1947,30 @@ show:boolean=false;
           orient: 'horizontal',
           right: '15%',
           textStyle: {
-            color: this.base.chartFont === 'light' ? 'black' : 'white',
-            fontSize: 14,
+            rich: {
+              tide: {
+                color: this.tideChartColor,
+                fontSize: 14,
+              },
+              speed: {
+                color: this.currentSpeedColor,
+                fontSize: 14,
+              },
+              direction: {
+                color: this.currentDirectionColor,
+                fontSize: 14,
+              },
+            },
+          },
+          formatter: (name: string) => {
+            if (name === 'Current Speed') {
+              return '{speed|Current Speed}';
+            } else if (name === 'Current Direction') {
+              return '{direction|Current Direction}';
+            } else if (name === 'Water Level') {
+              return '{tide|Water Level}';
+            }
+            return name;
           },
         },
         toolbox: {
@@ -1846,12 +1980,12 @@ show:boolean=false;
             },
             restore: {},
             saveAsImage: {
-              backgroundColor: this.base.chartFont === 'light' ? 'black' : 'white',
+              backgroundColor: bgColor,
               pixelRatio: 2,
             },
           },
           iconStyle: {
-            borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
+            borderColor: mainText,
           },
         },
         dataZoom: [
@@ -2010,20 +2144,20 @@ show:boolean=false;
   }
 
   midpolar(): void {
-    if (
-      !this.selectedPolarDateRange ||
-      this.selectedPolarDateRange.length !== 2
-    ) {
-      this.toast.warning('Please select a date range');
-      return;
-    }
- 
+    // if (
+    //   !this.selectedPolarDateRange ||
+    //   this.selectedPolarDateRange.length !== 2
+    // ) {
+    //   this.toast.warning('Please select a date range');
+    //   return;
+    // }
+
     const startDate = this.formatDateToYMD(this.selectedPolarDateRange[0]);
     const endDate = this.formatDateToYMD(this.selectedPolarDateRange[1]);
- 
+
     if (this.PolarSelectedInterVal === 'all') {
       const intervals = [30, 60, 360, 1440];
- 
+
       setTimeout(() => {
         intervals.forEach((interval) => {
           const groupedData = this.groupByIntervalWithinDateRange(
@@ -2044,7 +2178,7 @@ show:boolean=false;
       }, 100);
     } else {
       const interval = this.PolarSelectedInterVal;
- 
+
       setTimeout(() => {
         const groupedData = this.groupByIntervalWithinDateRange(
           this.fullData,
@@ -2063,7 +2197,7 @@ show:boolean=false;
       }, 100);
     }
   }
- 
+
   private renderPolarChart(
     elementId: string,
     averagedPolarData: { speed: number; direction: number }[],
@@ -2071,21 +2205,25 @@ show:boolean=false;
     endDate: string,
     interval: number
   ): void {
+    const computedStyle = getComputedStyle(document.body);
+    const bgColor = computedStyle.getPropertyValue('--background-color').trim();
+    const mainText = computedStyle.getPropertyValue('--text-color').trim();
+
     const element = document.getElementById(elementId);
     if (!element) {
       console.error(`Element with id '${elementId}' not found`);
       return;
     }
- 
+
     const existingInstance = echarts.getInstanceByDom(element);
     if (existingInstance) {
       existingInstance.dispose();
     }
- 
+
     const chart = echarts.init(element);
- 
+
     const directionLabels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
- 
+
     const speedCategories = [
       '<0.5 m/s',
       '0.5-2 m/s',
@@ -2102,10 +2240,10 @@ show:boolean=false;
       '#FF9933',
       '#FF3300',
     ];
- 
+
     type SpeedCategory = (typeof speedCategories)[number];
     type DirectionBin = Record<SpeedCategory, number>;
- 
+
     const categorizeSpeed = (speed: number): SpeedCategory => {
       if (speed < 0.5) return '<0.5 m/s';
       if (speed < 2) return '0.5-2 m/s';
@@ -2114,7 +2252,7 @@ show:boolean=false;
       if (speed < 8) return '6-8 m/s';
       return '>8 m/s';
     };
- 
+
     const dataBins: DirectionBin[] = directionLabels.map(() => ({
       '<0.5 m/s': 0,
       '0.5-2 m/s': 0,
@@ -2123,15 +2261,15 @@ show:boolean=false;
       '6-8 m/s': 0,
       '>8 m/s': 0,
     }));
- 
+
     averagedPolarData.forEach(({ speed, direction }) => {
       // const directionIndex = Math.round(direction / 22.5) % 16;
- 
+
       const directionIndex = Math.round(direction / 45) % 8;
       const speedCategory = categorizeSpeed(speed);
       dataBins[directionIndex][speedCategory] += 1;
     });
- 
+
     const seriesData = speedCategories.map((speedCategory, index) => ({
       name: speedCategory,
       type: 'bar',
@@ -2142,7 +2280,7 @@ show:boolean=false;
         color: speedColors[index],
       },
     }));
- 
+
     const option = {
       title: {
         // text: this.PolarSelectedInterVal,
@@ -2150,7 +2288,7 @@ show:boolean=false;
         top: '0%',
         left: 'center',
         textStyle: {
-          color: this.base.chartFont === 'light' ? 'black' : 'white',
+          color: mainText,
           fontSize: 18,
         },
       },
@@ -2163,7 +2301,7 @@ show:boolean=false;
               orient: 'vertical',
               right: '0%',
               textStyle: {
-                color: this.base.chartFont === 'light' ? 'black' : 'white',
+                color: mainText,
                 fontSize: 12,
               },
             }
@@ -2173,24 +2311,24 @@ show:boolean=false;
               orient: 'vertical',
               right: '0%',
               textStyle: {
-                color: this.base.chartFont === 'light' ? 'black' : 'white',
+                color: mainText,
                 fontSize: 12,
               },
             },
- 
+
       angleAxis: {
         type: 'category',
         data: directionLabels,
         boundaryGap: true,
-        startAngle: 100,
+        startAngle: 110,
         axisLabel: {
-          color: this.base.chartFont === 'light' ? 'black' : 'white',
+          color: mainText,
         },
       },
       radiusAxis: {
         min: 0,
         axisLabel: {
-          color: this.base.chartFont === 'light' ? 'black' : 'white',
+          color: mainText,
           formatter: '{value}',
         },
       },
@@ -2201,7 +2339,7 @@ show:boolean=false;
       series: seriesData,
       animationDuration: 800,
     };
- 
+
     chart.setOption(option);
     window.addEventListener('resize', () => chart.resize());
   }

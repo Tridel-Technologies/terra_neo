@@ -1,39 +1,51 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnInit, OnChanges, SimpleChanges } from '@angular/core';
+import {
+  Component,
+  Input,
+  OnInit,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 
 @Component({
   selector: 'app-battery',
   standalone: true,
   imports: [CommonModule],
   templateUrl: './battery.component.html',
-  styleUrl: './battery.component.css'
+  styleUrl: './battery.component.css',
 })
 export class BatteryComponent implements OnInit, OnChanges {
-  @Input() percentage: number = 0;
+  @Input() voltage: number = 0; // changed name
+  percentage: number = 0;
   strokeDashoffset: number = 0;
   batteryColor: string = 'red';
-  @Input() isLive:boolean = false;
+  @Input() isLive: boolean = false;
 
   ngOnInit() {
-    this.batteryColor = this.getColor()
+    this.batteryColor = this.getColor();
     this.updateValues();
   }
 
   ngOnChanges(changes: SimpleChanges) {
-    if (changes['percentage']) {
+    if (changes['voltage']) {
       this.updateValues();
     }
   }
 
   private updateValues() {
-    this.percentage = (this.percentage / 12) * 100;
+    const maxVoltage = 12.4;
+    let voltage = Math.min(this.voltage, maxVoltage);
+
+    const voltagePercentage = Math.round((voltage / maxVoltage) * 100);
+    this.percentage = voltagePercentage;
+
     this.calculateOffset();
     this.batteryColor = this.getColor();
   }
 
   private calculateOffset() {
     const circleLength = 51;
-    this.strokeDashoffset = -51 - ((circleLength / 100) * this.percentage);
+    this.strokeDashoffset = -51 - (circleLength / 100) * this.percentage;
     console.log(`Stroke Dashoffset calculated: ${this.strokeDashoffset}`);
   }
 
