@@ -3,10 +3,22 @@
 .topbar{
     height: 60px;
     width: 100%;
-    background-color: var(--bar-bg);
+    background-image: url('/assets/bg.png');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
+}
+
+.shadow{
+    width: 100%;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(6.5px);
+    -webkit-backdrop-filter: blur(6.5px);
+    color: white;
     display: flex;
     flex-direction: row;
-    justify-content: start s;
+    justify-content: flex-start;
     align-items: center;
 }
 
@@ -35,7 +47,7 @@ margin-left: 20px;
     display: flex;
     justify-content: center;
     align-items: center;
-    color: var(--font-color);
+    /* color: var(--font-color); */
 }
 
 .user{
@@ -65,15 +77,27 @@ margin-left: 20px;
     cursor: pointer;
     height: 30px;
     width: 30px;
-    border: 1px solid var(--font-color);
+    border: 1px solid white;
     display: flex;
     border-radius: 50%;
     justify-content: center;
     align-items: center;
 }
+.logouttt svg{
+    color: white;
+    stroke: white;
+}
+.logouttt:hover{
+    border: 1px solid var(--button-bg);
+    stroke: var(--button-bg);
+}
+.logouttt svg:hover{
+    /* color: #007bff; */
+    stroke: var(--button-bg);
+}
 .page{
     cursor: pointer;
-    color: var(--font-color);
+    /* color: var(--font-color); */
 }
 .page p{
     cursor: pointer;

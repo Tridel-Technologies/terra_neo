@@ -64,6 +64,12 @@ fileWiseUploadData: { [fileName: string]: any[] } = {};
 
   }
   
+  showCoordinates = true;
+  
+  toggleCoordinates() {
+    this.showCoordinates = !this.showCoordinates;
+  }
+
   update_Values(){
     if (this.latitude ===null && this.lon === null) {
       this.toast.warning("Please enter coordinates", "Error", {

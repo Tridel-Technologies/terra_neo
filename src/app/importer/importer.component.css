@@ -207,6 +207,11 @@
     top: 10px;
     right: 10px;
  }
+
+ .import_button:hover{
+  cursor: pointer;
+  background-color: var(--button-bg-hover);
+ }
   
   .file-upload label {
     display: inline-block;
@@ -420,6 +425,10 @@
     margin-left: 8%;
     /* color: var(--font-color); */
     color: var(--button-text-color);
+  }
+  .update:hover{
+    cursor: pointer;
+    background-color: var(--button-bg-hover);
   }
   /* dashboard */
   .dashboard {
