@@ -144,7 +144,7 @@ export class ReportsComponent implements OnInit {
     { label: 'Export to Excel', value: 'excel' },
     { label: 'Export to PDF', value: 'pdf' },
   ];
-  nameOfStation!: string;
+  nameOffile!: string;
 
   constructor(private http: HttpClient, private toast: ToastrService) {}
 
@@ -224,6 +224,7 @@ export class ReportsComponent implements OnInit {
     // this.dir = false;
     console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
+    this.nameOffile = fileName;
     this.isLive = true;
     // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
@@ -498,7 +499,7 @@ export class ReportsComponent implements OnInit {
     if (filteredData && filteredData.length > 0) {
       const csv = this.convertToCSV(filteredData);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      FileSaver.saveAs(blob, 'buoy_data.csv');
+      FileSaver.saveAs(blob, `${this.nameOffile}_download.csv`);
     } else {
       // Handle case where no data is available
       //console.warn('No data available for CSV export');
@@ -605,7 +606,7 @@ export class ReportsComponent implements OnInit {
         bookType: 'xlsx',
         type: 'array',
       });
-      this.saveAsExcelFile(excelBuffer, this.nameOfStation);
+      this.saveAsExcelFile(excelBuffer, `${this.nameOffile}_download`);
     }
   }
 
@@ -613,7 +614,7 @@ export class ReportsComponent implements OnInit {
     const EXCEL_TYPE =
       'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
     const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
-    saveAs(data, `${this.nameOfStation}.xlsx`);
+    saveAs(data, `${this.nameOffile}_download.xlsx`);
   }
 
   exportPDF(dt: any) {
@@ -685,7 +686,7 @@ export class ReportsComponent implements OnInit {
         showHead: 'everyPage',
       });
 
-      doc.save(`${this.nameOfStation}.pdf`);
+      doc.save(`${this.nameOffile}.pdf`);
     } else {
       console.warn('No data available for PDF export');
     }
