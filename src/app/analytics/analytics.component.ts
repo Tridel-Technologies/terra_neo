@@ -967,13 +967,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         toolbox: {
           feature: {
-            dataZoom: {
-              yAxisIndex: 'none',
-              title: {
-                zoom: 'Zoom',
-                back: 'Reset Zoom',
-              },
-            },
+            // dataZoom: {
+            //   yAxisIndex: 'none',
+            //   title: {
+            //     zoom: 'Zoom',
+            //     back: 'Reset Zoom',
+            //   },
+            // },
             restore: {},
             saveAsImage: {
               backgroundColor: bgColor,
@@ -1211,7 +1211,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         toolbox: {
           feature: {
-            dataZoom: { yAxisIndex: 'none' },
+            // dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
               backgroundColor: bgColor,
@@ -1424,7 +1424,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         toolbox: {
           feature: {
-            dataZoom: { yAxisIndex: 'none' },
+            // dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
               backgroundColor: bgColor,
@@ -1674,7 +1674,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
         toolbox: {
           feature: {
-            dataZoom: { yAxisIndex: 'none' },
+            // dataZoom: { yAxisIndex: 'none' },
             restore: {},
             saveAsImage: {
               backgroundColor: bgColor,
@@ -1975,9 +1975,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         toolbox: {
           feature: {
-            dataZoom: {
-              yAxisIndex: 'none',
-            },
+            // dataZoom: {
+            //   yAxisIndex: 'none',
+            // },
             restore: {},
             saveAsImage: {
               backgroundColor: bgColor,
