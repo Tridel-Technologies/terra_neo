@@ -250,73 +250,90 @@
 }
 
 #search input[type=search] {
-    background: #ededed url(https://static.tumblr.com/ftv85bp/MIXmud4tx/search-icon.png) no-repeat 9px center;
+    background: var(--background-color) url(https://static.tumblr.com/ftv85bp/MIXmud4tx/search-icon.png) no-repeat 9px center;
     width: 100%;
     height: 40px;
-    background-color: #fff;
+    background-color: var(--background-color);
     padding-left: 30px;
     border: 1px solid #ccc;
     border-radius: 10px;
     font-size: 16px;
     outline: none;
     margin-bottom: 10px;
+    color: var(--font-color);
 }
-
+ 
 #search input[type=search]:hover {
-    background-color: #F1F5F9;
+    background-color: var(--background-color);
     border-color: #119C8D;
 }
-
+ 
 #search input[type=search]:focus {
     border-color: #119C8D;
 }
-
+ 
 ::ng-deep .highlight {
     background-color: #F8C541;
     color: red;
     font-weight: bold;
 }
-
+ 
 ::ng-deep .highlight-row {
     background-color: #F8C541 !important;
     color: red;
     font-weight: bold;
 }
-
-
-
+ 
+ 
+ 
 .filter p-multiselect {
     width: 395px;
     height: 40px;
     border: 1px solid #ccc;
 }
-
+ 
 .filter p-multiselect:hover {
     border-color: #119C8D;
 }
-
+ 
 .export {
     width: 250px;
 }
-
+ 
 ::ng-deep .custom-toggle .p-toggleswitch .p-toggleswitch-slider {
     background-color: var(--toggle-color) !important;
     transition: background-color 0.3s ease;
 }
-
+ 
 ::ng-deep .custom-toggle .p-toggleswitch-checked .p-toggleswitch-slider {
     background-color: #e0f7fa;
 }
-
-
-
+ 
+ 
+ 
 .last-row-info {
     background-color: #f9fafb;
     border-radius: 8px;
     padding: 12px;
     margin-top: 10px;
 }
-
+ 
 .last-row-info i {
     margin-right: 8px;
 }
+ 
+::ng-deep .p-select {
+    background: var(--background-color) !important;
+    color: var(--font-color) !important;
+}
+ 
+::ng-deep .p-dropdown{
+    background: var(--background-color) !important;
+    color: var(--font-color) !important;
+}
+ 
+::ng-deep .p-multiselect{
+    background: var(--background-color) !important;
+    color: var(--font-color) !important;
+}
+ 
