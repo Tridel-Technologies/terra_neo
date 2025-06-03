@@ -15,7 +15,7 @@
 /* === Company Header === */
 .company-header {
   position: absolute;
-  bottom: 20px;  
+  bottom: 20px;
   left: 20px;
   display: flex;
   align-items: flex-end;
@@ -66,15 +66,20 @@
   backdrop-filter: blur(6.5px);
   -webkit-backdrop-filter: blur(6.5px);
   margin-top: 50px;
+  /* border: 2px solid #00f0ff; */
+  box-shadow: 0 0 15px #00f0ff;
 }
-.login-box .login_btn{
+
+.login-box .login_btn {
   margin-right: 10px;
 }
- a{
+
+a {
   font-size: medium;
   color: white;
   text-decoration: none;
 }
+
 a:hover {
   text-decoration: underline;
 }
@@ -93,25 +98,27 @@ a:hover {
   -webkit-backdrop-filter: blur(6.5px);
   margin-top: 30px;
 }
-.signup-box .input-wrapper{
+
+.signup-box .input-wrapper {
   width: 70%;
   display: flex;
 }
+
 .forgot-password {
   text-align: left;
   margin-left: 50px;
 }
 
-.signup-box .signup_btn{
+.signup-box .signup_btn {
   margin-top: 20px;
   /* width: 5%; */
 }
 
-.signup-box .adduser{
+.signup-box .adduser {
   margin-right: 10px;
 }
 
-.forgot-box{
+.forgot-box {
   width: 500px;
   height: 550px;
   background: rgba(255, 255, 255, 0.05);
@@ -124,6 +131,7 @@ a:hover {
   -webkit-backdrop-filter: blur(6.5px);
   margin-top: 10px;
 }
+
 /* === Avatar === */
 .avatar img {
   width: 90px;
@@ -136,9 +144,11 @@ a:hover {
   box-shadow: 0 0 15px #00f0ff;
 
 }
-h2{
+
+h2 {
   margin-top: 5px;
 }
+
 /* === Headers === */
 .login-box h3 {
   margin: 20px 0 10px;
@@ -181,20 +191,21 @@ h2{
   display: flex;
   position: fixed;
   color: #fe8787;
-  font-size:medium;
+  font-size: medium;
   margin-left: 15%;
   margin-top: 0px;
 }
+
 .login-box .err-msg-container {
   display: flex;
   position: fixed;
   color: #fe8787;
-  font-size:medium;
+  font-size: medium;
   margin-left: 10%;
   margin-top: 0px;
 }
 
-.column{
+.column {
   display: flex;
   flex-direction: column;
   margin: -15px;
@@ -206,7 +217,7 @@ h2{
   padding: 8px;
   border: none;
   border-radius: 20px;
-  background:rgb(116,183,216);
+  background: rgb(116, 183, 216);
   color: white;
   margin-top: 5px;
   cursor: pointer;
@@ -223,6 +234,7 @@ h2{
 .remember input {
   margin-right: 5px;
 }
+
 .input-wrapper {
   position: relative;
   width: 80%;
@@ -231,7 +243,7 @@ h2{
 
 .input-wrapper input {
   width: 100%;
-  padding: 8px 8px 8px 35px; 
+  padding: 8px 8px 8px 35px;
   border: none;
   border-radius: 20px;
   background: white;
@@ -247,23 +259,29 @@ h2{
   font-size: 14px;
   pointer-events: none;
 }
-.forgetbtn{
-margin-top: 20px;
+
+.forgetbtn {
+  margin-top: 20px;
 }
-.forgot-box .input-wrapper{
+
+.forgot-box .input-wrapper {
   width: 70%;
   display: flex;
 }
-.loginbtn{
+
+.loginbtn {
   margin-top: 20px;
-  }
-.signup_form{
+}
+
+.signup_form {
   margin-top: 10px;
 }
-.signup_btn:disabled,.forgetbtn:disabled {
-  background-color: #ccc;        
-  color: #666;                   
-  cursor: not-allowed;           
-  border: none;                  
-  opacity: 0.7;                  
+
+.signup_btn:disabled,
+.forgetbtn:disabled {
+  background-color: #ccc;
+  color: #666;
+  cursor: not-allowed;
+  border: none;
+  opacity: 0.7;
 }

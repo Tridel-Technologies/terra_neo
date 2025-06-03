@@ -21,10 +21,20 @@ export class HeaderComponent implements OnInit {
   private themeSource = new BehaviorSubject<string>('dark');
   currentTheme$ = this.themeSource.asObservable();
   ngOnInit() {
-    const theme = localStorage.getItem('theme');
-    this.base.chartFont = theme!;
-    this.theme = theme!;
-    this.onChangeTheme(theme!);
+    let storedTheme = localStorage.getItem('theme');
+
+    if (!storedTheme || (storedTheme !== 'light' && storedTheme !== 'dark')) {
+      storedTheme = 'light'; // fallback default
+      localStorage.setItem('theme', storedTheme);
+    }
+
+    this.theme = storedTheme;
+    this.base.chartFont = storedTheme;
+    this.applyTheme(storedTheme); // 👉 don't call onChangeTheme() here to avoid double-setting
+  }
+
+  applyTheme(theme: string) {
+    this.renderer.setAttribute(document.documentElement, 'data-theme', theme);
   }
 
   constructor(
@@ -40,12 +50,11 @@ export class HeaderComponent implements OnInit {
     this.router.navigate(['/login']);
   }
   onChangeTheme(theme: string) {
-    this.renderer.setAttribute(document.documentElement, 'data-theme', theme);
+    this.applyTheme(theme);
     this.theme = theme;
     this.themeSource.next(theme);
     this.base.chartFont = theme;
     localStorage.setItem('theme', theme);
-    const data = window.dispatchEvent(new Event('storage'));
     this.themeService.changeTheme(this.theme);
   }
 }

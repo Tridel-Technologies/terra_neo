@@ -1,3 +1,3 @@
-export class GlobalConfig{
-    baseUrl:string = 'http://localhost:3000/api/';
+export class GlobalConfig {
+  baseUrl: string = 'http://192.168.0.134:3000/api/';
 }

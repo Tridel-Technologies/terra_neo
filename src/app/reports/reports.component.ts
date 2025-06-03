@@ -151,7 +151,7 @@ export class ReportsComponent implements OnInit {
   ngOnInit(): void {
     this.files_list = [];
     this.http
-      .get('http://localhost:3000/api/files')
+      .get('http://192.168.0.134:3000/api/files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -275,7 +275,7 @@ export class ReportsComponent implements OnInit {
     console.log('dd', this.selectedData);
     this.http
       .get(
-        `http://localhost:3000/api/${
+        `http://192.168.0.134:3000/api/${
           this.selectedData.value === 'processed'
             ? 'get_processed_data'
             : 'fetch_data_by_file'
