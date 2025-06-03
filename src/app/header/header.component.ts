@@ -33,6 +33,15 @@ export class HeaderComponent implements OnInit {
     this.applyTheme(storedTheme); // 👉 don't call onChangeTheme() here to avoid double-setting
   }
 
+  onChangeTheme(theme: string) {
+    this.applyTheme(theme);
+    this.theme = theme;
+    this.themeSource.next(theme);
+    this.base.chartFont = theme;
+    localStorage.setItem('theme', theme);
+    this.themeService.changeTheme(this.theme);
+  }
+
   applyTheme(theme: string) {
     this.renderer.setAttribute(document.documentElement, 'data-theme', theme);
   }
@@ -48,13 +57,5 @@ export class HeaderComponent implements OnInit {
   }
   logout() {
     this.router.navigate(['/login']);
-  }
-  onChangeTheme(theme: string) {
-    this.applyTheme(theme);
-    this.theme = theme;
-    this.themeSource.next(theme);
-    this.base.chartFont = theme;
-    localStorage.setItem('theme', theme);
-    this.themeService.changeTheme(this.theme);
   }
 }

@@ -225,6 +225,12 @@ flex-direction: column;
   left: 20%;
 }
  
+
+@media (max-width: 2560) {
+  .feature-card{
+    width: 400px;
+  }
+}
 /* Make sure feature cards reposition on smaller screens */
 @media (max-width: 1024px) {
   .feature-card {

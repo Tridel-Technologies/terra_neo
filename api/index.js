@@ -4,7 +4,7 @@ const { connectDB } = require('./db');
 const userRouter = require('./router');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3200;
 
 // Fix CORS for Angular
 app.use(cors());

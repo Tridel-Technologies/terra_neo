@@ -151,7 +151,7 @@ export class ReportsComponent implements OnInit {
   ngOnInit(): void {
     this.files_list = [];
     this.http
-      .get('http://192.168.0.134:3000/api/files')
+      .get('http://localhost:3200/api/files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -176,7 +176,7 @@ export class ReportsComponent implements OnInit {
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
     // Remove the global filter since we're using custom filtering
-    // dt.filterGlobal(query, 'contains');
+    dt.filterGlobal(query, 'contains');
   }
 
   highlightSearchText(value: any): string {
@@ -275,7 +275,7 @@ export class ReportsComponent implements OnInit {
     console.log('dd', this.selectedData);
     this.http
       .get(
-        `http://192.168.0.134:3000/api/${
+        `http://localhost:3200/api/${
           this.selectedData.value === 'processed'
             ? 'get_processed_data'
             : 'fetch_data_by_file'
@@ -368,6 +368,7 @@ export class ReportsComponent implements OnInit {
       }
 
       const targetDateTime = new Date(filter[0].date);
+      const targetMinutes = targetDateTime.getMinutes();
 
       // We'll collect arrays of data per hour for before and after 6 hours
       const bf: any[][] = [];
@@ -375,37 +376,38 @@ export class ReportsComponent implements OnInit {
 
       for (let i = 6; i >= 1; i--) {
         const beforeHour = new Date(targetDateTime);
-        beforeHour.setHours(beforeHour.getHours() - i, 0, 0, 0);
-
-        // Filter all data for that hour
+        beforeHour.setHours(beforeHour.getHours() - i);
+        const windowStart = new Date(beforeHour);
+        windowStart.setMinutes(windowStart.getMinutes() - 30);
+        const windowEnd = new Date(beforeHour);
+        windowEnd.setMinutes(windowEnd.getMinutes() + 30);
+ 
+        // Filter all data for that hour window
         const beforeDataArray = this.main_table.filter((item) => {
           const d = new Date(item.date);
-          return (
-            d.getFullYear() === beforeHour.getFullYear() &&
-            d.getMonth() === beforeHour.getMonth() &&
-            d.getDate() === beforeHour.getDate() &&
-            d.getHours() === beforeHour.getHours()
-          );
+          return d >= windowStart && d <= windowEnd;
         });
         bf.push(beforeDataArray);
       }
 
+
+      // Calculate after times
       for (let i = 1; i <= 6; i++) {
         const afterHour = new Date(targetDateTime);
-        afterHour.setHours(afterHour.getHours() + i, 0, 0, 0);
-
-        // Filter all data for that hour
+        afterHour.setHours(afterHour.getHours() + i);
+        const windowStart = new Date(afterHour);
+        windowStart.setMinutes(windowStart.getMinutes() - 30);
+        const windowEnd = new Date(afterHour);
+        windowEnd.setMinutes(windowEnd.getMinutes() + 30);
+ 
+        // Filter all data for that hour window
         const afterDataArray = this.main_table.filter((item) => {
           const d = new Date(item.date);
-          return (
-            d.getFullYear() === afterHour.getFullYear() &&
-            d.getMonth() === afterHour.getMonth() &&
-            d.getDate() === afterHour.getDate() &&
-            d.getHours() === afterHour.getHours()
-          );
+          return d >= windowStart && d <= windowEnd;
         });
         af.push(afterDataArray);
       }
+ 
 
       // Current data as before
       const currentData = filter[0];
@@ -415,10 +417,10 @@ export class ReportsComponent implements OnInit {
 
       // Before hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
-        const timestamp = new Date(bf[i][0]?.date);
-        const formattedDate = timestamp
-          ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00`
-          : '';
+        const timestamp = new Date(targetDateTime);
+        timestamp.setHours(timestamp.getHours() - (6 - i));
+        const formattedDate = `${timestamp.toLocaleDateString()} ${String(timestamp.getHours()).padStart(2, '0')}:${String(targetMinutes).padStart(2, '0')}`;
+ 
 
         this.toggleTableData.push({
           name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} before`,
@@ -432,7 +434,7 @@ export class ReportsComponent implements OnInit {
       }
 
       const currentTimestamp = new Date(currentData.date);
-      const currentFormattedDate = `${currentTimestamp.toLocaleDateString()} ${currentTimestamp.getHours()}:00`;
+      const currentFormattedDate = `${currentTimestamp.toLocaleDateString()} ${String(currentTimestamp.getHours()).padStart(2, '0')}:${String(currentTimestamp.getMinutes()).padStart(2, '0')}`;
       this.toggleTableData.push({
         name: 'High Water Time',
         timestamp: currentFormattedDate,
@@ -443,11 +445,11 @@ export class ReportsComponent implements OnInit {
       });
 
       // After hours — average pressure, speed, direction
-      for (let i = 0; i < 6; i++) {
-        const timestamp = new Date(af[i][0]?.date);
-        const formattedDate = timestamp
-          ? `${timestamp.toLocaleDateString()} ${timestamp.getHours()}:00`
-          : '';
+       for (let i = 0; i < 6; i++) {
+        const timestamp = new Date(targetDateTime);
+        timestamp.setHours(timestamp.getHours() + (i + 1));
+        const formattedDate = `${timestamp.toLocaleDateString()} ${String(timestamp.getHours()).padStart(2, '0')}:${String(targetMinutes).padStart(2, '0')}`;
+ 
 
         this.toggleTableData.push({
           name: `${i + 1} hr${i + 1 > 1 ? 's' : ''} after`,

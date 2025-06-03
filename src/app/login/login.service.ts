@@ -5,7 +5,7 @@ import { HttpClient } from '@angular/common/http';
   providedIn: 'root',
 })
 export class LoginService {
-  private baseUrl = 'http://192.168.0.134:3000/api';
+  private baseUrl = 'http://localhost:3200/api';
 
   constructor(private http: HttpClient) {}
   getUsers() {

@@ -45,7 +45,7 @@ export class ImporterComponent {
   isMulti: boolean = false;
   main_table: any[] = [];
   fileWiseUploadData: { [fileName: string]: any[] } = {};
-
+  isFilesLoading:boolean=false;
   latitude: number | null = null;
   lon: number | null = null;
   high_water_level!: string;
@@ -93,7 +93,7 @@ export class ImporterComponent {
 
   update(data: any) {
     this.http
-      .post('http://192.168.0.134:3000/api/update_values', data)
+      .post('http://localhost:3200/api/update_values', data)
       .subscribe((response: any) => {
         console.log(response);
         this.toast.success('Update successful', 'Success');
@@ -121,7 +121,7 @@ export class ImporterComponent {
       file_name: file_name,
     };
     this.http
-      .get(`http://192.168.0.134:3000/api/fetch_data_by_file/${file_id}`)
+      .get(`http://localhost:3200/api/fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
         if (this.isMulti) {
@@ -203,15 +203,17 @@ export class ImporterComponent {
     // }
   }
   ngOnInit(): void {
+    this.isFilesLoading = true;
     window.addEventListener('storage', (e) => {
       console.log('Storage event fired!', e);
     });
     this.files_list = [];
     this.http
-      .get('http://192.168.0.134:3000/api/files')
+      .get('http://localhost:3200/api/files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
+        this.isFilesLoading=false;
         this.expandedFolders = this.files_list.map(() => false);
       });
   }
@@ -378,8 +380,8 @@ export class ImporterComponent {
   }
 
   deleteRow(index: number) {
-    this.tableData.splice(index, 1); // Remove row from the array
-    this.tableData = [...this.tableData]; // Update reference to trigger change detection
+    this.historyData.splice(index, 1); // Remove row from the array
+    this.historyData = [...this.historyData]; // Update reference to trigger change detection
   }
 
   convertToTimeFormat(value: number): string {
@@ -427,6 +429,7 @@ export class ImporterComponent {
   }
 
   import() {
+    this.isFilesLoading = true;
     if (!this.FileName) {
       this.toast.warning('Please Enter Folder name', 'Warning');
       return;
@@ -440,22 +443,26 @@ export class ImporterComponent {
 
     console.log(file);
     this.http
-      .post(`http://192.168.0.134:3000/api/createFile`, file)
+      .post(`http://localhost:3200/api/createFile`, file)
       .subscribe((response: any) => {
         this.toast.success(response.message, 'Success');
-        this.is_show_import = false;
+        
         this.historyData = [];
         this.FileName = '';
         this.uploaded_files = [];
-        this.files_list = [];
         this.fileWiseUploadData = {};
 
         setTimeout(() => {
           this.http
-            .get('http://192.168.0.134:3000/api/get_files')
+            .get('http://localhost:3200/api/files')
             .subscribe((response: any) => {
               this.files_list = response['data'];
+              console.log("files", response, this.files_list)
               this.expandedFolders = this.files_list.map(() => false);
+              setTimeout(() => {
+                this.isFilesLoading =false;
+                this.is_show_import = false;
+              }, 200);
             });
         }, 900);
       });

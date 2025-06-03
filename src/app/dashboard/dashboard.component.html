@@ -28,8 +28,8 @@
             </div>
 
             <div class="file-list" *ngIf="expandedFolders[i]">
-                <div [ngClass]="getFileClass(f.file_name, folder.folder_id)" *ngFor="let f of folder.files"
-                    (click)="toggleFileSelection(f.file_name, $event, folder.folder_id, folder.folder_name)">
+                <div [ngClass]="getFileClass(f.file_name, f.file_id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f.file_name, $event, f.file_id, folder.folder_name)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
                     <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem; color: var(--font-color);"
@@ -74,7 +74,7 @@
                             selected_data.dateTime === dates.date
                             ? 'rgba(165, 198, 240, 0.851)' : 'transparent'
                         }">
-                    {{ dates.date | date :'yyyy-MM-dd HH:mm:ss' }} {{ dates.time }}
+                    {{ dates.date | date :'yyyy-MMM-dd HH:mm:ss' }} {{ dates.time }}
                 </p>
             </div>
         </div>
@@ -87,9 +87,9 @@
                 <div class="date-time">
                     <h5 class="title">Date & Time</h5>
                     <p class="sub-title">
-                        {{ isLive ? (selected_data.dateTime | date: 'yyyy-MM-dd HH:mm:ss' :'UTC') : (currentData.date |
+                        {{ isLive ? (selected_data.dateTime | date: 'yyyy-MMM-dd HH:mm:ss' :'UTC') : (currentData.date |
                         date:
-                        'yyyy-MM-dd HH:mm:ss' : 'UTC') }}
+                        'yyyy-MMM-dd HH:mm:ss' : 'UTC') }}
                     </p>
 
                 </div>
@@ -101,7 +101,7 @@
                     <div class="separate-bat-depth" *ngIf="!isLive">
                         <div class="bat">
                             <h5>Battery Voltage</h5>
-                            <app-battery [isLive]="isLive" [voltage]="12"></app-battery>
+                            <app-battery [isLive]="isLive" [voltage]="truncate(selected_data.battery)"></app-battery>
                             <p style="align-self: center;">{{ truncate(selected_data.battery) }} {{units.battery}}</p>
                         </div>
                         <div class="depth">
@@ -148,7 +148,7 @@
                 @if (!isLive) {
                 <div class="tide-not-live" *ngFor="let tide of filteredAvgData"
                     [ngStyle]="{'height': dynamicHeight + '%', 'background-color':tide.name==='Current'?'rgba(182, 229, 243, 0.374)':''}">
-                    <span>{{tide.date | date:'yyyy-MM-dd HH:mm:ss':'UTC'}}</span>
+                    <span>{{tide.date | date:'yyyy-MMM-dd HH:mm:ss'}}</span>
                     <!-- <img src="../../assets/tide.png" alt=""> -->
                     <svg width="120" height="120" viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
                         <!-- Background Circle -->
@@ -206,7 +206,7 @@
                 <div class="battery" *ngIf="isLive">
                     <h5 class="title-tide" style="margin-top: 8%;">Battery</h5>
                     <div class="bat-live">
-                        <app-battery [isLive]="isLive" [voltage]="12"></app-battery>
+                        <app-battery [isLive]="isLive" [voltage]="truncate(selected_data.battery)"></app-battery>
                     </div>
                     <p style="align-self: center;">{{ truncate(selected_data.battery) }} {{units.battery}}</p>
                 </div>

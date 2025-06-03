@@ -28,8 +28,8 @@
             </div>
 
             <div class="file-list" *ngIf="expandedFolders[i]">
-                <div [ngClass]="getFileClass(f.file_name, folder.folder_id)" *ngFor="let f of folder.files"
-                    (click)="toggleFileSelection(f.file_name, $event, folder.folder_id, folder.folder_name)">
+                <div [ngClass]="getFileClass(f.file_name, f.file_id)" *ngFor="let f of folder.files"
+                    (click)="toggleFileSelection(f.file_name, $event, f.file_id, folder.folder_name)">
                     <img [src]="getFileImage(f.file_name)" alt="file" />
                     <p>{{ f.file_name }}</p>
                     <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem; color: var(--font-color);"

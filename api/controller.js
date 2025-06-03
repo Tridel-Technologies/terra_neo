@@ -134,6 +134,7 @@ const updateValues = async (req, res) => {
 
       // Reset all rows
       await client.query(`UPDATE ${targetTable} SET high_water_level = 0`);
+      await client.query(`UPDATE ${targetTable}_processed SET high_water_level = 0`);
 
       // Set high_water_level = 1 for matching timestamp
       await client.query(

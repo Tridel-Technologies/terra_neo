@@ -109,11 +109,11 @@ export class DashboardComponent implements OnInit {
       const targetDateTime = new Date(filter[0].date);
       // this.high_watel_level = filter[0]
       for (let i = 1; i <= 6; i++) {
-        const beforeHour = new Date(targetDateTime);
-        beforeHour.setHours(beforeHour.getHours() - i, 0, 0, 0); // exact hour
+        const beforeHour = new Date(targetDateTime.getTime() - i * 60 * 60 * 1000);
+        // beforeHour.setHours(beforeHour.getHours() - i, 0, 0, 0); // exact hour
 
-        const afterHour = new Date(targetDateTime);
-        afterHour.setHours(afterHour.getHours() + i, 0, 0, 0);
+        const afterHour = new Date(targetDateTime.getTime() + i * 60 * 60 * 1000);
+        // afterHour.setHours(afterHour.getHours() + i, 0, 0, 0);
 
         const beforeHourData = this.main_table.filter((item) => {
           const itemDate = new Date(item.date);
@@ -196,15 +196,11 @@ export class DashboardComponent implements OnInit {
     console.log('Selected time:', this.timee);
     this.__assign();
   }
-  hours: number = 5;
+  hours: number = 6;
   __assign() {
-    // this.bf_tide = this.get_value_for_widget(this.timee - 1, 'pressure', 'before');
-    // this.af_tide = this.get_value_for_widget(this.timee - 1, 'pressure', 'after');
-    // this.bf_c_speed = this.get_value_for_widget(this.timee - 1, 'speed', 'before');
-    // this.af_c_speed = this.get_value_for_widget(this.timee - 1, 'speed', 'after');
-    // this.bf_c_dir = this.get_value_for_widget(this.timee - 1, 'direction', 'before');
-    // this.af_c_dir = this.get_value_for_widget(this.timee - 1, 'direction', 'after');
+    
     this.avgData = []; // clear existing data
+    const baseDate = new Date(this.currentData.date);
 
     for (let i = 6; i >= 1; i--) {
       const entries = this.before_data[6 - i] || []; // fallback to empty array
@@ -216,7 +212,7 @@ export class DashboardComponent implements OnInit {
         tide: avg.pressure.toFixed(2),
         speed: avg.speed.toFixed(2),
         direction: avg.direction.toFixed(2),
-        date: entries[0].date,
+        date: new Date(baseDate.getTime() - i * 60 * 60 * 1000),
       });
     }
 
@@ -236,7 +232,7 @@ export class DashboardComponent implements OnInit {
         tide: avg.pressure.toFixed(2),
         speed: avg.speed.toFixed(2),
         direction: avg.direction.toFixed(2),
-        date: entries[0].date,
+        date: new Date(baseDate.getTime() + i * 60 * 60 * 1000),
       });
     }
 
@@ -388,7 +384,7 @@ export class DashboardComponent implements OnInit {
   ngOnInit(): void {
     this.files_list = [];
     this.http
-      .get('http://192.168.0.134:3000/api/files')
+      .get('http://localhost:3200/api/files')
       .subscribe((response: any) => {
         console.log('resposnse==', response);
         this.files_list = response['data'];
@@ -490,7 +486,7 @@ export class DashboardComponent implements OnInit {
     };
     console.log(data);
     this.http
-      .get(`http://192.168.0.134:3000/api/fetch_data_by_file/${file_id}`)
+      .get(`http://localhost:3200/api/fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
         if (this.isMulti) {
@@ -521,19 +517,5 @@ export class DashboardComponent implements OnInit {
     // }
   }
 
-  avgData: any[] = [
-    { name: '6 hours before1', tide: '1.2', speed: '3.4', direction: '234' },
-    { name: '5 hours before', tide: '1.4', speed: '3.1', direction: '240' },
-    { name: '4 hours before', tide: '1.6', speed: '3.6', direction: '245' },
-    { name: '3 hours before', tide: '1.8', speed: '3.2', direction: '250' },
-    { name: '2 hours before', tide: '2.0', speed: '3.0', direction: '255' },
-    { name: '1 hour before', tide: '2.2', speed: '3.5', direction: '260' },
-    { name: 'Current', tide: '2.5', speed: '3.8', direction: '265' },
-    { name: '1 hour after', tide: '2.4', speed: '3.7', direction: '270' },
-    { name: '2 hours after', tide: '2.1', speed: '3.3', direction: '275' },
-    { name: '3 hours after', tide: '1.9', speed: '3.1', direction: '280' },
-    { name: '4 hours after', tide: '1.7', speed: '3.2', direction: '285' },
-    { name: '5 hours after', tide: '1.5', speed: '3.0', direction: '290' },
-    { name: '6 hours after', tide: 'N/A', speed: 'N/A', direction: 'N/A' },
-  ];
+  avgData: any[] = [];
 }

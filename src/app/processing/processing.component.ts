@@ -21,7 +21,7 @@ export class ProcessingComponent implements OnInit {
   fetch_file_data(index: number) {}
   ngOnInit(): void {
     this.http
-      .get('http://192.168.0.134:3000/api/get_files')
+      .get('http://localhost:3200/api/get_files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
