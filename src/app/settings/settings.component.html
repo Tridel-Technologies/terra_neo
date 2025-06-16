@@ -56,7 +56,7 @@
     <!-- FOLDER VIEW -->
     <div class="files_cont" *ngIf="openedFile.length === 0">
         <ng-container *ngFor="let folder of processedFiles">
-            <div class="Folder" *ngIf="folder.files && folder.files.length > 0"
+            <div class="Folder"
                 (click)="Foldertaped(folder.files, folder)" (contextmenu)="onFolderRightClick($event, folder)">
                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30px" height="30px"
                     fill="var(--folder-color1)">

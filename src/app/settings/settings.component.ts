@@ -80,7 +80,7 @@ export class SettingsComponent {
     if (this.folderName) {
       // this.files_list.push({ folder_name: folderName, files:  });
       this.http
-        .post('http://localhost:3200/api/create_folder', {
+        .post('http://192.168.0.111:3200/api/create_folder', {
           folder_name: this.folderName,
         })
         .subscribe((response: any) => {
@@ -201,7 +201,7 @@ export class SettingsComponent {
 
     console.log(data);
     this.http
-      .post('http://localhost:3200/api/change_folder', data)
+      .post('http://192.168.0.111:3200/api/change_folder', data)
       .subscribe((response: any) => {
         console.log(response);
         this.fileToMove = null;
@@ -234,7 +234,7 @@ export class SettingsComponent {
         //   files: []
         // });
         this.http
-          .post('http://localhost:3200/api/create_folder', {
+          .post('http://192.168.0.111:3200/api/create_folder', {
             folder_name: folderName,
           })
           .subscribe((response: any) => {
@@ -392,7 +392,7 @@ export class SettingsComponent {
     this.files_list = [];
     setTimeout(() => {
       this.http
-        .get('http://localhost:3200/api/files')
+        .get('http://192.168.0.111:3200/api/files')
         .subscribe((response: any) => {
           this.files_list = response['data'];
           console.log('files:', response, this.files_list);

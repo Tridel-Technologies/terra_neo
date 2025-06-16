@@ -95,6 +95,8 @@ export class LoginComponent {
     this.signup_form = false;
     this.login_form = true;
     this.emailVerified = false;
+    this.username_exists = false;
+    this.email_exists = false;
     this.resetform();
     // this.forget_password();
   }
@@ -102,8 +104,8 @@ export class LoginComponent {
   //To validate the password while typing
   onPasswordChange(value: string, ngModelRef: NgModel) {
     this.password_forget = value;
-    this.password_forget_invalid = this.passwordInvalids;
     this.validateEmail(); // your existing logic
+    this.password_forget_invalid = this.passwordInvalids;
   }
 
   // Regex email validation method

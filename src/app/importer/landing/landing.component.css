@@ -196,33 +196,33 @@ flex-direction: column;
  
 /* Positioning feature cards responsively using data attribute selectors */
 .feature-card[data-pos="1"] {
-  top: 8%;
-  left: 53%;
+  top: 9%;
+  left: 50%;
 }
  
 .feature-card[data-pos="2"] {
-  top: 21%;
-  right: 5%;
+  top: 22%;
+  right: 12%;
 }
  
 .feature-card[data-pos="3"] {
-  bottom: 2%;
-  right: 0%;
+  bottom: 4.5%;
+  right: 9%;
 }
  
 .feature-card[data-pos="4"] {
-  bottom: -4%;
-  left: 47%;
+  bottom: -0.5%;
+  left: 50%;
 }
  
 .feature-card[data-pos="5"] {
-  bottom: 16%;
-  left: 14.5%;
+  bottom: 17.5%;
+  left: 19.5%;
 }
  
 .feature-card[data-pos="6"] {
-  top: 25.5%;
-  left: 20%;
+  top: 27%;
+  left: 25%;
 }
  
 

@@ -8,6 +8,7 @@ import { FormsModule } from '@angular/forms';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Direction1Component } from '../widget/direction1/direction1.component';
+import { BaseComponent } from '../base/base.component';
 
 interface Files {
   folder_id: number;
@@ -77,7 +78,8 @@ export class DashboardComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
-    private unitSerive: UnitService
+    private unitSerive: UnitService,
+    private globe: BaseComponent
   ) {}
 
   // Units
@@ -109,10 +111,14 @@ export class DashboardComponent implements OnInit {
       const targetDateTime = new Date(filter[0].date);
       // this.high_watel_level = filter[0]
       for (let i = 1; i <= 6; i++) {
-        const beforeHour = new Date(targetDateTime.getTime() - i * 60 * 60 * 1000);
+        const beforeHour = new Date(
+          targetDateTime.getTime() - i * 60 * 60 * 1000
+        );
         // beforeHour.setHours(beforeHour.getHours() - i, 0, 0, 0); // exact hour
 
-        const afterHour = new Date(targetDateTime.getTime() + i * 60 * 60 * 1000);
+        const afterHour = new Date(
+          targetDateTime.getTime() + i * 60 * 60 * 1000
+        );
         // afterHour.setHours(afterHour.getHours() + i, 0, 0, 0);
 
         const beforeHourData = this.main_table.filter((item) => {
@@ -198,7 +204,6 @@ export class DashboardComponent implements OnInit {
   }
   hours: number = 6;
   __assign() {
-    
     this.avgData = []; // clear existing data
     const baseDate = new Date(this.currentData.date);
 
@@ -379,41 +384,73 @@ export class DashboardComponent implements OnInit {
       return 'NNW'; // North-Northwest
     }
   }
-
+  fileID: number | undefined;
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
   ngOnInit(): void {
     this.files_list = [];
+
     this.http
-      .get('http://localhost:3200/api/files')
+      .get('http://192.168.0.111:3200/api/files')
       .subscribe((response: any) => {
         console.log('resposnse==', response);
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
-        this.expandedFolders = this.files_list.map(() => false);
-        if (
-          this.files_list.length !== 0 &&
-          this.files_list[0].files.length !== 0
-        ) {
-          const firstFolder = this.files_list[0];
-          const firstFile = firstFolder.files[0].file_name;
+        this.fileID = this.globe.fileId;
+        console.log('file IFD', this.fileID);
 
-          // Set folder as opened
-          this.expandedFolders[0] = true;
-          this.openedFolder = firstFolder.folder_id;
-          this.selected_folder_name = firstFolder.folder_name;
+        let folderIndex = -1;
+        let selectedFile = null;
+        let selectedFolder = null;
 
-          // Select file
+        if (this.fileID) {
+          folderIndex = this.files_list.findIndex((folder) =>
+            folder.files.some((file) => file.file_id === this.fileID)
+          );
+          if (folderIndex !== -1) {
+            selectedFolder = this.files_list[folderIndex];
+            selectedFile = selectedFolder.files.find(
+              (file) => file.file_id === this.fileID
+            );
+          }
+        }
+
+        // If no matching file found, fallback to first folder with files
+        if (folderIndex === -1) {
+          folderIndex = this.files_list.findIndex(
+            (folder) => folder.files && folder.files.length > 0
+          );
+          if (folderIndex !== -1) {
+            selectedFolder = this.files_list[folderIndex];
+            selectedFile = selectedFolder.files[0];
+          }
+        }
+
+        // Expand the matched folder
+        this.expandedFolders = this.files_list.map(
+          (_, index) => index === folderIndex
+        );
+
+        // Set folder and file details if found
+        if (selectedFolder && selectedFile) {
+          this.openedFolder = selectedFolder.folder_id;
+          this.selected_folder_name = selectedFolder.folder_name;
+
           this.selectedFiles = [
             {
-              file_name: firstFile,
-              file_id: firstFolder.files[0].file_id,
+              file_name: selectedFile.file_name,
+              file_id: selectedFile.file_id,
             },
           ];
-          this.opened_file = firstFile;
+          this.opened_file = selectedFile.file_name;
 
           // Fetch data for the file
-          this.open_file(firstFile, firstFolder.files[0].file_id);
+          this.open_file(selectedFile.file_name, selectedFile.file_id);
         }
+
+        setTimeout(() => {
+          this.globe.fileId = undefined;
+        }, 100);
+        // this.isFilesLoading = false;
       });
 
     // Units
@@ -421,6 +458,7 @@ export class DashboardComponent implements OnInit {
       this.units = u;
     });
   }
+
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
@@ -486,7 +524,7 @@ export class DashboardComponent implements OnInit {
     };
     console.log(data);
     this.http
-      .get(`http://localhost:3200/api/fetch_data_by_file/${file_id}`)
+      .get(`http://192.168.0.111:3200/api/fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
         if (this.isMulti) {

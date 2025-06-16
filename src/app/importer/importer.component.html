@@ -1,5 +1,12 @@
 <div class="importer_base">
-
+<div class="poup" *ngIf="showoption">
+        <p class="lab">Are you want to open updated file in dashboard?</p>
+        <div class="buttonns">
+            <button (click)="onCancel()">Cancel</button>
+            <button (click)="onYes()">Yes</button>
+        </div>
+    </div>
+ 
     <button class="import_button" (click)="on_openImport()">Import</button>
 
     <div class="files_container">

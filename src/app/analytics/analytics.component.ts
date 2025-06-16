@@ -215,7 +215,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.files_list = [];
     this.http
-      .get('http://localhost:3200/api/files')
+      .get('http://192.168.0.111:3200/api/files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -337,7 +337,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.http
       .get(
-        `http://localhost:3200/api/${
+        `http://192.168.0.111:3200/api/${
           this.isProcessedData ? 'get_processed_data' : 'fetch_data_by_file'
         }/${file_id}`
       )
@@ -536,7 +536,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         };
 
         return this.http
-          .post('http://localhost:3200/api/addNewRow', newRowPayload)
+          .post('http://192.168.0.111:3200/api/addNewRow', newRowPayload)
           .toPromise();
       });
       promises.push(...newRowsPromises);
@@ -553,7 +553,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       }));
 
       const updatePromise = this.http
-        .put('http://localhost:3200/api/updateData', updatePayload)
+        .put('http://192.168.0.111:3200/api/updateData', updatePayload)
         .toPromise();
       promises.push(updatePromise);
     }

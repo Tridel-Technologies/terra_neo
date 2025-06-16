@@ -6,6 +6,7 @@ import { GlobalConfig } from '../global/app.global';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { LandingComponent } from './landing/landing.component';
+import { BaseComponent } from '../base/base.component';
 
 interface Folders {
   folder_id: number;
@@ -45,7 +46,7 @@ export class ImporterComponent {
   isMulti: boolean = false;
   main_table: any[] = [];
   fileWiseUploadData: { [fileName: string]: any[] } = {};
-  isFilesLoading:boolean=false;
+  isFilesLoading: boolean = false;
   latitude: number | null = null;
   lon: number | null = null;
   high_water_level!: string;
@@ -90,20 +91,33 @@ export class ImporterComponent {
     console.log('sendingData', data);
     this.update(data);
   }
-
+  showoption: boolean = false;
   update(data: any) {
     this.http
-      .post('http://localhost:3200/api/update_values', data)
+      .post('http://192.168.0.111:3200/api/update_values', data)
       .subscribe((response: any) => {
         console.log(response);
         this.toast.success('Update successful', 'Success');
+        this.showoption = true;
       });
+  }
+  FileID!: number;
+  // this.globe.fileId=this.FileID
+  onCancel() {
+    this.showoption = false;
+  }
+  onYes() {
+    this.globe.fileId = this.FileID;
+    setTimeout(() => {
+      this.globe.index = 1;
+    }, 100);
   }
 
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private globe: BaseComponent
   ) {}
   main_table_headers = [
     'STRING',
@@ -121,7 +135,7 @@ export class ImporterComponent {
       file_name: file_name,
     };
     this.http
-      .get(`http://localhost:3200/api/fetch_data_by_file/${file_id}`)
+      .get(`http://192.168.0.111:3200/api/fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
         if (this.isMulti) {
@@ -162,6 +176,7 @@ export class ImporterComponent {
   }
 
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
+    this.FileID = file_id;
     console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
@@ -209,11 +224,11 @@ export class ImporterComponent {
     });
     this.files_list = [];
     this.http
-      .get('http://localhost:3200/api/files')
+      .get('http://192.168.0.111:3200/api/files')
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
-        this.isFilesLoading=false;
+        this.isFilesLoading = false;
         this.expandedFolders = this.files_list.map(() => false);
       });
   }
@@ -443,10 +458,10 @@ export class ImporterComponent {
 
     console.log(file);
     this.http
-      .post(`http://localhost:3200/api/createFile`, file)
+      .post(`http://192.168.0.111:3200/api/createFile`, file)
       .subscribe((response: any) => {
         this.toast.success(response.message, 'Success');
-        
+
         this.historyData = [];
         this.FileName = '';
         this.uploaded_files = [];
@@ -454,13 +469,13 @@ export class ImporterComponent {
 
         setTimeout(() => {
           this.http
-            .get('http://localhost:3200/api/files')
+            .get('http://192.168.0.111:3200/api/files')
             .subscribe((response: any) => {
               this.files_list = response['data'];
-              console.log("files", response, this.files_list)
+              console.log('files', response, this.files_list);
               this.expandedFolders = this.files_list.map(() => false);
               setTimeout(() => {
-                this.isFilesLoading =false;
+                this.isFilesLoading = false;
                 this.is_show_import = false;
               }, 200);
             });
