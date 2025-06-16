@@ -9,6 +9,7 @@ import { UnitService, UnitSettings } from '../settings/unit.service';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Direction1Component } from '../widget/direction1/direction1.component';
 import { BaseComponent } from '../base/base.component';
+import { GlobalConfig } from '../global/app.global';
 
 interface Files {
   folder_id: number;
@@ -75,12 +76,16 @@ export class DashboardComponent implements OnInit {
   isbefore: boolean = true;
   currentData!: any;
   dir: boolean = false;
+  private baseUrl: string;
+
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
     private unitSerive: UnitService,
     private globe: BaseComponent
-  ) {}
+  ) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
 
   // Units
   units: UnitSettings = {
@@ -390,7 +395,7 @@ export class DashboardComponent implements OnInit {
     this.files_list = [];
 
     this.http
-      .get('http://192.168.0.111:3200/api/files')
+      .get(`${this.baseUrl}files`)
       .subscribe((response: any) => {
         console.log('resposnse==', response);
         this.files_list = response['data'];
@@ -524,7 +529,7 @@ export class DashboardComponent implements OnInit {
     };
     console.log(data);
     this.http
-      .get(`http://192.168.0.111:3200/api/fetch_data_by_file/${file_id}`)
+      .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
         if (this.isMulti) {

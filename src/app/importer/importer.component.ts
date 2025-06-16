@@ -94,7 +94,7 @@ export class ImporterComponent {
   showoption: boolean = false;
   update(data: any) {
     this.http
-      .post('http://192.168.0.111:3200/api/update_values', data)
+      .post(`${this.baseUrl}update_values`, data)
       .subscribe((response: any) => {
         console.log(response);
         this.toast.success('Update successful', 'Success');
@@ -113,12 +113,17 @@ export class ImporterComponent {
     }, 100);
   }
 
+  private baseUrl: string;
+
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
     private datePipe: DatePipe,
     private globe: BaseComponent
-  ) {}
+  ) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
+
   main_table_headers = [
     'STRING',
     'date',
@@ -135,7 +140,7 @@ export class ImporterComponent {
       file_name: file_name,
     };
     this.http
-      .get(`http://192.168.0.111:3200/api/fetch_data_by_file/${file_id}`)
+      .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
         if (this.isMulti) {
@@ -224,7 +229,7 @@ export class ImporterComponent {
     });
     this.files_list = [];
     this.http
-      .get('http://192.168.0.111:3200/api/files')
+      .get(`${this.baseUrl}files`)
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -458,7 +463,7 @@ export class ImporterComponent {
 
     console.log(file);
     this.http
-      .post(`http://192.168.0.111:3200/api/createFile`, file)
+      .post(`${this.baseUrl}createFile`, file)
       .subscribe((response: any) => {
         this.toast.success(response.message, 'Success');
 
@@ -469,7 +474,7 @@ export class ImporterComponent {
 
         setTimeout(() => {
           this.http
-            .get('http://192.168.0.111:3200/api/files')
+            .get(`${this.baseUrl}files`)
             .subscribe((response: any) => {
               this.files_list = response['data'];
               console.log('files', response, this.files_list);

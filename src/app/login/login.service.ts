@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { GlobalConfig } from '../global/app.global';
 
 @Injectable({
   providedIn: 'root',
 })
 export class LoginService {
-  private baseUrl = 'http://192.168.0.111:3200/api';
+  private baseUrl = new GlobalConfig().baseUrl;
 
   constructor(private http: HttpClient) {}
   getUsers() {

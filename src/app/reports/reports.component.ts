@@ -16,6 +16,7 @@ import { saveAs } from 'file-saver';
 import * as FileSaver from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { GlobalConfig } from '../global/app.global';
 
 interface Column {
   field: string;
@@ -146,12 +147,16 @@ export class ReportsComponent implements OnInit {
   ];
   nameOffile!: string;
 
-  constructor(private http: HttpClient, private toast: ToastrService) {}
+  private baseUrl: string;
+
+  constructor(private http: HttpClient, private toast: ToastrService) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
 
   ngOnInit(): void {
     this.files_list = [];
     this.http
-      .get('http://192.168.0.111:3200/api/files')
+      .get(`${this.baseUrl}files`)
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -275,7 +280,7 @@ export class ReportsComponent implements OnInit {
     console.log('dd', this.selectedData);
     this.http
       .get(
-        `http://192.168.0.111:3200/api/${
+        `${this.baseUrl}${
           this.selectedData.value === 'processed'
             ? 'get_processed_data'
             : 'fetch_data_by_file'

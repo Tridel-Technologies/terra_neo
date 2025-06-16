@@ -30,6 +30,7 @@ import { BaseComponent } from '../base/base.component';
 import { CascadeSelectModule } from 'primeng/cascadeselect';
 import { ThemeService } from '../theme_service/theme.service';
 import { UnitService, UnitSettings } from '../settings/unit.service';
+import { GlobalConfig } from '../global/app.global';
 
 interface Files {
   id: number;
@@ -195,6 +196,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private themeSubscription: any;
   private themeChange$ = new BehaviorSubject<string>('light');
+  private baseUrl: string;
 
   constructor(
     private http: HttpClient,
@@ -204,7 +206,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private base: BaseComponent,
     private themeService: ThemeService,
     private unitSerive: UnitService
-  ) {}
+  ) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
 
   ngOnInit(): void {
     // Load saved data type preference
@@ -215,7 +219,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.files_list = [];
     this.http
-      .get('http://192.168.0.111:3200/api/files')
+      .get(`${this.baseUrl}files`)
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
@@ -337,7 +341,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     this.http
       .get(
-        `http://192.168.0.111:3200/api/${
+        `${this.baseUrl}${
           this.isProcessedData ? 'get_processed_data' : 'fetch_data_by_file'
         }/${file_id}`
       )
@@ -536,7 +540,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         };
 
         return this.http
-          .post('http://192.168.0.111:3200/api/addNewRow', newRowPayload)
+          .post(`${this.baseUrl}addNewRow`, newRowPayload)
           .toPromise();
       });
       promises.push(...newRowsPromises);
@@ -553,7 +557,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       }));
 
       const updatePromise = this.http
-        .put('http://192.168.0.111:3200/api/updateData', updatePayload)
+        .put(`${this.baseUrl}updateData`, updatePayload)
         .toPromise();
       promises.push(updatePromise);
     }

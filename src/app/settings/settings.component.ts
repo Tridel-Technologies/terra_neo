@@ -4,6 +4,8 @@ import { UnitService } from './unit.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
+import { GlobalConfig } from '../global/app.global';
+
 interface Folders {
   folder_id: number;
   folder_name: string;
@@ -80,7 +82,7 @@ export class SettingsComponent {
     if (this.folderName) {
       // this.files_list.push({ folder_name: folderName, files:  });
       this.http
-        .post('http://192.168.0.111:3200/api/create_folder', {
+        .post(`${this.baseUrl}create_folder`, {
           folder_name: this.folderName,
         })
         .subscribe((response: any) => {
@@ -201,7 +203,7 @@ export class SettingsComponent {
 
     console.log(data);
     this.http
-      .post('http://192.168.0.111:3200/api/change_folder', data)
+      .post(`${this.baseUrl}change_folder`, data)
       .subscribe((response: any) => {
         console.log(response);
         this.fileToMove = null;
@@ -234,7 +236,7 @@ export class SettingsComponent {
         //   files: []
         // });
         this.http
-          .post('http://192.168.0.111:3200/api/create_folder', {
+          .post(`${this.baseUrl}create_folder`, {
             folder_name: folderName,
           })
           .subscribe((response: any) => {
@@ -330,12 +332,15 @@ export class SettingsComponent {
 
   selectedUnits: any = {};
 
+  private baseUrl: string;
+
   constructor(
     private unitService: UnitService,
     private http: HttpClient,
     private toastr: ToastrService
   ) {
     this.selectedUnits = this.unitService.getCurrentUnits();
+    this.baseUrl = new GlobalConfig().baseUrl;
   }
 
   selectUnit(paramKey: string, unit: string) {
@@ -392,7 +397,7 @@ export class SettingsComponent {
     this.files_list = [];
     setTimeout(() => {
       this.http
-        .get('http://192.168.0.111:3200/api/files')
+        .get(`${this.baseUrl}files`)
         .subscribe((response: any) => {
           this.files_list = response['data'];
           console.log('files:', response, this.files_list);
