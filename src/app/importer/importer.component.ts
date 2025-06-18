@@ -6,6 +6,7 @@ import { GlobalConfig } from '../global/app.global';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { LandingComponent } from './landing/landing.component';
+import { BaseComponent } from '../base/base.component';
 
 interface Folders {
   folder_id: number;
@@ -24,7 +25,7 @@ interface fileData {
   imports: [CommonModule, HttpClientModule, FormsModule, LandingComponent],
   templateUrl: './importer.component.html',
   styleUrl: './importer.component.css',
-  providers: [DatePipe],
+  providers: [DatePipe, GlobalConfig],
 })
 export class ImporterComponent {
   showImport: boolean = false;
@@ -90,20 +91,32 @@ export class ImporterComponent {
     console.log('sendingData', data);
     this.update(data);
   }
-
+showoption:boolean=false;
   update(data: any) {
     this.http
       .post('http://localhost:3200/api/update_values', data)
       .subscribe((response: any) => {
         console.log(response);
         this.toast.success('Update successful', 'Success');
+        this.showoption = true;
       });
   }
+// this.globe.fileId=this.FileID
+onCancel(){
+  this.showoption = false;
 
+}
+onYes(){
+  this.globe.fileId = this.FileID;
+  setTimeout(() => {
+    this.globe.index=1;
+  }, 100);
+}
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
-    private datePipe: DatePipe
+    private datePipe: DatePipe,
+    private globe:BaseComponent
   ) {}
   main_table_headers = [
     'STRING',
@@ -160,8 +173,9 @@ export class ImporterComponent {
   changinglat() {
     console.log(this.latitude);
   }
-
+FileID!:number;
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
+    this.FileID = file_id;
     console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
@@ -214,7 +228,7 @@ export class ImporterComponent {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
         this.isFilesLoading=false;
-        this.expandedFolders = this.files_list.map(() => false);
+        this.expandedFolders = [false, false, false, false, false, false, true];
       });
   }
 

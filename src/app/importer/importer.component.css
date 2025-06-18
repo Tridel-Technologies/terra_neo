@@ -5,9 +5,61 @@
     display: flex;
     justify-content: center;
     align-items: center;
-
     flex-direction: row;
+    /* filter: blur(8px); */
 
+}
+.home_base_main{
+      height: 100%;
+    width: 100%;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* flex-direction: row; */
+}
+.poup{
+  height: 25%;
+  width: 20%;
+  background-color: var(--background-color);
+  position: absolute;
+  top: 35%;
+  left: 40%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  font-size: 17px;
+  padding: 5px;
+  border-radius: 8px;
+  box-shadow: 2px 2px 6px rgba(152, 151, 151, 0.666);
+  z-index: 1;
+}
+.lab{
+  color: var(--font-color);
+}
+.poup h4{
+  margin: 2px;
+ align-self: center;
+ text-align: center;
+}
+.buttonns{
+  height: 100px;
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: end;
+  justify-content: end;
+
+}
+.buttonns button{
+  margin: 8px;
+  height: 25px;
+  width: 80px;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--button-bg);
+  color: var(--button-text-color);
 }
 .files_container {
     width: 20%;
