@@ -181,6 +181,7 @@
     </div>
 
     <div class="home_main" *ngIf="is_show_import">
+
         <div class="table_container">
             <p *ngIf="historyData.length === 0">No Files Selected</p>
             <div class="bod" *ngIf="historyData.length > 0">
@@ -211,11 +212,13 @@
             </div>
         </div>
         <div class="file_upload_container">
+
+
             <h1 (click)="on_openImport()">X</h1>
 
             <!-- Toggle for allowing folder upload -->
             <div class="checkbox-container">
-                <label>
+                <label class="lab">
                     <input type="checkbox" [(ngModel)]="allowFolderUpload" />
                     Allow Folder Upload
                 </label>
@@ -226,7 +229,7 @@
                     [attr.webkitdirectory]="allowFolderUpload ? '' : null" />
                 <label for="fileUpload">📁 Upload File (.xlsx, .csv)</label>
 
-                <div *ngIf="FileName !== ''" class="file-name">{{ FileName }}</div>
+                <div *ngIf="FileName !== ''" class="file-name lab">{{ FileName }}</div>
             </div>
             <div class="uploaded_files">
                 <p *ngFor="let file of uploaded_files">{{file}}</p>

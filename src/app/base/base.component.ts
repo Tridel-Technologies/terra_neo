@@ -28,5 +28,5 @@ export class BaseComponent {
   index: number = 0;
   chartFont: string = 'light';
   fileId:number | undefined;
- 
+
 }

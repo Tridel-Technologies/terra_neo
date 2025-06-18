@@ -8,8 +8,8 @@ import { FormsModule } from '@angular/forms';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Direction1Component } from '../widget/direction1/direction1.component';
-import { BaseComponent } from '../base/base.component';
 import { GlobalConfig } from '../global/app.global';
+import { BaseComponent } from '../base/base.component';
 
 interface Files {
   folder_id: number;
@@ -51,6 +51,7 @@ interface dashdata {
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
+  providers:[GlobalConfig]
 })
 export class DashboardComponent implements OnInit {
   expandedFolders: boolean[] = [];
@@ -389,7 +390,7 @@ export class DashboardComponent implements OnInit {
       return 'NNW'; // North-Northwest
     }
   }
-  fileID: number | undefined;
+  fileID:number | undefined;
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
   ngOnInit(): void {
     this.files_list = [];

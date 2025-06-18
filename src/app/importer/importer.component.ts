@@ -26,7 +26,7 @@ interface fileData {
   imports: [CommonModule, HttpClientModule, FormsModule, LandingComponent],
   templateUrl: './importer.component.html',
   styleUrl: './importer.component.css',
-  providers: [DatePipe],
+  providers: [DatePipe, GlobalConfig],
 })
 export class ImporterComponent {
   showImport: boolean = false;
@@ -178,6 +178,7 @@ export class ImporterComponent {
         console.log(response);
         this.toast.success('Update successful', 'Success');
         this.showoption = true;
+        this.showoption = true;
       });
   }
   FileID!: number;
@@ -260,8 +261,9 @@ export class ImporterComponent {
   changinglat() {
     console.log(this.latitude);
   }
-
+FileID!:number;
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
+    this.FileID = file_id;
     this.FileID = file_id;
     console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
@@ -314,8 +316,8 @@ export class ImporterComponent {
       .subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
-        this.isFilesLoading = false;
-        this.expandedFolders = this.files_list.map(() => false);
+        this.isFilesLoading=false;
+        this.expandedFolders = [false, false, false, false, false, false, true];
       });
   }
 
