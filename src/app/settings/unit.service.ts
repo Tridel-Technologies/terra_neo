@@ -8,6 +8,7 @@ export interface UnitSettings {
   battery: string;
   depth: string;
   latandlong: string;
+  [key: string]: string;
 }
 
 @Injectable({

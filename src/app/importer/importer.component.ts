@@ -7,6 +7,7 @@ import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { LandingComponent } from './landing/landing.component';
 import { BaseComponent } from '../base/base.component';
+import { UnitService } from '../settings/unit.service';
 
 interface Folders {
   folder_id: number;
@@ -52,6 +53,84 @@ export class ImporterComponent {
   high_water_level!: string;
   selectedRowIndex: number | null = null;
   selectedRowData: any = null;
+
+  unitSettings = [
+    {
+      key: 'waterLevel',
+      label: 'Water Level',
+      iconClass: 'fas fa-water', // or use another icon library
+      units: ['m', 'ft', 'cm'],
+    },
+    {
+      key: 'currentSpeed',
+      label: 'Current Speed',
+      iconClass: 'fas fa-tachometer-alt',
+      units: ['m/s', 'knots'],
+    },
+    {
+      key: 'currentDirection',
+      label: 'Current Direction',
+      iconClass: 'fas fa-compass',
+      units: ['°', 'radians'],
+    },
+    {
+      key: 'battery',
+      label: 'Battery',
+      iconClass: 'fas fa-battery-full',
+      units: ['%', 'volts'],
+    },
+    {
+      key: 'depth',
+      label: 'Depth',
+      iconClass: 'fas fa-arrows-down-to-line',
+      units: ['m', 'ft'],
+    },
+    // {
+    //   key: 'latandlong',
+    //   label: 'Latitude and Longitude',
+    //   iconClass: 'fas fa-map-marker-alt',
+    //   units: ['DD', 'DMS'],
+    // },
+  ];
+
+  getTooltip(paramKey: string, unit: string): string {
+    const tooltips: any = {
+      waterLevel: {
+        m: 'Meters',
+        ft: 'Feet',
+        cm: 'Centimeters',
+      },
+      currentSpeed: {
+        'm/s': 'Meters per second',
+        knots: 'Knots',
+      },
+      currentDirection: {
+        '°': 'Degrees',
+        radians: 'Radians',
+      },
+      battery: {
+        '%': 'Percentage',
+        volts: 'Volts',
+      },
+      depth: {
+        m: 'Meters',
+        ft: 'Feet',
+      },
+      latandlong: {
+        DD: 'Decimal Degrees',
+        DMS: 'Degrees, Minutes, Seconds',
+      },
+    };
+
+    return tooltips[paramKey]?.[unit] || '';
+  }
+
+  selectedUnits: any = {};
+
+  selectUnit(paramKey: string, unit: string) {
+    this.selectedUnits[paramKey] = unit;
+    console.log("units", this.selectedUnits);
+  }
 
   onRowClick(row: any, index: number) {
     this.selectedRowIndex = index;
@@ -119,9 +198,11 @@ export class ImporterComponent {
     private http: HttpClient,
     private toast: ToastrService,
     private datePipe: DatePipe,
-    private globe: BaseComponent
+    private globe: BaseComponent,
+    private unitService: UnitService
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
+    this.selectedUnits = this.unitService.getCurrentUnits();
   }
 
   main_table_headers = [
@@ -459,6 +540,7 @@ export class ImporterComponent {
       folder_name: this.FileName,
       file_name: Object.keys(this.fileWiseUploadData),
       data: this.fileWiseUploadData,
+      units: this.selectedUnits
     };
 
     console.log(file);

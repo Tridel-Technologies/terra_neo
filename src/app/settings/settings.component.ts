@@ -264,7 +264,7 @@ export class SettingsComponent {
       key: 'currentDirection',
       label: 'Current Direction',
       iconClass: 'fas fa-compass',
-      units: ['°'],
+      units: ['°', 'radians'],
     },
     {
       key: 'battery',
@@ -311,7 +311,7 @@ export class SettingsComponent {
       },
       currentDirection: {
         '°': 'Degrees',
-        rad: 'Radians',
+        radians: 'Radians',
       },
       battery: {
         '%': 'Percentage',

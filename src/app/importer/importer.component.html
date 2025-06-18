@@ -232,12 +232,24 @@
                 <p *ngFor="let file of uploaded_files">{{file}}</p>
             </div>
             <input class="nameField" type="text" placeholder="File Name" [(ngModel)]="FileName" />
-
+            <div style="width: 90%;">
+                <p style="font-weight: 400; font-size: larger; text-align: center;">Select Units</p>
+                <div *ngFor="let param of unitSettings" class="parameter-row">
+                    <div class="parameter-content">
+                        <span class="parameter-label">{{ param.label }}</span>
+                    </div>
+                    <div class="unit-selection">
+                        <div class="tooltip-container" *ngFor="let unit of param.units">
+                            <button class="unit-button" [class.selected]="selectedUnits[param.key] === unit"
+                                (click)="selectUnit(param.key, unit)">
+                                {{ unit }}
+                            </button>
+                            <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
             <button type="submit" (click)="import()">Submit</button>
         </div>
-
-
-
-
     </div>
 </div>

@@ -55,6 +55,12 @@ interface ApiData {
   station_id: string;
   time: string;
   isNewRow?: boolean;
+  water_level_unit: string;
+  current_speed_unit: string;
+  current_direction_unit: string;
+  battery_unit: string;
+  depth_unit: string;
+  [key: string]: any;
 }
 
 interface SelectedData {
@@ -122,6 +128,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   isLive: boolean = true;
   changedRows: Set<number> = new Set();
   isProcessedData: boolean = false;
+  unitSettings: { key: string }[] = [];
 
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
   @ViewChild('tideChart') tideChart!: ElementRef;
@@ -258,6 +265,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.unitSerive.units$.subscribe((u) => {
       this.units = u;
     });
+    console.log('units', this.units);
   }
 
   show: boolean = false;
@@ -312,7 +320,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       },
     ]; // Only keep the clicked file selected
     this.open_file(file_id);
-
     // }
   }
 
@@ -611,7 +618,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       const maxId = Math.max(...this.main_table.map((row) => row.id));
       const newId = maxId + 1;
 
-      const newRow = {
+      const newRow: ApiData = {
         id: newId,
         date: formattedDate,
         speed: '',
@@ -627,6 +634,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         station_id: '',
         time: formattedDate.split('T')[1].split('.')[0],
         isNewRow: true,
+        water_level_unit: item.water_level_unit,
+        current_speed_unit: item.current_speed_unit,
+        current_direction_unit: item.current_direction_unit,
+        battery_unit: item.battery_unit,
+        depth_unit: item.depth_unit
       };
       this.main_table.splice(currentIndex + 1, 0, newRow);
       this.fullData = [...this.main_table];
@@ -674,8 +686,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.main_table.length === 0 && this.fullData.length > 0) {
       this.main_table = this.fullData;
     }
-
-    this.fillDataGaps();
 
     setTimeout(() => {
       if (this.selectedPointId !== null) {
@@ -738,87 +748,109 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     }, 100); // Reduced initial timeout
   }
 
-  private fillDataGaps() {
-    if (this.main_table.length < 2) return;
-
-    // Sort the table by date first
-    this.main_table.sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-    );
-
-    const newRows: ApiData[] = [];
-    let maxId = Math.max(...this.main_table.map((row) => row.id));
-
-    // Check each consecutive pair of rows
-    for (let i = 0; i < this.main_table.length - 1; i++) {
-      const currentRow = this.main_table[i];
-      const nextRow = this.main_table[i + 1];
-
-      const currentDate = new Date(currentRow.date);
-      const nextDate = new Date(nextRow.date);
-      const timeDiff = nextDate.getTime() - currentDate.getTime();
-      const minutesDiff = timeDiff / (1000 * 60);
-
-      if (minutesDiff > 10) {
-        // Calculate how many 10-minute intervals we need to fill
-        const intervalsToFill = Math.floor(minutesDiff / 10) - 1;
-
-        for (let j = 0; j < intervalsToFill; j++) {
-          // Calculate the new timestamp
-          const newDate = new Date(
-            currentDate.getTime() + (j + 1) * 10 * 60 * 1000
-          );
-          const formattedDate = newDate.toISOString();
-
-          maxId++;
-          const newRow: ApiData = {
-            id: maxId,
-            date: formattedDate,
-            speed: '',
-            direction: '',
-            pressure: '',
-            file_id: currentRow.file_id,
-            file_name: currentRow.file_name,
-            battery: '',
-            dept: '',
-            high_water_level: 0,
-            lat: '',
-            lon: '',
-            station_id: '',
-            time: formattedDate.split('T')[1].split('.')[0],
-            isNewRow: true,
-          };
-
-          newRows.push(newRow);
-        }
-      }
-    }
-
-    // Add all new rows to main_table
-    if (newRows.length > 0) {
-      this.main_table = [...this.main_table, ...newRows];
-      // Sort again after adding new rows
-      this.main_table.sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-      this.fullData = [...this.main_table];
-
-      // Notify user about added rows
-      this.toast.info(`Added ${newRows.length} rows to fill time gaps`);
-    }
-  }
-
   closeDialog() {
     this.visible = false;
     this.selectedPointId = null;
   }
 
+  // loadData(event: any) {
+  //   this.loading = true;
+  //   this.main_table = this.fullData;
+  //   console.log(this.units);
+  //   this.loading = false;
+  //   this.cdr.detectChanges();
+  // }
   loadData(event: any) {
     this.loading = true;
-    this.main_table = this.fullData;
+  
+    if (this.fullData.length === 0) {
+      this.main_table = [];
+      this.loading = false;
+      return;
+    }
+  
+    const sourceUnits: { [key: string]: string } = {
+      waterLevel: this.fullData[0].water_level_unit,
+      currentSpeed: this.fullData[0].current_speed_unit,
+      currentDirection: this.fullData[0].current_direction_unit,
+      battery: this.fullData[0].battery_unit,
+      depth: this.fullData[0].depth_unit,
+    };
+  
+    const unitsMatch = Object.keys(this.units).every(
+      key => this.units[key] === sourceUnits[key]
+    );
+    console.log('match', unitsMatch);
+  
+    if (unitsMatch) {
+      this.main_table = this.fullData;
+    } else {
+      this.main_table = this.fullData.map((item, index) => {
+        const newItem = { ...item } as ApiData;
+  
+        // if waterLevel unit mismatches → convert pressure
+        if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
+          if (newItem.pressure !== null && newItem.pressure !== undefined) {
+            const converted = this.convertValue(+item.pressure, sourceUnits['waterLevel'], this.units['waterLevel']);
+            newItem.pressure = converted.toString();
+            this.fullData[index].pressure = converted.toString();
+          }
+        }
+  
+        // if currentSpeed unit mismatches → convert speed
+        if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
+          if (newItem.speed !== null && newItem.speed !== undefined) {
+            const converted = this.convertValue(+item.speed, sourceUnits['currentSpeed'], this.units['currentSpeed']);
+            newItem.speed = converted.toString();
+            this.fullData[index].speed = converted.toString();
+          }
+        }
+  
+        // if currentDirection unit mismatches → convert direction
+        if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+          if (newItem.direction !== null && newItem.direction !== undefined) {
+            const converted = this.convertValue(+item.direction, sourceUnits['currentDirection'], this.units['currentDirection']);
+            newItem.direction = converted.toString();
+            this.fullData[index].direction = converted.toString();
+          }
+        }
+  
+        return newItem;
+      });
+    }
+  
+    console.log('converted', this.fullData);
     this.loading = false;
-    this.cdr.detectChanges();
   }
+
+  convertValue(value: number, fromUnit: string, toUnit: string): number {
+    if (fromUnit === toUnit) return value;
+  
+    const maxVolt = 4.2; // for battery conversion
+  
+    const conversions: { [key: string]: (v: number) => number } = {
+      'm-ft': (v) => v * 3.28084,
+      'ft-m': (v) => v / 3.28084,
+      'm-cm': (v) => v * 100,
+      'cm-m': (v) => v / 100,
+      'ft-cm': (v) => (v / 3.28084) * 100,
+      'cm-ft': (v) => (v / 100) * 3.28084,
+      'm/s-knots': (v) => v * 1.94384,
+      'knots-m/s': (v) => v / 1.94384,
+      'radians-°': (v) => v * (180 / Math.PI),
+      '°-radians': (v) => v * (Math.PI / 180),
+      'volts-%': (v) => (v / maxVolt) * 100,
+      '%-volts': (v) => (v * maxVolt) / 100,
+    };
+  
+    const key = `${fromUnit}-${toUnit}`;
+    if (conversions[key]) {
+      return conversions[key](value);
+    }
+  
+    // no conversion available
+    return value;
+  }  
 
   private updateXAxisLabel(
     chart: EChartsType,
