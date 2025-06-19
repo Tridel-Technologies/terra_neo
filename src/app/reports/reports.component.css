@@ -133,7 +133,7 @@
 
 
 .tablecontainer {
-    height: 97%;
+    /* height: 97%; */
     width: 80%;
     border-radius: 20px;
     border: 1px solid #BDDDFC;
@@ -168,8 +168,8 @@
 
 ::ng-deep .p-datatable-tbody td {
     /* background-color: #9f1414 !important; */
-    background-color: var(--tablebgcolor) !important;
-    color: var(--font-color) !important;
+    /* background-color: var(--tablebgcolor) !important;
+    color: var(--font-color) !important; */
     font-size: 16px;
     padding: 14px;
     text-align: center;

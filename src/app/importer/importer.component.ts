@@ -261,7 +261,7 @@ export class ImporterComponent {
   changinglat() {
     console.log(this.latitude);
   }
-FileID!:number;
+
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
     this.FileID = file_id;
     this.FileID = file_id;

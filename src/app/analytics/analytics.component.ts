@@ -204,6 +204,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   private themeSubscription: any;
   private themeChange$ = new BehaviorSubject<string>('light');
   private baseUrl: string;
+  private convertValues;
 
   constructor(
     private http: HttpClient,
@@ -215,11 +216,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private unitSerive: UnitService
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
+    this.convertValues = new GlobalConfig().convertValue;
   }
 
   ngOnInit(): void {
     // Load saved data type preference
     const savedDataType = localStorage.getItem('isProcessedData');
+
     if (savedDataType !== null) {
       this.isProcessedData = savedDataType === 'true';
     }
@@ -791,7 +794,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         // if waterLevel unit mismatches → convert pressure
         if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
           if (newItem.pressure !== null && newItem.pressure !== undefined) {
-            const converted = this.convertValue(+item.pressure, sourceUnits['waterLevel'], this.units['waterLevel']);
+            const converted = this.convertValues(+item.pressure, sourceUnits['waterLevel'], this.units['waterLevel']);
             newItem.pressure = converted.toString();
             this.fullData[index].pressure = converted.toString();
           }
@@ -800,7 +803,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         // if currentSpeed unit mismatches → convert speed
         if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
           if (newItem.speed !== null && newItem.speed !== undefined) {
-            const converted = this.convertValue(+item.speed, sourceUnits['currentSpeed'], this.units['currentSpeed']);
+            const converted = this.convertValues(+item.speed, sourceUnits['currentSpeed'], this.units['currentSpeed']);
             newItem.speed = converted.toString();
             this.fullData[index].speed = converted.toString();
           }
@@ -809,7 +812,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         // if currentDirection unit mismatches → convert direction
         if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
           if (newItem.direction !== null && newItem.direction !== undefined) {
-            const converted = this.convertValue(+item.direction, sourceUnits['currentDirection'], this.units['currentDirection']);
+            const converted = this.convertValues(+item.direction, sourceUnits['currentDirection'], this.units['currentDirection']);
             newItem.direction = converted.toString();
             this.fullData[index].direction = converted.toString();
           }
@@ -822,35 +825,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     console.log('converted', this.fullData);
     this.loading = false;
   }
-
-  convertValue(value: number, fromUnit: string, toUnit: string): number {
-    if (fromUnit === toUnit) return value;
-  
-    const maxVolt = 4.2; // for battery conversion
-  
-    const conversions: { [key: string]: (v: number) => number } = {
-      'm-ft': (v) => v * 3.28084,
-      'ft-m': (v) => v / 3.28084,
-      'm-cm': (v) => v * 100,
-      'cm-m': (v) => v / 100,
-      'ft-cm': (v) => (v / 3.28084) * 100,
-      'cm-ft': (v) => (v / 100) * 3.28084,
-      'm/s-knots': (v) => v * 1.94384,
-      'knots-m/s': (v) => v / 1.94384,
-      'radians-°': (v) => v * (180 / Math.PI),
-      '°-radians': (v) => v * (Math.PI / 180),
-      'volts-%': (v) => (v / maxVolt) * 100,
-      '%-volts': (v) => (v * maxVolt) / 100,
-    };
-  
-    const key = `${fromUnit}-${toUnit}`;
-    if (conversions[key]) {
-      return conversions[key](value);
-    }
-  
-    // no conversion available
-    return value;
-  }  
 
   private updateXAxisLabel(
     chart: EChartsType,
@@ -2244,22 +2218,27 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-
+ 
     const element = document.getElementById(elementId);
+ 
+    const speedUnit = this.units?.currentSpeed || 'm/s'; // default to m/s
+    const directionUnit = this.units?.currentDirection || '°'; // default to degree
     if (!element) {
       console.error(`Element with id '${elementId}' not found`);
       return;
     }
-
+ 
     const existingInstance = echarts.getInstanceByDom(element);
     if (existingInstance) {
       existingInstance.dispose();
     }
-
+ 
     const chart = echarts.init(element);
-
+ 
     const directionLabels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
-
+ 
+    const speedLabelUnit = speedUnit === 'knots' ? 'knots' : 'm/s';
+ 
     const speedCategories = [
       '<0.5 m/s',
       '0.5-2 m/s',
@@ -2276,10 +2255,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       '#FF9933',
       '#FF3300',
     ];
-
+ 
     type SpeedCategory = (typeof speedCategories)[number];
     type DirectionBin = Record<SpeedCategory, number>;
-
+ 
     const categorizeSpeed = (speed: number): SpeedCategory => {
       if (speed < 0.5) return '<0.5 m/s';
       if (speed < 2) return '0.5-2 m/s';
@@ -2288,7 +2267,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       if (speed < 8) return '6-8 m/s';
       return '>8 m/s';
     };
-
+ 
     const dataBins: DirectionBin[] = directionLabels.map(() => ({
       '<0.5 m/s': 0,
       '0.5-2 m/s': 0,
@@ -2297,15 +2276,29 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       '6-8 m/s': 0,
       '>8 m/s': 0,
     }));
-
+ 
+    // averagedPolarData.forEach(({ speed, direction }) => {
+    //   // const directionIndex = Math.round(direction / 22.5) % 16;
+ 
+    //   const directionIndex = Math.round(direction / 45) % 8;
+    //   const speedCategory = categorizeSpeed(speed);
+    //   dataBins[directionIndex][speedCategory] += 1;
+    // });
+ 
     averagedPolarData.forEach(({ speed, direction }) => {
-      // const directionIndex = Math.round(direction / 22.5) % 16;
-
-      const directionIndex = Math.round(direction / 45) % 8;
+      // Convert speed to m/s if needed
+      // const normalizedSpeed = speedUnit === 'knots' ? speed * 0.514444 : speed;
+ 
+      // Convert direction to degrees if needed
+      const normalizedDirection =
+        directionUnit === 'radians' ? direction * (180 / Math.PI) : direction;
+ 
+      const directionIndex = Math.round(normalizedDirection / 45) % 8;
       const speedCategory = categorizeSpeed(speed);
+ 
       dataBins[directionIndex][speedCategory] += 1;
     });
-
+ 
     const seriesData = speedCategories.map((speedCategory, index) => ({
       name: speedCategory,
       type: 'bar',
@@ -2316,7 +2309,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         color: speedColors[index],
       },
     }));
-
+ 
     const option = {
       title: {
         // text: this.PolarSelectedInterVal,
@@ -2351,7 +2344,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                 fontSize: 12,
               },
             },
-
+ 
       angleAxis: {
         type: 'category',
         data: directionLabels,
@@ -2375,11 +2368,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       series: seriesData,
       animationDuration: 800,
     };
-
+ 
     chart.setOption(option);
     window.addEventListener('resize', () => chart.resize());
   }
-
+ 
   private groupByIntervalWithinDateRange(
     data: ApiData[],
     startDate: string,
@@ -2387,13 +2380,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     intervalMinutes: number
   ): Record<string, { speed: number; direction: number }[]> {
     const grouped: Record<string, { speed: number; direction: number }[]> = {};
-
+ 
     const dateStart = new Date(`${startDate}T00:00:00`);
     const dateEnd = new Date(`${endDate}T23:59:59`);
-
+ 
     data.forEach((entry) => {
       const localTime = this.toIST(entry.date);
-
+ 
       if (localTime >= dateStart && localTime <= dateEnd) {
         const roundedTime = new Date(
           Math.floor(localTime.getTime() / (intervalMinutes * 60 * 1000)) *
@@ -2401,29 +2394,29 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             60 *
             1000
         );
-
+ 
         const key = roundedTime.toISOString();
-
+ 
         if (!grouped[key]) {
           grouped[key] = [];
         }
-
+ 
         grouped[key].push({
           speed: parseFloat(entry.speed),
           direction: parseFloat(entry.direction),
         });
       }
     });
-
+ 
     return grouped;
   }
-
+ 
   private toIST(dateStr: string): Date {
     const utcDate = new Date(dateStr);
     const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in ms
     return new Date(utcDate.getTime() + istOffset);
   }
-
+ 
   private computeAverages(
     grouped: Record<string, { speed: number; direction: number }[]>
   ): { speed: number; direction: number }[] {
@@ -2435,11 +2428,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       return { speed: avgSpeed, direction: avgDirection };
     });
   }
-
+ 
   private formatDateToYMD(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
+
 }
