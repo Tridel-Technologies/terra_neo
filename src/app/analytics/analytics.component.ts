@@ -212,11 +212,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private ngZone: NgZone,
     private base: BaseComponent,
     private themeService: ThemeService,
-    private unitSerive: UnitService
+    private unitSerive: UnitService,
+
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
   }
-
+fileID!:number;
   ngOnInit(): void {
     // Load saved data type preference
     const savedDataType = localStorage.getItem('isProcessedData');
@@ -231,6 +232,57 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
         this.expandedFolders = this.files_list.map(() => false);
+        this.fileID = this.base.fileId!;
+        console.log('file IFD', this.fileID);
+        
+        let folderIndex = -1;
+        let selectedFile = null;
+        let selectedFolder = null;
+
+        if (this.fileID) {
+          folderIndex = this.files_list.findIndex((folder) =>
+            folder.files.some((file) => file.file_id === this.fileID)
+          );
+          if (folderIndex !== -1) {
+            selectedFolder = this.files_list[folderIndex];
+            selectedFile = selectedFolder.files.find(
+              (file) => file.file_id === this.fileID
+            );
+          }
+        }
+
+        // If no matching file found, fallback to first folder with files
+        if (folderIndex === -1) {
+          folderIndex = this.files_list.findIndex(
+            (folder) => folder.files && folder.files.length > 0
+          );
+          if (folderIndex !== -1) {
+            selectedFolder = this.files_list[folderIndex];
+            selectedFile = selectedFolder.files[0];
+          }
+        }
+
+        // Expand the matched folder
+        this.expandedFolders = this.files_list.map(
+          (_, index) => index === folderIndex
+        );
+
+        // Set folder and file details if found
+        if (selectedFolder && selectedFile) {
+          this.openedFolder = selectedFolder.folder_id;
+          this.selected_folder_name = selectedFolder.folder_name;
+
+          this.selectedFiles = [
+            {
+              file_name: selectedFile.file_name,
+              file_id: selectedFile.file_id,
+            },
+          ];
+          this.opened_file = selectedFile.file_name;
+
+          // Fetch data for the file
+          this.open_file(selectedFile.file_id);
+        }
       });
     this.viewModes = [
       {

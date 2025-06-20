@@ -77,13 +77,16 @@ export class DashboardComponent implements OnInit {
   isbefore: boolean = true;
   currentData!: any;
   dir: boolean = false;
+  latutude!:string;
+  longitude!:string;
   private baseUrl: string;
 
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
     private unitSerive: UnitService,
-    private globe: BaseComponent
+    private globe: BaseComponent,
+    private globall:GlobalConfig
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
   }
@@ -101,7 +104,9 @@ export class DashboardComponent implements OnInit {
   truncate(value: string | number): number {
     return Math.floor(parseFloat(value as string));
   }
-
+parseFloat(value: any): number {
+  return parseFloat(value);
+}
   toggle_tap() {
     // try {
     const filter = this.main_table.filter(
@@ -181,6 +186,7 @@ export class DashboardComponent implements OnInit {
       };
 
       this.selected_data = data;
+      
       this.isLive = !this.isLive;
       const bfMatches = this.filterByHour(bf[0]);
       const afMatches = this.filterByHour(af[0]);
@@ -342,6 +348,11 @@ export class DashboardComponent implements OnInit {
       current_dir_after_6: '',
     };
     this.selected_data = data;
+    this.latutude = this.convertcoored(this.selected_data.lat,
+                        this.coor_unit, 'dms')
+    this.longitude = this.convertcoored(this.selected_data.lon,
+    this.coor_unit, 'dms')
+      console.log("latitude====", this.latutude)
     this.dir = false;
     console.log('selected', this.selected_data);
     this.directionTo = this.directionValue(
@@ -392,9 +403,15 @@ export class DashboardComponent implements OnInit {
   }
   fileID:number | undefined;
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
+  unitssTo!:UnitSettings;
   ngOnInit(): void {
+    this.unitSerive.units$.subscribe((u) => {
+      this.units = u;
+    });
     this.files_list = [];
-
+    const unitss:any = localStorage.getItem('unitSettings');
+    this.unitssTo = JSON.parse(unitss);
+    console.log("Unitsss", this.unitssTo)
     this.http
       .get(`${this.baseUrl}files`)
       .subscribe((response: any) => {
@@ -403,7 +420,7 @@ export class DashboardComponent implements OnInit {
         console.log('files:', response, this.files_list);
         this.fileID = this.globe.fileId;
         console.log('file IFD', this.fileID);
-
+        
         let folderIndex = -1;
         let selectedFile = null;
         let selectedFolder = null;
@@ -454,15 +471,13 @@ export class DashboardComponent implements OnInit {
         }
 
         setTimeout(() => {
-          this.globe.fileId = undefined;
+          // this.globe.fileId = undefined;
         }, 100);
         // this.isFilesLoading = false;
       });
 
     // Units
-    this.unitSerive.units$.subscribe((u) => {
-      this.units = u;
-    });
+    
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -521,6 +536,91 @@ export class DashboardComponent implements OnInit {
         return 'assets/file.png'; // Default file image
     }
   }
+
+
+  convertValue(value: number, fromUnit: string, toUnit: string): number {
+    if (fromUnit === toUnit) return value;
+  
+    const maxVolt = 4.2; // for battery conversion
+  
+    const conversions: { [key: string]: (v: number) => number } = {
+      'm-ft': (v) => v * 3.28084,
+      'ft-m': (v) => v / 3.28084,
+      'm-cm': (v) => v * 100,
+      'cm-m': (v) => v / 100,
+      'ft-cm': (v) => (v / 3.28084) * 100,
+      'cm-ft': (v) => (v / 100) * 3.28084,
+      'm/s-knots': (v) => v * 1.94384,
+      'knots-m/s': (v) => v / 1.94384,
+      'radians-°': (v) => v * (180 / Math.PI),
+      '°-radians': (v) => v * (Math.PI / 180),
+      'volts-%': (v) => (v / maxVolt) * 100,
+      '%-volts': (v) => (v * maxVolt) / 100,
+    };
+  
+    const key = `${fromUnit}-${toUnit}`;
+    if (conversions[key]) {
+      return this.parseFloat(conversions[key](value).toFixed(2));
+    }
+  
+    // no conversion available
+    return parseFloat(value.toFixed(2));
+  }  
+  convertcoored(value: any, fromUnit: string, toUnit: string): any {
+  if (fromUnit === toUnit) return value;
+  
+  const maxVolt = 4.2; // for battery conversion
+
+  const conversions: { [key: string]: (v: any) => any } = {
+    'm-ft': (v) => v * 3.28084,
+    'ft-m': (v) => v / 3.28084,
+    'm-cm': (v) => v * 100,
+    'cm-m': (v) => v / 100,
+    'ft-cm': (v) => (v / 3.28084) * 100,
+    'cm-ft': (v) => (v / 100) * 3.28084,
+    'm/s-knots': (v) => v * 1.94384,
+    'knots-m/s': (v) => v / 1.94384,
+    'radians-°': (v) => v * (180 / Math.PI),
+    '°-radians': (v) => v * (Math.PI / 180),
+    'volts-%': (v) => (v / maxVolt) * 100,
+    '%-volts': (v) => (v * maxVolt) / 100,
+
+    // DD to DMS
+    'dd-dms': (v) => {
+      const deg = Math.floor(v);
+      const minFloat = (v - deg) * 60;
+      const min = Math.floor(minFloat);
+      const sec = (minFloat - min) * 60;
+      return `${deg}°${min}'${sec.toFixed(2)}"`;
+    },
+
+    // DMS to DD
+    'dms-dd': (v) => {
+      const regex = /(\d+)°(\d+)'([\d.]+)"/;
+      const match = v.match(regex);
+      if (!match) return 0;
+      const deg = parseInt(match[1]);
+      const min = parseInt(match[2]);
+      const sec = parseFloat(match[3]);
+      return parseFloat((deg + (min / 60) + (sec / 3600)).toFixed(6));
+    }
+  };
+
+  const key = `${fromUnit}-${toUnit}`;
+  if (conversions[key]) {
+    return conversions[key](value);
+  }
+
+  // No conversion found
+  return value;
+}
+
+  bet_unit!:string;
+  wat_unit!:string;
+  coor_unit!:string;
+  depth_unit!:string;
+  speed_unit!:string;
+  directtion_unit!:string;
   open_file(file_name: string, file_id: number) {
     console.log('h');
     this.opened_file = file_name;
@@ -533,6 +633,44 @@ export class DashboardComponent implements OnInit {
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
+        this.bet_unit = response[0].battery_unit;
+        this.wat_unit = response[0].water_level_unit;
+        this.coor_unit = response[0].coord_unit;
+        this.depth_unit = response[0].depth_unit;
+        this.speed_unit = response[0].current_speed_unit;
+        this.directtion_unit = response[0].current_direction_unit;
+
+        console.log("unitss====",
+          this.bet_unit, this.wat_unit, this.coor_unit, this.directtion_unit, this.speed_unit, this.depth_unit
+        )
+        console.log(this.unitssTo.waterLevel)
+        let dd = []
+        // Unitsss {"waterLevel":"m","currentSpeed":"m/s","currentDirection":"°","battery":"volts","depth":"m","latandlong":"DMS"}
+        for (let index = 0; index < response.length; index++) {
+          dd.push({
+            battery : this.globall.convertValue(response[index].battery, response[index].battery_unit, this.unitssTo.battery),
+            battery_unit: "volts",
+            current_direction_unit: "°",
+            current_speed_unit: "m/s",
+            date: "2025-04-01T00:00:54.000Z",
+            depth: this.globall.convertValue(response[index].depth, response[index].depth_unit, this.unitssTo.depth),
+            depth_unit: "m",
+            direction: this.globall.convertValue(response[index].direction, response[index].current_direction_unit, this.unitssTo.currentDirection),
+            file_id: 17,
+            high_water_level: 0,
+            id: 1,
+            lat: "18.3",
+            lon: "52.3",
+            pressure:  this.globall.convertValue(response[index].pressure, response[index].water_level_unit, this.unitssTo.waterLevel),
+            speed:this.globall.convertValue(response[index].speed, response[index].current_speed_unit, this.unitssTo.currentSpeed),
+            station_id:"$PRTI20",
+            water_level_unit: "m"
+          })
+          
+        }
+        console.log("dd",dd)
+        const ddddd = this.globall.convertValue(response[0].pressure, response[0].water_level_unit, 'ft') 
+        console.log("converted", ddddd)
         if (this.isMulti) {
           let data = this.main_table;
           this.main_table = [];
