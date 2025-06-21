@@ -509,6 +509,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     item[field] = value;
   }
 
+  formatValue(value: any): string {
+    const num = parseFloat(value);
+    return isNaN(num) ? '' : num.toFixed(4);
+  }  
+
   onUpdateClick() {
     // Check for empty values
     const emptyRows = this.main_table.filter(
@@ -1146,7 +1151,7 @@ onDialogShow() {
           {
             name: 'Water Level',
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.pressure)];
+              return [item.date, this.formatValue(item.pressure)];
             }),
             type: chartType === 'bar' ? 'bar' : chartType,
             barWidth: chartType === 'bar' ? '50%' : undefined,
@@ -1163,7 +1168,7 @@ onDialogShow() {
             name: 'High Water Time',
             data: this.fullData
               .filter((item) => item.high_water_level === 1)
-              .map((item) => [item.date, parseFloat(item.pressure)]),
+              .map((item) => [item.date, this.formatValue(item.pressure)]),
             type: 'scatter',
             symbolSize: 20,
             itemStyle: {
@@ -1390,7 +1395,7 @@ onDialogShow() {
           {
             name: 'Current Speed',
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.speed)];
+              return [item.date, this.formatValue(item.speed)];
             }),
             // data: this.sampleDataAdcp.map((item) => [
             //   item.timestamp,
@@ -1611,7 +1616,7 @@ onDialogShow() {
             //   item.current_direction,
             // ]),
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.direction)];
+              return [item.date, this.formatValue(item.direction)];
             }),
             type: chartType,
             // smooth: 'line',
@@ -1853,7 +1858,7 @@ onDialogShow() {
           {
             name: 'Current Speed',
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.speed)];
+              return [item.date, this.formatValue(item.speed)];
             }),
             // data: this.sampleDataAdcp.map((item) => [
             //   item.timestamp,
@@ -1872,7 +1877,7 @@ onDialogShow() {
             //   item.current_direction,
             // ]),
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.direction)];
+              return [item.date, this.formatValue(item.direction)];
             }),
             type: chartType,
             itemStyle: { color: this.currentDirectionColor },
@@ -2182,7 +2187,7 @@ onDialogShow() {
             //   item.tide,
             // ]),
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.pressure)];
+              return [item.date, this.formatValue(item.pressure)];
             }),
             type: chartType,
             // lineStyle: {
@@ -2205,7 +2210,7 @@ onDialogShow() {
             //   item.current_speed,
             // ]),
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.speed)];
+              return [item.date, this.formatValue(item.speed)];
             }),
             type: chartType,
             // lineStyle: {
@@ -2229,7 +2234,7 @@ onDialogShow() {
             //   item.current_direction,
             // ]),
             data: this.fullData.map((item) => {
-              return [item.date, parseFloat(item.direction)];
+              return [item.date, this.formatValue(item.direction)];
             }),
             type: chartType,
             // lineStyle: {

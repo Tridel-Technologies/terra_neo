@@ -186,17 +186,17 @@
                     >
                         <td>{{ item.date | date:'yyyy-MM-dd HH:mm:ss':'UTC' }}</td>
                         <td>
-                            <input type="text" pInputText [value]="item.speed"
+                            <input type="text" pInputText [value]="formatValue(item.speed)"
                                 (blur)="updateField(item, 'speed', $event)"
                                 (keyup.enter)="updateField(item, 'speed', $event)" />
                         </td>
                         <td>
-                            <input type="text" pInputText [value]="item.direction"
+                            <input type="text" pInputText [value]="formatValue(item.direction)"
                                 (blur)="updateField(item, 'direction', $event)"
                                 (keyup.enter)="updateField(item, 'direction', $event)" />
                         </td>
                         <td>
-                            <input type="text" pInputText [value]="item.pressure"
+                            <input type="text" pInputText [value]="formatValue(item.pressure)"
                                 (blur)="updateField(item, 'pressure', $event)"
                                 (keyup.enter)="updateField(item, 'pressure', $event)" />
                         </td>
