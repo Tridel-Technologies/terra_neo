@@ -521,7 +521,7 @@ const getDataByFolderIdAndFileName = async (req, res) => {
     const result = await pool.query(
       `SELECT
          tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit, 
-         tf.battery_unit, tf.depth_unit 
+         tf.battery_unit, tf.depth_unit, tf.coord_unit
        FROM
          tb_${file_id} tp
        JOIN 

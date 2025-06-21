@@ -278,12 +278,12 @@ export class SettingsComponent {
       iconClass: 'fas fa-arrows-down-to-line',
       units: ['m', 'ft'],
     },
-    // {
-    //   key: 'latandlong',
-    //   label: 'Latitude and Longitude',
-    //   iconClass: 'fas fa-map-marker-alt',
-    //   units: ['DD', 'DMS'],
-    // },
+    {
+      key: 'latandlong',
+      label: 'Latitude and Longitude',
+      iconClass: 'fas fa-map-marker-alt',
+      units: ['dd', 'dms'],
+    },
   ];
 
   getFileImage(fileName: string): string {

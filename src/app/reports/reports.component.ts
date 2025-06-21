@@ -19,7 +19,8 @@ import autoTable from 'jspdf-autotable';
 import { GlobalConfig } from '../global/app.global';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { array } from '@amcharts/amcharts5';
- 
+import { BaseComponent } from '../base/base.component';
+
 interface Column {
   field: string;
   header: string;
@@ -216,7 +217,89 @@ export class ReportsComponent implements OnInit {
     { label: 'Export to PDF', value: 'pdf' },
   ];
   nameOffile!: string;
- 
+
+  private baseUrl: string;
+
+  constructor(private http: HttpClient, private toast: ToastrService, private base:BaseComponent) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
+fileID!:number
+  ngOnInit(): void {
+    this.files_list = [];
+    this.http
+      .get(`${this.baseUrl}files`)
+      .subscribe((response: any) => {
+        this.files_list = response['data'];
+        console.log('files:', response, this.files_list);
+        this.expandedFolders = this.files_list.map(() => false);
+        this.fileID = this.base.fileId!;
+        console.log('file IFD', this.fileID);
+        
+        let folderIndex = -1;
+        let selectedFile = null;
+        let selectedFolder = null;
+
+        if (this.fileID) {
+          folderIndex = this.files_list.findIndex((folder) =>
+            folder.files.some((file) => file.file_id === this.fileID)
+          );
+          if (folderIndex !== -1) {
+            selectedFolder = this.files_list[folderIndex];
+            selectedFile = selectedFolder.files.find(
+              (file) => file.file_id === this.fileID
+            );
+          }
+        }
+
+        // If no matching file found, fallback to first folder with files
+        if (folderIndex === -1) {
+          folderIndex = this.files_list.findIndex(
+            (folder) => folder.files && folder.files.length > 0
+          );
+          if (folderIndex !== -1) {
+            selectedFolder = this.files_list[folderIndex];
+            selectedFile = selectedFolder.files[0];
+          }
+        }
+
+        // Expand the matched folder
+        this.expandedFolders = this.files_list.map(
+          (_, index) => index === folderIndex
+        );
+
+        // Set folder and file details if found
+        if (selectedFolder && selectedFile) {
+          this.openedFolder = selectedFolder.folder_id;
+          this.selected_folder_name = selectedFolder.folder_name;
+
+          this.selectedFiles = [
+            {
+              file_name: selectedFile.file_name,
+              file_id: selectedFile.file_id,
+            },
+          ];
+          this.opened_file = selectedFile.file_name;
+
+          // Fetch data for the file
+          this.open_file(selectedFile.file_id);
+        }
+      });
+
+    this.cols = [
+      // { field: 'id', header: 'ID', type: 'text' },
+      { field: 'station_id', header: 'Station ID', type: 'text' },
+      { field: 'date', header: 'Time Stamp', type: 'shortDate' },
+      { field: 'lat', header: 'LAT', type: 'text' },
+      { field: 'lon', header: 'LON', type: 'text' },
+      { field: 'depth', header: 'Depth', type: 'text' },
+      { field: 'pressure', header: 'Water Level', type: 'text' },
+      { field: 'speed', header: 'Current Speed', type: 'text' },
+      { field: 'direction', header: 'Current Direction', type: 'text' },
+    ];
+    this.selectedColumns = this.cols;
+    this.globalFilterFields = this.cols.map((col) => col.field);
+  }
+
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
     // Remove the global filter since we're using custom filtering

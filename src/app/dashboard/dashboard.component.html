@@ -95,7 +95,10 @@
                 </div>
                 <div class="lat">
                     <h5 class="title">Coordinates</h5>
-                    <p class="sub-title">Long: {{selected_data.lon}} °<br> Lat: {{selected_data.lat}} °</p>
+                    <p class="sub-title">Lat: {{latutude}} {{unitssTo.latandlong
+                        ==='dd'?'°':''}}<br>
+                        Long: {{longitude}} {{unitssTo.latandlong
+                        ==='dd'?'°':''}}</p>
                 </div>
                 <div class="lon" [ngStyle]="{'background-color':isLive?'var(--background-secondary)':''}">
                     <div class="separate-bat-depth" *ngIf="!isLive">
@@ -107,11 +110,14 @@
                         <div class="depth">
                             <h5>Depth</h5>
                             <img src="../../assets/depth.png" alt="">
-                            <p>{{selected_data.depth}} {{units.depth}}</p>
+                            <p>{{
+                                convertValue(parseFloat(selected_data.depth), depth_unit, unitssTo.depth)
+                                }} {{units.depth}}</p>
                         </div>
                     </div>
                     <h5 class="title" *ngIf="isLive">Depth</h5>
-                    <p class="sub-title" *ngIf="isLive">{{selected_data.depth}} {{units.depth}}</p>
+                    <p class="sub-title" *ngIf="isLive">{{ convertValue(parseFloat(selected_data.depth), depth_unit,
+                        unitssTo.depth)}} {{units.depth}}</p>
                 </div>
             </div>
             <div class="centers">
@@ -143,7 +149,8 @@
                         <polygon points="60,65 55,75 65,75" fill="white" />
                         <polygon points="60,95 55,85 65,85" fill="white" />
                     </svg>
-                    <p style="align-self: center;">{{ selected_data.tide}} {{units.waterLevel}}</p>
+                    <p style="align-self: center;">{{ convertValue(parseFloat(selected_data?.tide || '0'), wat_unit,
+                        unitssTo.waterLevel).toString()}} {{units.waterLevel}}</p>
                 </div>
                 @if (!isLive) {
                 <div class="tide-not-live" *ngFor="let tide of filteredAvgData"
@@ -172,7 +179,10 @@
                     </svg>
                     <h5 class="title-tide" style="margin-left: 20px;">{{tide.name ==='Current'?'': isLive ?'':
                         isbefore?'Raising':'Falling'}} {{tide.name==='Current'? 'High Water time':'Water Level'}} <br>
-                        <p style="margin: 0; font-weight: 400;">{{tide.tide}}{{units.waterLevel}}</p>
+                        <p style="margin: 0; font-weight: 400;">{{
+                            convertValue(parseFloat(tide.tide || '0'), wat_unit,
+                            unitssTo.waterLevel).toString()
+                            }}{{units.waterLevel}}</p>
                     </h5>
                     <p style="align-self: center;"></p>
                 </div>
@@ -208,7 +218,10 @@
                     <div class="bat-live">
                         <app-battery [isLive]="isLive" [voltage]="truncate(selected_data.battery)"></app-battery>
                     </div>
-                    <p style="align-self: center;">{{ truncate(selected_data.battery) }} {{units.battery}}</p>
+                    <p style="align-self: center;">{{
+                        convertValue(truncate(selected_data.battery), bet_unit,
+                        unitssTo.battery).toString()
+                        }} {{units.battery}}</p>
                 </div>
             </div>
             <div class="currents">
@@ -259,7 +272,9 @@
                     </svg>
 
 
-                    <p style="align-self: center;">{{selected_data.current_speed}} {{units.currentSpeed}}</p>
+                    <p style="align-self: center;">{{
+
+                        selected_data.current_speed}} {{units.currentSpeed}}</p>
                 </div>
                 <div class="current_direction" *ngIf="isLive">
                     <h5 class="title-tide" style="margin-top: 8%;">Current Direction</h5>
@@ -267,7 +282,10 @@
                     <app-direction1 *ngIf="dir" [direction]="selected_data.current_direction" id="Dir1"
                         style="align-self: center;"></app-direction1>
                     <p style="align-self: center; text-align: center; margin-top: -1%;">
-                        {{truncate(selected_data.current_direction)}}
+                        {{
+                        convertValue(truncate(selected_data.current_direction), directtion_unit,
+                        unitssTo.currentDirection).toString()
+                        }}
                         {{units.currentDirection}}
                         <br> (towards {{directionTo}})
                     </p>
@@ -304,7 +322,10 @@
                                 </defs>
                             </svg>
                             <h5>Current Speed <br>
-                                <p>{{current.speed}}{{units.currentSpeed}}</p>
+                                <p>{{
+                                    convertValue(current.speed, speed_unit,
+                                    unitssTo.currentSpeed).toString()
+                                    }}{{units.currentSpeed}}</p>
                             </h5>
                             <p></p>
                         </div>
@@ -316,7 +337,10 @@
                                     [ngStyle]="{'width':hours <3?'65px':'40px', 'height':hours <3?'65px':'40px'}">
                             </div>
                             <h5>Direction <br>
-                                <p>{{truncate(current.direction)}} {{units.currentDirection}}
+                                <p>{{
+                                    convertValue(truncate(current.direction), directtion_unit,
+                                    unitssTo.currentDirection)
+                                    }} {{units.currentDirection}}
                                     {{directionValue(current.direction)}}</p>
                             </h5>
                             <p></p>
