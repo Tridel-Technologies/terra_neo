@@ -1,9 +1,6 @@
 export class GlobalConfig {
   baseUrl: string = 'http://localhost:3000/api/';
 
-
-
-
   convertValue(value: number, fromUnit: string, toUnit: string): number {
     if (fromUnit === toUnit) return value;
   
@@ -31,5 +28,6 @@ export class GlobalConfig {
   
     // no conversion available
     return value;
-  }  
+  }
+
 }
