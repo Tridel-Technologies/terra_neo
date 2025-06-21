@@ -130,6 +130,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   isProcessedData: boolean = false;
   unitSettings: { key: string }[] = [];
 
+  @ViewChild('table') table: any;
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
   @ViewChild('tideChart') tideChart!: ElementRef;
   @ViewChild('midChart') midChart!: ElementRef;
@@ -527,11 +528,24 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       (row) => this.changedRows.has(row.id) && !row.isNewRow
     );
 
+    const sourceUnits: { [key: string]: string } = {
+      waterLevel: this.main_table[0].water_level_unit,
+      currentSpeed: this.main_table[0].current_speed_unit,
+      currentDirection: this.main_table[0].current_direction_unit,
+      battery: this.main_table[0].battery_unit,
+      depth: this.main_table[0].depth_unit,
+    };
+
     // Create the payload
     let promises: Promise<any>[] = [];
 
     // Handle new rows
     if (newRows.length > 0) {
+      // Check for units conversion
+      const unitsMatch = Object.keys(this.units).every(
+        key => this.units[key] === sourceUnits[key]
+      );
+      console.log('units', unitsMatch);
       const newRowsPromises = newRows.map((newRow) => {
         // Parse the date string to get hours and minutes
         const date = new Date(newRow.date);
@@ -539,16 +553,67 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         const minutes = date.getMinutes().toString().padStart(2, '0');
         const timeString = `${hours}:${minutes}`;
 
-        const newRowPayload = {
-          id: newRow.id,
-          file_id: newRow.file_id,
-          timestamp: newRow.date,
-          speed: parseFloat(newRow.speed),
-          direction: parseFloat(newRow.direction),
-          tide: parseFloat(newRow.pressure),
-          time: timeString,
-        };
+        let newRowPayload: any;
 
+        if(unitsMatch){
+          newRowPayload = {
+            id: newRow.id,
+            file_id: newRow.file_id,
+            timestamp: newRow.date,
+            speed: parseFloat(newRow.speed),
+            direction: parseFloat(newRow.direction),
+            tide: parseFloat(newRow.pressure),
+            time: timeString,
+          };
+        } else {
+          newRowPayload = {
+            id: newRow.id,
+            file_id: newRow.file_id,
+            timestamp: newRow.date,
+            time: timeString,
+          };
+          
+          // Convert speed if units don't match
+          if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
+            if (newRow.speed !== null && newRow.speed !== undefined) {
+              newRowPayload.speed = this.convertValues(
+                parseFloat(newRow.speed),
+                this.units['currentSpeed'],
+                sourceUnits['currentSpeed']
+              );
+            }
+          } else {
+            newRowPayload.speed = parseFloat(newRow.speed);
+          }
+          
+          // Convert direction if units don't match
+          if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+            if (newRow.direction !== null && newRow.direction !== undefined) {
+              newRowPayload.direction = this.convertValues(
+                parseFloat(newRow.direction),
+                this.units['currentDirection'],
+                sourceUnits['currentDirection']
+              );
+            }
+          } else {
+            newRowPayload.direction = parseFloat(newRow.direction);
+          }
+          
+          // Convert pressure (tide) if units don't match
+          if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
+            if (newRow.pressure !== null && newRow.pressure !== undefined) {
+              newRowPayload.tide = this.convertValues(
+                parseFloat(newRow.pressure),
+                this.units['waterLevel'],
+                sourceUnits['waterLevel']
+              );
+            }
+          } else {
+            newRowPayload.tide = parseFloat(newRow.pressure);
+          }
+        }
+
+        console.log(newRowPayload);
         return this.http
           .post(`${this.baseUrl}addNewRow`, newRowPayload)
           .toPromise();
@@ -558,17 +623,81 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Handle updated rows
     if (changedRows.length > 0) {
-      const updatePayload = changedRows.map((row) => ({
-        id: row.id,
-        file_id: row.file_id,
-        speed: parseFloat(row.speed),
-        direction: parseFloat(row.direction),
-        pressure: parseFloat(row.pressure),
-      }));
+      // Check for units conversion
+      const unitsMatch = Object.keys(this.units).every(
+        key => this.units[key] === sourceUnits[key]
+      );
+      console.log('units', unitsMatch);
+
+      const updatePayload = changedRows.map((row) => {
+        let rowPayload: any;
+
+        if (unitsMatch) {
+          rowPayload = {
+            id: row.id,
+            file_id: row.file_id,
+            speed: parseFloat(row.speed),
+            direction: parseFloat(row.direction),
+            pressure: parseFloat(row.pressure)
+          };
+        } else {
+          rowPayload = {
+            id: row.id,
+            file_id: row.file_id
+          };
+
+          // Convert speed if units don't match
+          if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
+            if (row.speed !== null && row.speed !== undefined) {
+              rowPayload.speed = this.convertValues(
+                parseFloat(row.speed),
+                this.units['currentSpeed'],
+                sourceUnits['currentSpeed']
+              );
+            }
+          } else {
+            rowPayload.speed = parseFloat(row.speed);
+          }
+
+          // Convert direction if units don't match
+          if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+            if (row.direction !== null && row.direction !== undefined) {
+              rowPayload.direction = this.convertValues(
+                parseFloat(row.direction),
+                this.units['currentDirection'],
+                sourceUnits['currentDirection']
+              );
+            }
+          } else {
+            rowPayload.direction = parseFloat(row.direction);
+          }
+
+          // Convert pressure if units don't match
+          if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
+            if (row.pressure !== null && row.pressure !== undefined) {
+              rowPayload.pressure = this.convertValues(
+                parseFloat(row.pressure),
+                this.units['waterLevel'],
+                sourceUnits['waterLevel']
+              );
+            }
+          } else {
+            rowPayload.pressure = parseFloat(row.pressure);
+          }
+        }
+
+        console.log(rowPayload);
+        return rowPayload;
+      });
 
       const updatePromise = this.http
         .put(`${this.baseUrl}updateData`, updatePayload)
-        .toPromise();
+        .toPromise()
+        .catch(error => {
+          console.error('Failed to update rows:', error);
+          throw error;
+        });
+        
       promises.push(updatePromise);
     }
 
@@ -685,84 +814,76 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.themeChange$.complete();
   }
 
-  onDialogShow() {
-    if (this.main_table.length === 0 && this.fullData.length > 0) {
-      this.main_table = this.fullData;
+   
+onDialogShow() {
+  if (this.main_table.length === 0 && this.fullData.length > 0) {
+    this.main_table = this.fullData;
+  }
+ 
+  const indexToHighlight = this.main_table.findIndex(item => item.id === this.selectedPointId);
+ 
+  if (
+    indexToHighlight !== null &&
+    indexToHighlight >= 0 &&
+    indexToHighlight < this.main_table.length
+  ) {
+    this.selectedPointId = this.main_table[indexToHighlight].id;
+ 
+    const rowHeight = 46; // should match your virtualScrollItemSize
+    const tableWrapper = this.tableWrapper?.nativeElement;
+ 
+    if (this.table?.scrollToVirtualIndex) {
+      this.table.scrollToVirtualIndex(indexToHighlight);
+    } else if (tableWrapper) {
+      // Center the row manually
+      const visibleHeight = tableWrapper.clientHeight;
+      const targetScrollTop = (indexToHighlight * rowHeight) - (visibleHeight / 2) + (rowHeight / 2);
+      const maxScroll = tableWrapper.scrollHeight - visibleHeight;
+ 
+      const scrollTop = Math.min(Math.max(targetScrollTop, 0), maxScroll);
+ 
+      tableWrapper.scrollTo({
+        top: scrollTop,
+        behavior: 'smooth'
+      });
     }
-
+ 
+    // Delay highlight to allow scroll to settle
     setTimeout(() => {
-      if (this.selectedPointId !== null) {
-        // Find the index of the selected item
-        const selectedIndex = this.main_table.findIndex(
-          (item) => item.id === this.selectedPointId
-        );
-
-        if (selectedIndex !== -1) {
-          // Calculate the virtual scroll position
-          const rowHeight = 46; // This should match virtualScrollItemSize
-          const tableWrapper = this.tableWrapper?.nativeElement;
-
-          if (tableWrapper) {
-            const wrapperHeight = tableWrapper.clientHeight;
-            const scrollPosition = Math.max(
-              0,
-              selectedIndex * rowHeight - wrapperHeight / 2 + rowHeight / 2
-            );
-
-            // First scroll to the approximate position
-            tableWrapper.scrollTop = scrollPosition;
-
-            // Then try to find and center the exact row after a short delay
-            setTimeout(() => {
-              const selectedRow = tableWrapper.querySelector(
-                `tr[data-id="${this.selectedPointId}"]`
-              );
-
-              if (selectedRow) {
-                const rowTop = selectedRow.offsetTop;
-                const fineScrollPosition = Math.max(
-                  0,
-                  rowTop - wrapperHeight / 2 + rowHeight / 2
-                );
-
-                tableWrapper.scrollTo({
-                  top: fineScrollPosition,
-                  behavior: 'smooth',
-                });
-
-                // Add a highlight effect
-                selectedRow.style.transition = 'background-color 0.3s ease';
-                selectedRow.style.backgroundColor = 'rgba(0, 255, 0, 0.2)';
-                setTimeout(() => {
-                  selectedRow.style.backgroundColor = '';
-                }, 1500);
-              }
-            }, 100);
-          }
+      const tableWrapper = this.tableWrapper?.nativeElement;
+      if (tableWrapper) {
+        const rows = tableWrapper.querySelectorAll('tr');
+        const selectedRow = Array.from(rows).find((r: any) =>
+          r.getAttribute('data-id') === String(this.selectedPointId)
+        ) as HTMLElement;
+ 
+        if (selectedRow) {
+          selectedRow.classList.add('temp-highlight');
+ 
+          // Remove highlight after 1.5 seconds
+          setTimeout(() => {
+            selectedRow.classList.remove('temp-highlight');
+          }, 1500);
         }
       }
-
-      // Resize charts
+    }, 400); // Adjusted delay for scroll + render
+ 
+    // Resize charts (safe placement)
+    setTimeout(() => {
       this.chartInstances.forEach((chart) => {
         if (!chart.isDisposed()) {
           chart.resize();
         }
       });
-    }, 100); // Reduced initial timeout
+    }, 500);
   }
+}
 
   closeDialog() {
     this.visible = false;
     this.selectedPointId = null;
   }
 
-  // loadData(event: any) {
-  //   this.loading = true;
-  //   this.main_table = this.fullData;
-  //   console.log(this.units);
-  //   this.loading = false;
-  //   this.cdr.detectChanges();
-  // }
   loadData(event: any) {
     this.loading = true;
   
@@ -824,6 +945,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   
     console.log('converted', this.fullData);
     this.loading = false;
+    this.cdr.detectChanges();
   }
 
   private updateXAxisLabel(
@@ -863,7 +985,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-    const subText = computedStyle.getPropertyValue('--icon-color').trim();
+    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
     // const text = computedStyle.getPropertyValue('--circuit-color-pulse').trim();
 
     // Load saved color from localStorage or use default
@@ -907,7 +1029,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLabel: {
               color: mainText,
-              rotate: 45,
+              rotate: 0,
             },
             axisLine: {
               show: true,
@@ -918,6 +1040,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             position: 'top',
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             axisTick: {
               show: false,
@@ -945,9 +1070,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             splitLine: {
               show: true,
+              lineStyle: {
+                color: subText,
+                type: 'dotted',
+              },
             },
           },
           {
@@ -1033,7 +1165,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               .filter((item) => item.high_water_level === 1)
               .map((item) => [item.date, parseFloat(item.pressure)]),
             type: 'scatter',
-            symbolSize: 15,
+            symbolSize: 20,
             itemStyle: {
               color: '#ff0000',
               borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
@@ -1054,7 +1186,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             lineStyle: {
               opacity: 0,
             },
-            showSymbol: false,
+            showSymbol: true,
             tooltip: {
               show: false,
             },
@@ -1101,11 +1233,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-
-    // const savedColor = localStorage.getItem('currentSpeedColor');
-    // if (savedColor) {
-    //   this.currentSpeedColor = savedColor;
-    // }
+    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
 
     if (speed) {
       const existingInstance = echarts.getInstanceByDom(speed);
@@ -1139,10 +1267,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLabel: {
               color: mainText,
-              rotate: 45,
+              rotate: 0,
             },
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             // splitLine: {
             //   show: true,
@@ -1153,6 +1284,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             position: 'top',
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             axisTick: {
               show: false,
@@ -1181,14 +1315,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLine: {
               show: true,
-              // lineStyle: { color: '#00ff00' },
+              lineStyle: {
+                color: mainText,
+              },
             },
             splitLine: {
               show: true,
-              // lineStyle: {
-              //   type: 'solid',
-              //   color: '#00ff00',
-              // },
+              lineStyle: {
+                color: subText,
+                type: 'dotted',
+              },
             },
           },
           {
@@ -1310,11 +1446,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-
-    // const savedColor = localStorage.getItem('currentDirectionColor');
-    // if (savedColor) {
-    //   this.currentDirectionColor = savedColor;
-    // }
+    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
 
     if (direction) {
       const existingInstance = echarts.getInstanceByDom(direction);
@@ -1349,10 +1481,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLabel: {
               color: mainText,
-              rotate: 45,
+              rotate: 0,
             },
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             // splitLine: {
             //   show: true,
@@ -1363,6 +1498,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             position: 'top',
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             axisTick: {
               show: false,
@@ -1391,14 +1529,16 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLine: {
               show: true,
-              // lineStyle: { color: '#00ff00' },
+              lineStyle: {
+                color: mainText,
+              },
             },
             splitLine: {
               show: true,
-              // lineStyle: {
-              //   type: 'solid',
-              //   color: '#00ff00',
-              // },
+              lineStyle: {
+                color: subText,
+                type: 'dotted',
+              },
             },
           },
           {
@@ -1549,13 +1689,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const chartType = this.selectedChart;
     const chartContainer = document.getElementById('currentSpeedDirection');
 
-    // const bgColor = '#ffffff';
-    // const mainText = '#000000';
-    // const subText = '#666666';
-
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
+    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
 
     if (chartContainer) {
       const existingInstance = echarts.getInstanceByDom(chartContainer);
@@ -1603,9 +1740,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           },
           axisLabel: {
             color: mainText,
-            rotate: 45,
+            rotate: 0,
           },
-          axisLine: { show: true },
+          axisLine: { 
+            show: true,
+            lineStyle: {
+              color: mainText,
+            },
+          },
         },
         yAxis: [
           {
@@ -1620,8 +1762,19 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             axisLabel: {
               color: mainText,
             },
-            axisLine: { show: true },
-            splitLine: { show: true },
+            axisLine: { 
+              show: true,
+              lineStyle: {
+                color: mainText,
+              },
+            },
+            splitLine: { 
+              show: true,
+              lineStyle: {
+                color: subText,
+                type: 'dotted',
+              },
+            },
           },
           {
             type: 'value',
@@ -1801,6 +1954,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
+    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
 
     if (mid) {
       const existingInstance = echarts.getInstanceByDom(mid);
@@ -1843,10 +1997,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             axisLabel: {
               color: mainText,
-              rotate: 45,
+              rotate: 0,
             },
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
           },
           {
@@ -1854,6 +2011,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             position: 'top',
             axisLine: {
               show: true,
+              lineStyle: {
+                color: mainText,
+              },
             },
             axisTick: {
               show: false,
@@ -1913,10 +2073,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             },
             splitLine: {
               show: false,
-              // lineStyle: {
-              //   type: 'solid',
-              //   color: '#00ff00',
-              // },
+              lineStyle: {
+                color: subText,
+                type: 'dotted',
+              },
             },
             position: 'left',
             offset: 70, // to avoid overlap with third y-axis
@@ -2239,13 +2399,33 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
  
     const speedLabelUnit = speedUnit === 'knots' ? 'knots' : 'm/s';
  
+    let graphic: any = undefined;
+ 
+    if (this.PolarSelectedInterVal !== 'all' || interval === 60) {
+      graphic = {
+        elements: [
+          {
+            type: 'text',
+            right: '0%',
+            top: '0%',
+            style: {
+              text: `Current Speed (${speedLabelUnit})`,
+              fill: mainText,
+              font: 'bold 12px sans-serif',
+              textAlign: 'left',
+            },
+          },
+        ],
+      };
+    }
+ 
     const speedCategories = [
-      '<0.5 m/s',
-      '0.5-2 m/s',
-      '2-4 m/s',
-      '4-6 m/s',
-      '6-8 m/s',
-      '>8 m/s',
+      '<0.5',
+      '0.5-2',
+      '2-4',
+      '4-6',
+      '6-8',
+      '>8',
     ] as const;
     const speedColors = [
       '#0000FF',
@@ -2260,21 +2440,21 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     type DirectionBin = Record<SpeedCategory, number>;
  
     const categorizeSpeed = (speed: number): SpeedCategory => {
-      if (speed < 0.5) return '<0.5 m/s';
-      if (speed < 2) return '0.5-2 m/s';
-      if (speed < 4) return '2-4 m/s';
-      if (speed < 6) return '4-6 m/s';
-      if (speed < 8) return '6-8 m/s';
-      return '>8 m/s';
+      if (speed < 0.5) return '<0.5';
+      if (speed < 2) return '0.5-2';
+      if (speed < 4) return '2-4';
+      if (speed < 6) return '4-6';
+      if (speed < 8) return '6-8';
+      return '>8';
     };
  
     const dataBins: DirectionBin[] = directionLabels.map(() => ({
-      '<0.5 m/s': 0,
-      '0.5-2 m/s': 0,
-      '2-4 m/s': 0,
-      '4-6 m/s': 0,
-      '6-8 m/s': 0,
-      '>8 m/s': 0,
+      '<0.5': 0,
+      '0.5-2': 0,
+      '2-4': 0,
+      '4-6': 0,
+      '6-8': 0,
+      '>8': 0,
     }));
  
     // averagedPolarData.forEach(({ speed, direction }) => {
@@ -2311,16 +2491,26 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     }));
  
     const option = {
-      title: {
-        // text: this.PolarSelectedInterVal,
-        text: this.PolarSelectedInterVal !== 'all' ? `${interval} min` : '',
-        top: '0%',
-        left: 'center',
-        textStyle: {
-          color: mainText,
-          fontSize: 18,
-        },
-      },
+      title:
+        this.PolarSelectedInterVal === 'all'
+          ? {
+              text: this.formatInterval(interval),
+              top: '0%',
+              left: 'center',
+              textStyle: {
+                color: mainText,
+                fontSize: 18,
+              },
+            }
+          : {
+              text: this.formatInterval(interval),
+              top: '0%',
+              left: 'center',
+              textStyle: {
+                color: mainText,
+                fontSize: 18,
+              },
+            },
       polar: { center: ['50%', '55%'] },
       legend:
         this.PolarSelectedInterVal === 'all'
@@ -2328,6 +2518,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               show: interval == 60,
               // data: ['30 min', '60 min', '360 min', '1440 min'],
               orient: 'vertical',
+              top: '5%',
               right: '0%',
               textStyle: {
                 color: mainText,
@@ -2338,12 +2529,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               show: true,
               data: speedCategories,
               orient: 'vertical',
+              top: '2%',
               right: '0%',
               textStyle: {
                 color: mainText,
                 fontSize: 12,
               },
             },
+      graphic,
  
       angleAxis: {
         type: 'category',
@@ -2372,6 +2565,22 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     chart.setOption(option);
     window.addEventListener('resize', () => chart.resize());
   }
+ 
+  private formatInterval(interval: number): string {
+    switch (interval) {
+      case 30:
+        return '30 Minutes';
+      case 60:
+        return '1 Hour';
+      case 360:
+        return '6 Hours';
+      case 1440:
+        return '24 Hours';
+      default:
+        return `${interval} Minutes`;
+    }
+  }
+ 
  
   private groupByIntervalWithinDateRange(
     data: ApiData[],

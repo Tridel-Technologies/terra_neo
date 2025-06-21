@@ -421,7 +421,7 @@ const addNewRow = async (req, res) => {
   if (!file_id || !speed || !direction || !tide || !timestamp) {
     return res.status(400).json({ message: "All fields are required" });
   }
-
+  
   try {
     const data = await pool.query(
       `SELECT * FROM tb_${file_id}_processed ORDER BY RANDOM() LIMIT 1`

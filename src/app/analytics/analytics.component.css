@@ -220,16 +220,31 @@
     z-index: 1;
 }
 
-
+/* Temporary highlight class */
+   
+  .temp-highlight {
+    animation: highlight-fade 1.5s ease-out;
+    background-color: lightblue !important;
+  }
+   
+  @keyframes highlight-fade {
+    0% { background-color: lightblue; }
+    100% { background-color: transparent; }
+  }
+  /* Use !important to override PrimeNG styles */
+  tr.temp-highlight td {
+    background-color: lightblue !important;
+    transition: background-color 0.3s ease-in-out;
+  }
 
 /*Table */
 
-.selected-row {
+.high-water-highlight {
     background-color: rgba(0, 255, 0, 0.1) !important;
     font-weight: bold;
 }
 
-.selected-row td {
+.high-water-highlight td {
     border-color: #00ff00 !important;
 }
 

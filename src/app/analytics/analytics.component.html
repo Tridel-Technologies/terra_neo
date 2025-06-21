@@ -119,29 +119,29 @@
                     <div class="top_two">
                         <div class="left_c" style="flex: 1;">
                             <div id="midpolar_30" class="chart-diagram" style="width: 100%; height: 85%;"></div>
-                            <div style="text-align: center;">
+                            <!-- <div style="text-align: center;">
                                 <p>30 Min</p>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="right_c" style="flex: 1;">
                             <div id="midpolar_60" class="chart-diagram" style="width: 100%; height: 85%;"></div>
-                            <div style="text-align: center;">
+                            <!-- <div style="text-align: center;">
                                 <p>60 Min</p>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                     <div class="bottom_two">
                         <div class="left_c" style="flex: 1;">
                             <div id="midpolar_360" class="chart-diagram" style="width: 100%; height: 85%;"></div>
-                            <div style="text-align: center;">
+                            <!-- <div style="text-align: center;">
                                 <p>360 Min</p>
-                            </div>
+                            </div> -->
                         </div>
                         <div class="right_c" style="flex: 1;">
                             <div id="midpolar_1440" class="chart-diagram" style="width: 100%; height: 85%;"></div>
-                            <div style="text-align: center;">
+                            <!-- <div style="text-align: center;">
                                 <p>1440 Min</p>
-                            </div>
+                            </div> -->
                         </div>
                     </div>
                 </div>
@@ -154,29 +154,36 @@
         (onShow)="onDialogShow()">
         <ng-template pTemplate="header">
             <div class="header">
-                <span style="font-size: 1.5rem; font-weight: bold;">Data</span>
+                <span style="font-size: 1.5rem; font-weight: bold;">Processed Data</span>
             </div>
         </ng-template>
         <div #tableWrapper>
-            <p-table [value]="main_table" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
+            <p-table #table [value]="main_table" stripedRows [scrollable]="true" styleClass="p-datatable-sm"
                 [scrollHeight]="'calc(100vh - 150px)'" [showGridlines]="true" [virtualScroll]="true"
                 [virtualScrollItemSize]="46" [loading]="loading">
 
                 <ng-template pTemplate="header">
                     <tr>
-                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Timestamp
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--background-color);">Timestamp
                         </th>
-                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current Speed
-                            (m/s)</th>
-                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Current
-                            Direction (°)</th>
-                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Water Level
-                            (m)</th>
-                        <th style="position: sticky; top: 0; z-index: 1; background: var(--surface-card);">Add</th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--background-color);">
+                            Current Speed ({{ units.currentSpeed }})
+                        </th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--background-color);">
+                            Current Direction ({{ units.currentDirection }})
+                        </th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--background-color);">
+                            Water Level ({{ units.waterLevel }})
+                        </th>
+                        <th style="position: sticky; top: 0; z-index: 1; background: var(--background-color);">Add</th>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-item>
-                    <tr [class.selected-row]="item.id === selectedPointId" [attr.data-id]="item.id">
+                    <tr
+                        [class.high-water-highlight]="item.high_water_level === 1"
+                        [class.selected-row]="item.id === selectedPointId && item.high_water_level !== 1"
+                        [attr.data-id]="item.id"
+                    >
                         <td>{{ item.date | date:'yyyy-MM-dd HH:mm:ss':'UTC' }}</td>
                         <td>
                             <input type="text" pInputText [value]="item.speed"

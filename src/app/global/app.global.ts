@@ -1,5 +1,5 @@
 export class GlobalConfig {
-  baseUrl: string = 'http://localhost:3000/api/';
+  baseUrl: string = 'http://192.168.0.122:3000/api/';
 
   convertValue(value: number, fromUnit: string, toUnit: string): number {
     if (fromUnit === toUnit) return value;
@@ -24,7 +24,7 @@ export class GlobalConfig {
     const key = `${fromUnit}-${toUnit}`;
     if (conversions[key]) {
       const converted =  conversions[key](value);
-      return parseFloat(converted.toFixed(5));
+      return parseFloat(converted.toFixed(4));
     }
 
     // no conversion available
