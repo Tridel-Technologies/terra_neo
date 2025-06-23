@@ -59,6 +59,7 @@ export class ImporterComponent {
   latDeg!:number;
   latMin!:number;
   latSec!:number;
+  row_isempty: boolean = false;
 
   unitSettings = [
     {
@@ -551,12 +552,13 @@ export class ImporterComponent {
             for (const key of this.expectedHeaders) {
               const value = cleanedRow[key];
               if (!value || (typeof value === 'number' && isNaN(value))) {
-                this.toast.warning(
-                  `Empty/NaN value in "${key}" at row ${index + 2} in file ${
-                    file.name
-                  }`,
-                  'Warning'
-                );
+                // this.toast.warning(
+                //   `Empty/NaN value in "${key}" at row ${index + 2} in file ${
+                //     file.name
+                //   }`,
+                //   'Warning'
+                // );
+                this.row_isempty = true;
               }
             }
 
@@ -576,6 +578,13 @@ export class ImporterComponent {
               lon: '52.3', // Replace with dynamic value if available
             };
           });
+
+          if(this.row_isempty === true){
+            this.toast.warning(
+              `Empty or NaN values in the file ${file.name} have been replaced with NULL.`,
+              'Warning'
+            );          
+          }
 
           resolve({ fileName: file.name, data: formattedData });
         } catch (err: any) {

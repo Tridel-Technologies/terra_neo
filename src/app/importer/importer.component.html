@@ -230,7 +230,7 @@
                             <td>{{ row.pressure }}</td>
                             <td>
                                 <!-- <button cli>Delete</button>-->
-                                <i id="trash" class="fa-solid fa-trash" (click)="deleteRow(i)" style="color: red;"></i>
+                                <i id="trash" class="fa-solid fa-trash" title="Delete" (click)="deleteRow(i)" style="color: red;"></i>
                             </td>
                         </tr>
                     </tbody>
@@ -240,7 +240,7 @@
         <div class="file_upload_container">
 
 
-            <h1 (click)="on_openImport()" style="color: var(--font-color);">X</h1>
+            <h1 (click)="on_openImport()" style="color: var(--font-color); cursor: pointer;">X</h1>
 
             <!-- Toggle for allowing folder upload -->
             <div class="checkbox-container" style="width: 90%;" *ngIf="uploaded_files.length ===0">
@@ -284,7 +284,7 @@
                     </div>
                 </div>
             </div>
-            <button class="importtt" type="submit" (click)="import()">Submit</button>
+            <button class="importtt" type="submit" *ngIf="historyData.length !==0" (click)="import()">Submit</button>
         </div>
     </div>
 </div>
