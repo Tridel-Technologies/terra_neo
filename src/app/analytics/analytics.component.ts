@@ -1211,6 +1211,7 @@ onDialogShow() {
               color: this.tideChartColor, // Use selected color
             },
             showSymbol: false,
+            symbolSize: 10,
             label: {
               show: false,
               fontSize: 12,
@@ -1458,6 +1459,7 @@ onDialogShow() {
             // lineStyle: { color: '#00ff00' },
             itemStyle: { color: this.currentSpeedColor },
             showSymbol: false,
+            symbolSize: 10,
             label: { show: true, fontSize: 12 },
             // yAxisIndex: 0,
           },
@@ -1682,6 +1684,8 @@ onDialogShow() {
             // symbolRotate: (value: any) => value[1],
             // label: { show: false, fontSize: 12 },
             yAxisIndex: 0,
+            showSymbol: false,
+            symbolSize: 10,
           },
 
           {
@@ -1919,6 +1923,7 @@ onDialogShow() {
             type: chartType,
             itemStyle: { color: this.currentSpeedColor },
             showSymbol: false,
+            symbolSize: 10,
             label: { show: true, fontSize: 12 },
             yAxisIndex: 0,
           },
@@ -1944,6 +1949,8 @@ onDialogShow() {
             //   fontSize: 12,
             // },
             yAxisIndex: 1,
+            showSymbol: false,
+            symbolSize: 10,
           },
           // {
           //   data: this.fullData.map((item) => [item.date, 0]), // fix Y at bottom
@@ -2249,6 +2256,7 @@ onDialogShow() {
               color: this.tideChartColor,
             },
             showSymbol: false,
+            symbolSize: 10,
             label: {
               show: false,
               fontSize: 12,
@@ -2272,6 +2280,7 @@ onDialogShow() {
               color: this.currentSpeedColor,
             },
             showSymbol: false,
+            symbolSize: 10,
             label: {
               show: false,
               fontSize: 12,
@@ -2307,6 +2316,8 @@ onDialogShow() {
             //   fontSize: 12,
             // },
             yAxisIndex: 2,
+            showSymbol: false,
+            symbolSize: 10,
           },
 
           // {
