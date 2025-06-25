@@ -20,6 +20,7 @@ import { GlobalConfig } from '../global/app.global';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { array } from '@amcharts/amcharts5';
 import { BaseComponent } from '../base/base.component';
+import { formatDate } from '@angular/common';
 
 interface Column {
   field: string;
@@ -27,14 +28,14 @@ interface Column {
   type: string;
   // customExportHeader?: string;
 }
- 
+
 interface Files {
   id: number;
   files: string[];
   folder_name: string;
   timestamp: string;
 }
- 
+
 interface ApiData {
   id: number;
   battery: string;
@@ -57,7 +58,7 @@ interface ApiData {
   depth_unit: string;
   [key: string]: any;
 }
- 
+
 interface SelectedData {
   id: string;
   pressure: string;
@@ -74,14 +75,14 @@ interface SelectedData {
   lat: string;
   lon: string;
 }
- 
+
 interface Folders {
   folder_id: number;
   folder_name: string;
   files: fileData[];
   timestamp: string;
 }
- 
+
 interface fileData {
   file_id: number;
   file_name: string;
@@ -120,16 +121,16 @@ export class ReportsComponent implements OnInit {
   totalRecords: number = 0;
   unitSettings: { key: string }[] = [];
   dateFormat!: string;
- 
+
   before_data: any[] = [];
   after_data: any[] = [];
   current_hours_data: any[] = [];
- 
+
   showToggleTable: boolean = false;
   toggleTableData: any[] = [];
- 
+
   last_row: ApiData | null = null;
- 
+
   cols!: Column[];
   selectedColumns!: Column[];
   globalFilterFields!: string[];
@@ -167,7 +168,7 @@ export class ReportsComponent implements OnInit {
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
       console.log('files:', response, this.files_list);
-      
+
       let folderIndex = -1;
         let selectedFile = null;
         let selectedFolder = null;
@@ -217,7 +218,7 @@ export class ReportsComponent implements OnInit {
           this.open_file(selectedFile.file_id);
         }
     });
- 
+
     this.setupColumns();
 
     // check date format from settings
@@ -233,7 +234,7 @@ export class ReportsComponent implements OnInit {
     }
 
   }
- 
+
   setupColumns() {
     if (!this.showToggleTable) {
       this.cols = [
@@ -265,7 +266,7 @@ export class ReportsComponent implements OnInit {
     this.selectedColumns = this.cols;
     this.globalFilterFields = (!this.showToggleTable ? this.cols : this.summaryColumns).map(col => col.field);
   }
- 
+
   selectedData: { name: string; value: string } = {
     name: 'Raw Data',
     value: 'raw',
@@ -274,7 +275,7 @@ export class ReportsComponent implements OnInit {
     { name: 'Raw Data', value: 'raw' },
     { name: 'Processed Data', value: 'processed' },
   ];
- 
+
   exportOptions = [
     { label: 'Export to CSV', value: 'csv' },
     { label: 'Export to Excel', value: 'excel' },
@@ -289,10 +290,10 @@ export class ReportsComponent implements OnInit {
     // Remove the global filter since we're using custom filtering
     dt.filterGlobal(query, 'contains');
   }
- 
+
   highlightSearchText(value: any): string {
     if (!this.searchQuery) return value;
- 
+
     // Ensure the value is treated as a string
     const stringValue =
       value !== null && value !== undefined ? String(value) : '';
@@ -303,25 +304,25 @@ export class ReportsComponent implements OnInit {
     const regex = new RegExp(`(${escapedSearchQuery})`, 'gi');
     return stringValue.replace(regex, '<span class="highlight">$1</span>');
   }
- 
+
   rowMatchesSearch(rowData: any, columns: any[]): boolean {
     if (!this.searchQuery) return false;
- 
+
     const search = this.searchQuery.toLowerCase().trim();
- 
+
     if (rowData.name && rowData.name.toLowerCase().includes(search)) {
       return true;
     }
- 
+
     return columns.some((col) => {
       const value = rowData[col.field];
       if (value === null || value === undefined) return false;
- 
+
       const stringValue = String(value).toLowerCase().trim();
       return stringValue.includes(search);
     });
   }
- 
+
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
@@ -338,7 +339,7 @@ export class ReportsComponent implements OnInit {
     this.nameOffile = fileName;
     this.isLive = true;
     // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
- 
+
     // if (isCtrlPressed) {
     //   this.isMulti = true;
     //   // If Ctrl/Cmd is pressed, toggle file selection
@@ -365,10 +366,10 @@ export class ReportsComponent implements OnInit {
     this.open_file(file_id);
     // }
   }
- 
+
   getFileImage(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase();
- 
+
     switch (extension) {
       case 'csv':
         return '../../assets/csv.png'; // Path to CSV image
@@ -393,7 +394,7 @@ export class ReportsComponent implements OnInit {
       )
       .subscribe((response: any) => {
         console.log('response', response);
- 
+
         this.last_row =
           response.length > 0 ? response[response.length - 1] : null;
         console.log('Last row:', this.last_row);
@@ -404,44 +405,15 @@ export class ReportsComponent implements OnInit {
             this.main_table = data;
             for (let index = 0; index < response.length; index++) {
               const row = { ...response[index] };
- 
-              // 🕒 Convert 'timestamp' field if it exists
+
               if (row.date) {
                 const date = new Date(row.date);
-                const months = [
-                  'Jan',
-                  'Feb',
-                  'Mar',
-                  'Apr',
-                  'May',
-                  'Jun',
-                  'Jul',
-                  'Aug',
-                  'Sep',
-                  'Oct',
-                  'Nov',
-                  'Dec',
-                ];
- 
-                const formattedDate =
-                  String(date.getDate()).padStart(2, '0') +
-                  '-' +
-                  months[date.getMonth()] +
-                  '-' +
-                  date.getFullYear() +
-                  ' ' +
-                  String(date.getHours()).padStart(2, '0') +
-                  ':' +
-                  String(date.getMinutes()).padStart(2, '0') +
-                  ':' +
-                  String(date.getSeconds()).padStart(2, '0');
- 
-                row.date = formattedDate;
+                row.date = formatDate(date, this.dateFormat, 'en-US');
               }
- 
+
               this.main_table.push(row);
             }
- 
+
             console.log('Main table data ', this.main_table);
           }, 100);
         }
@@ -457,16 +429,16 @@ export class ReportsComponent implements OnInit {
       battery: this.main_table[0].battery_unit,
       depth: this.main_table[0].depth_unit,
     };
-  
+
     const unitsMatch = Object.keys(this.units).every(
       key => this.units[key] === sourceUnits[key]
     );
     console.log('match', unitsMatch);
-    
+
     if(!unitsMatch){
       this.main_table = this.main_table.map((item, index) => {
         const newItem = { ...item } as ApiData;
-  
+
         // if waterLevel unit mismatches → convert pressure
         if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
           if (newItem.pressure !== null && newItem.pressure !== undefined) {
@@ -475,7 +447,7 @@ export class ReportsComponent implements OnInit {
             this.main_table[index].pressure = converted.toString();
           }
         }
-  
+
         // if currentSpeed unit mismatches → convert speed
         if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
           if (newItem.speed !== null && newItem.speed !== undefined) {
@@ -484,7 +456,7 @@ export class ReportsComponent implements OnInit {
             this.main_table[index].speed = converted.toString();
           }
         }
-  
+
         // if currentDirection unit mismatches → convert direction
         if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
           if (newItem.direction !== null && newItem.direction !== undefined) {
@@ -502,7 +474,7 @@ export class ReportsComponent implements OnInit {
             this.main_table[index].depth = converted.toString();
           }
         }
-  
+
         return newItem;
       });
     }
@@ -516,7 +488,7 @@ export class ReportsComponent implements OnInit {
     return isSelected ? 'file-item_active' : 'file-item';
     // }
   }
- 
+
   get_value_for_widget(index: number, param: string, period: string): number {
     const bfMatches =
       period === 'after'
@@ -526,18 +498,18 @@ export class ReportsComponent implements OnInit {
   }
   getAverageSpeed(dataArray: any[], key: string): number {
     if (!dataArray.length) return 0;
- 
+
     const speeds = dataArray.map((item) => parseFloat(item[key]));
     const total = speeds.reduce((acc, val) => acc + val, 0);
     const average = total / speeds.length;
- 
+
     return parseFloat(average.toFixed(3)); // Rounded to 3 decimal places
   }
- 
+
   filterByHour(dataArray: any[]): any[] {
     const date = dataArray[0].date;
     const targetDate = new Date(date);
- 
+
     return dataArray.filter((item) => {
       const itemDate = new Date(item.date);
       return (
@@ -548,7 +520,7 @@ export class ReportsComponent implements OnInit {
       );
     });
   }
- 
+
   getOrdinalSuffix(n: number): string {
     if (n % 100 >= 11 && n % 100 <= 13) {
       return 'th';
@@ -564,20 +536,20 @@ export class ReportsComponent implements OnInit {
         return 'th';
     }
   }
- 
+
   toggle_tap() {
     console.log('main_table sample:', this.main_table.slice(0, 5)); // Show first 5 records
- 
+
     const filter = this.main_table.filter(
       (item) => item.high_water_level === 1
     );
     console.log('Filtered high_water_level === 1:', filter);
- 
+
     if (filter.length === 0) {
       console.error('No records where high_water_level === 1 found.');
       throw new Error('No high_water_level data');
     }
- 
+
     try {
       const filter = this.main_table.filter(
         (item) => item.high_water_level === 1
@@ -585,16 +557,16 @@ export class ReportsComponent implements OnInit {
       if (filter.length === 0) {
         throw new Error('No high_water_level data');
       }
- 
+
       const targetDateTime = new Date(filter[0].date);
       const targetMinutes = targetDateTime.getMinutes();
       console.log('targetDateTime', targetDateTime);
       console.log('targetMinutes', targetMinutes);
- 
+
       // We'll collect arrays of data per hour for before and after 6 hours
       const bf: any[][] = [];
       const af: any[][] = [];
- 
+
       // Calculate before times
       for (let i = 6; i >= 1; i--) {
         const beforeHour = new Date(targetDateTime);
@@ -603,7 +575,7 @@ export class ReportsComponent implements OnInit {
         windowStart.setMinutes(windowStart.getMinutes() - 30);
         const windowEnd = new Date(beforeHour);
         windowEnd.setMinutes(windowEnd.getMinutes() + 30);
- 
+
         // Filter all data for that hour window
         const beforeDataArray = this.main_table.filter((item) => {
           const d = new Date(item.date);
@@ -611,7 +583,7 @@ export class ReportsComponent implements OnInit {
         });
         bf.push(beforeDataArray);
       }
- 
+
       // Calculate after times
       for (let i = 1; i <= 6; i++) {
         const afterHour = new Date(targetDateTime);
@@ -620,7 +592,7 @@ export class ReportsComponent implements OnInit {
         windowStart.setMinutes(windowStart.getMinutes() - 30);
         const windowEnd = new Date(afterHour);
         windowEnd.setMinutes(windowEnd.getMinutes() + 30);
- 
+
         // Filter all data for that hour window
         const afterDataArray = this.main_table.filter((item) => {
           const d = new Date(item.date);
@@ -628,23 +600,20 @@ export class ReportsComponent implements OnInit {
         });
         af.push(afterDataArray);
       }
- 
+
       // Current data as before
       const currentData = filter[0];
- 
+
       // Prepare toggleTableData with averaged values
       this.toggleTableData = [];
- 
+
       for (let i = 0; i < 6; i++) {
         const timestamp = new Date(targetDateTime);
         timestamp.setHours(timestamp.getHours() - (6 - i));
-        const formattedDate = `${timestamp.toLocaleDateString()} ${String(
-          timestamp.getHours()
-        ).padStart(2, '0')}:${String(targetMinutes).padStart(2, '0')}`;
- 
+        const formattedDate = formatDate(timestamp, this.dateFormat, 'en-US');
+
         const suffix = this.getOrdinalSuffix(i + 1);
         this.toggleTableData.push({
-          // name: `${i + 1}${suffix} hr${i + 1 > 1 ? 's' : ''} before`,
           name: `${i + 1}${suffix}`,
           timestamp: formattedDate,
           pressure: bf[i].length
@@ -656,14 +625,9 @@ export class ReportsComponent implements OnInit {
             : NaN,
         });
       }
- 
+
       const currentTimestamp = new Date(currentData.date);
-      const currentFormattedDate = `${currentTimestamp.toLocaleDateString()} ${String(
-        currentTimestamp.getHours()
-      ).padStart(2, '0')}:${String(currentTimestamp.getMinutes()).padStart(
-        2,
-        '0'
-      )}`;
+      const currentFormattedDate = formatDate(currentTimestamp, this.dateFormat, 'en-US');
       this.toggleTableData.push({
         name: 'High Water Time',
         timestamp: currentFormattedDate,
@@ -672,18 +636,15 @@ export class ReportsComponent implements OnInit {
         direction: currentData.direction ?? NaN,
         highlight: true,
       });
- 
+
       // After hours — average pressure, speed, direction
       for (let i = 0; i < 6; i++) {
         const timestamp = new Date(targetDateTime);
         timestamp.setHours(timestamp.getHours() + (i + 1));
-        const formattedDate = `${timestamp.toLocaleDateString()} ${String(
-          timestamp.getHours()
-        ).padStart(2, '0')}:${String(targetMinutes).padStart(2, '0')}`;
- 
+        const formattedDate = formatDate(timestamp, this.dateFormat, 'en-US');
+
         const suffix = this.getOrdinalSuffix(i + 1);
         this.toggleTableData.push({
-          // name: `${i + 1}${suffix} hr${i + 1 > 1 ? 's' : ''} before`,
           name: `${i + 1}${suffix}`,
           timestamp: formattedDate,
           pressure: af[i].length
@@ -695,7 +656,7 @@ export class ReportsComponent implements OnInit {
             : NaN,
         });
       }
- 
+
       // this.showToggleTable = !this.showToggleTable;
     } catch (error) {
       this.toast.error(
@@ -704,25 +665,25 @@ export class ReportsComponent implements OnInit {
       );
     }
   }
- 
+
   onDataTypeChange() {
     if (this.selectedFiles.length > 0) {
       const fileId = this.selectedFiles[0].file_id;
       this.open_file(fileId);
     }
   }
- 
+
   getRowStyle(row: any): { [key: string]: string } {
     if (row.highlight) {
       return { 'background-color': '#ffeb3b' }; // Highlight color for high water level
     }
- 
+
     // Check if it's a 'before' or 'after' row by position or content
     if (typeof row.name === 'string') {
       if (row.name.includes('High Water')) {
         return { 'background-color': '#c5e1ff' }; // Special color for peak
       }
- 
+
       const match = row.name.match(/^(\d+)(?:st|nd|rd|th)$/);
       if (match) {
         const hour = +match[1];
@@ -730,7 +691,7 @@ export class ReportsComponent implements OnInit {
         const highIndex = this.toggleTableData.findIndex(
           (r) => r.name === 'High Water Time'
         );
- 
+
         const index = this.toggleTableData.findIndex((r) => r === row);
         if (index < highIndex) {
           return { 'background-color': '#e0f7fa' }; // Light blue for before
@@ -739,7 +700,7 @@ export class ReportsComponent implements OnInit {
         }
       }
     }
- 
+
     return {}; // Default
   }
 
@@ -747,12 +708,12 @@ export class ReportsComponent implements OnInit {
     if (row.highlight) {
       return 'highlight-row';
     }
- 
+
     if (typeof row.name === 'string') {
       if (row.name.includes('High Water')) {
         return 'peak-row';
       }
- 
+
       const match = row.name.match(/^(\d+)(?:st|nd|rd|th)$/);
       if (match) {
         const hour = +match[1];
@@ -760,15 +721,15 @@ export class ReportsComponent implements OnInit {
           (r) => r.name === 'High Water Time'
         );
         const index = this.toggleTableData.findIndex((r) => r === row);
- 
+
         if (index < highIndex) return 'before-row';
         if (index > highIndex) return 'after-row';
       }
     }
- 
+
     return '';
   }
- 
+
   onExportOptionSelect(event: any, dt2: any) {
     const selectedOption = event.value;
     switch (selectedOption) {
@@ -785,10 +746,10 @@ export class ReportsComponent implements OnInit {
         break;
     }
   }
- 
+
   exportCSV(dt: any) {
     const filteredData = dt.filteredValue || dt.value;
- 
+
     if (filteredData && filteredData.length > 0) {
       const csv = this.convertToCSV(filteredData);
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
@@ -798,76 +759,62 @@ export class ReportsComponent implements OnInit {
       //console.warn('No data available for CSV export');
     }
   }
- 
+
   // Helper method to convert JSON to CSV format
   convertToCSV(data: any[]): string {
     const fixedHeaders = ['S No'];
     const fixedFields: string[] = [];
- 
-    // 🔁 Dynamically pick the correct columns
+
     const activeColumns = this.showToggleTable
       ? this.summaryColumns
       : this.selectedColumns;
- 
+
     const dynamicHeaders = activeColumns.map((col) => col.header);
     const dynamicFields = activeColumns.map((col) => col.field);
- 
+
     const headers = [...fixedHeaders, ...dynamicHeaders];
     const fields = [...fixedFields, ...dynamicFields];
- 
+
     const csvRows = [
       headers.join(','), // Header row
       ...data.map((row, index) => {
         const values = [
           index + 1,
           ...fields.map((field) => {
-            const value = row[field];
-            if (
-              typeof value === 'string' &&
-              value.match(/^\d{4}-\d{2}-\d{2}T/)
-            ) {
-              const date = new Date(value);
-              const formattedDate =
-                date.getFullYear() +
-                '-' +
-                String(date.getMonth() + 1).padStart(2, '0') +
-                '-' +
-                String(date.getDate()).padStart(2, '0') +
-                ' ' +
-                String(date.getHours()).padStart(2, '0') +
-                ':' +
-                String(date.getMinutes()).padStart(2, '0') +
-                ':' +
-                String(date.getSeconds()).padStart(2, '0');
-              return formattedDate;
+            const value = row[field] ?? '';
+            if (field == 'date') {
+              return `'${value}`;
             }
-            return value ?? '';
-          }),
+            return value;
+          })
         ];
         return values.map((cell) => `"${cell}"`).join(',');
       }),
     ];
- 
+
     return csvRows.join('\r\n');
   }
- 
+
+
+
+
   exportExcel(dt: any) {
     const filteredData = dt.filteredValue || dt.value;
-   
+
     if (filteredData && filteredData.length > 0) {
       const activeColumns = this.showToggleTable
         ? this.summaryColumns
         : this.selectedColumns;
-   
+
       const fixedHeaders = ['S No'];
       const fixedFields: string[] = [];
-   
+
       const dynamicHeaders = activeColumns.map((col) => col.header);
       const dynamicFields = activeColumns.map((col) => col.field);
-   
+
       const headers = [...fixedHeaders, ...dynamicHeaders];
       const fields = [...fixedFields, ...dynamicFields];
-   
+
       // ⛳ Use array of arrays instead of CSV rows for Excel
       const dataToExport: (string | number)[][] = [
         headers, // header row as an array
@@ -876,56 +823,45 @@ export class ReportsComponent implements OnInit {
             index + 1,
             ...fields.map((field: string) => {
               const value = row[field];
-              if (
-                typeof value === 'string' &&
-                value.match(/^\d{4}-\d{2}-\d{2}T/)
-              ) {
-                const date = new Date(value);
-                const formattedDate =
-                  date.getFullYear() +
-                  '-' +
-                  String(date.getMonth() + 1).padStart(2, '0') +
-                  '-' +
-                  String(date.getDate()).padStart(2, '0') +
-                  ' ' +
-                  String(date.getHours()).padStart(2, '0') +
-                  ':' +
-                  String(date.getMinutes()).padStart(2, '0') +
-                  ':' +
-                  String(date.getSeconds()).padStart(2, '0');
-                return formattedDate;
-              }
+              // if (
+              //   typeof value === 'string' &&
+              //   value.match(/^\d{4}-\d{2}-\d{2}T/)
+              // ) {
+              //   const date = new Date(value);
+              //   const formattedDate = formatDate(date, this.dateFormat, 'en-US');
+              //   return formattedDate;
+              // }
               return value ?? '';
             }),
           ];
           return values;
         }),
       ];
-   
+
       const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(dataToExport);
       const workbook: XLSX.WorkBook = {
         Sheets: { data: worksheet },
         SheetNames: ['data'],
       };
-   
+
       const excelBuffer: any = XLSX.write(workbook, {
         bookType: 'xlsx',
         type: 'array',
       });
-   
+
       this.saveAsExcelFile(excelBuffer, `${this.nameOffile}_download`);
     }
   }
-   
-   
-   
+
+
+
     saveAsExcelFile(buffer: any, fileName: string): void {
       const EXCEL_TYPE =
         'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
       const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
       saveAs(data, `${this.nameOffile}_download.xlsx`);
     }
-   
+
     exportPDF(dt: any) {
       const hexToRgb = (hex: string): [number, number, number] => {
         hex = hex.replace('#', '');
@@ -938,72 +874,65 @@ export class ReportsComponent implements OnInit {
         const bigint = parseInt(hex, 16);
         return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
       };
-   
+
       const filteredData: any[] = dt.value;
-   
+
       if (filteredData && filteredData.length > 0) {
         const activeColumns = this.showToggleTable
           ? this.summaryColumns
           : this.selectedColumns;
-   
+
         const fixedHeaders = ['S No'];
         const fixedFields: string[] = [];
-   
+
         const dynamicHeaders = activeColumns.map((col) => col.header);
         const dynamicFields = activeColumns.map((col) => col.field);
-   
+
         const headers = [...fixedHeaders, ...dynamicHeaders];
         const fields = [...fixedFields, ...dynamicFields];
-   
+
         const data = filteredData.map((row: any, index: number) => {
           const rowData: (string | number)[] = [index + 1];
           fields.forEach((field) => {
             const value = row[field];
             if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
-              const date = new Date(value);
-              const formattedDate = `${date.getFullYear()}-${String(
-                date.getMonth() + 1
-              ).padStart(2, '0')}-${String(date.getDate()).padStart(
-                2,
-                '0'
-              )} ${String(date.getHours()).padStart(2, '0')}:${String(
-                date.getMinutes()
-              ).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
-              rowData.push(formattedDate);
+              // const date = new Date(value);
+              // const formattedDate = formatDate(date, this.dateFormat, 'en-US');
+              rowData.push(value);
             } else {
               rowData.push(value || '');
             }
           });
           return rowData;
         });
-   
+
         // Get theme-based CSS variable values
         const tableBgColor =
           this.getCSSVariableValue('--tablebgcolor') || '#ffffff';
         const rowStripeColor =
           this.getCSSVariableValue('--row-stripe-color') || '#f9f9f9';
         const fontColor = this.getCSSVariableValue('--font-color') || '#000000';
-   
+
         const highlightRowColor =
           this.getCSSVariableValue('--highlight-row-color') || '#ffeb3b';
         const highlightFontColor =
           this.getCSSVariableValue('--highlight-font-color') || '#212529';
-   
+
         const peakRowColor =
           this.getCSSVariableValue('--peak-row-color') || '#c5e1ff';
         const peakFontColor =
           this.getCSSVariableValue('--peak-font-color') || '#212529';
-   
+
         const beforeRowColor =
           this.getCSSVariableValue('--before-row-color') || '#e0f7fa';
         const beforeFontColor =
           this.getCSSVariableValue('--before-font-color') || '#212529';
-   
+
         const afterRowColor =
           this.getCSSVariableValue('--after-row-color') || '#fff3e0';
         const afterFontColor =
           this.getCSSVariableValue('--after-font-color') || '#212529';
-   
+
         const doc = new jsPDF('landscape');
         autoTable(doc, {
           head: [headers],
@@ -1032,7 +961,7 @@ export class ReportsComponent implements OnInit {
               const rowIndex = data.row.index;
               const rowData = filteredData[rowIndex];
               const rowClass = this.getRowClass(rowData);
-   
+
               switch (rowClass) {
                 case 'highlight-row':
                   data.cell.styles.fillColor = hexToRgb(highlightRowColor);
@@ -1063,17 +992,16 @@ export class ReportsComponent implements OnInit {
           pageBreak: 'auto',
           showHead: 'everyPage',
         });
-   
+
         doc.save(`${this.nameOffile}.pdf`);
       } else {
         console.warn('No data available for PDF export');
       }
     }
-   
+
     getCSSVariableValue(variableName: string): string {
       return getComputedStyle(document.body)
         .getPropertyValue(variableName)
         .trim();
     }
 }
-   

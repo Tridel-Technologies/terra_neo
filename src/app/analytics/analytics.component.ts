@@ -1,4 +1,4 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, formatDate } from '@angular/common';
 import {
   Component,
   OnInit,
@@ -130,6 +130,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   isProcessedData: boolean = false;
   unitSettings: { key: string }[] = [];
   isFilesLoading: boolean = false;
+  dateFormat!: string;
 
   @ViewChild('table') table: any;
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
@@ -241,7 +242,7 @@ fileID!:number;
         this.expandedFolders = this.files_list.map(() => false);
         this.fileID = this.base.fileId!;
         console.log('file IFD', this.fileID);
-        
+
         let folderIndex = -1;
         let selectedFile = null;
         let selectedFolder = null;
@@ -326,6 +327,13 @@ fileID!:number;
     });
     this.isFilesLoading = false;
     console.log('units', this.units);
+    if (this.units['datetime'] === '30-03-2025 12:00:00') {
+      this.dateFormat = 'dd-MM-Y hh:mm:ss';
+    } else if (this.units['datetime'] === '03-30-2025 12:00:00') {
+      this.dateFormat = 'MM-dd-Y hh:mm:ss';
+    } else {
+      this.dateFormat = 'dd MMM yyyy hh:mm:ss';
+    }
   }
 
   show: boolean = false;
@@ -568,7 +576,7 @@ fileID!:number;
   formatValue(value: any): string {
     const num = parseFloat(value);
     return isNaN(num) ? '' : num.toFixed(4);
-  }  
+  }
 
   onUpdateClick() {
     // Check for empty values
@@ -633,7 +641,7 @@ fileID!:number;
             timestamp: newRow.date,
             time: timeString,
           };
-          
+
           // Convert speed if units don't match
           if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
             if (newRow.speed !== null && newRow.speed !== undefined) {
@@ -646,7 +654,7 @@ fileID!:number;
           } else {
             newRowPayload.speed = parseFloat(newRow.speed);
           }
-          
+
           // Convert direction if units don't match
           if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
             if (newRow.direction !== null && newRow.direction !== undefined) {
@@ -659,7 +667,7 @@ fileID!:number;
           } else {
             newRowPayload.direction = parseFloat(newRow.direction);
           }
-          
+
           // Convert pressure (tide) if units don't match
           if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
             if (newRow.pressure !== null && newRow.pressure !== undefined) {
@@ -758,7 +766,7 @@ fileID!:number;
           console.error('Failed to update rows:', error);
           throw error;
         });
-        
+
       promises.push(updatePromise);
     }
 
@@ -875,24 +883,24 @@ fileID!:number;
     this.themeChange$.complete();
   }
 
-   
+
 onDialogShow() {
   if (this.main_table.length === 0 && this.fullData.length > 0) {
     this.main_table = this.fullData;
   }
- 
+
   const indexToHighlight = this.main_table.findIndex(item => item.id === this.selectedPointId);
- 
+
   if (
     indexToHighlight !== null &&
     indexToHighlight >= 0 &&
     indexToHighlight < this.main_table.length
   ) {
     this.selectedPointId = this.main_table[indexToHighlight].id;
- 
+
     const rowHeight = 46; // should match your virtualScrollItemSize
     const tableWrapper = this.tableWrapper?.nativeElement;
- 
+
     if (this.table?.scrollToVirtualIndex) {
       this.table.scrollToVirtualIndex(indexToHighlight);
     } else if (tableWrapper) {
@@ -900,15 +908,15 @@ onDialogShow() {
       const visibleHeight = tableWrapper.clientHeight;
       const targetScrollTop = (indexToHighlight * rowHeight) - (visibleHeight / 2) + (rowHeight / 2);
       const maxScroll = tableWrapper.scrollHeight - visibleHeight;
- 
+
       const scrollTop = Math.min(Math.max(targetScrollTop, 0), maxScroll);
- 
+
       tableWrapper.scrollTo({
         top: scrollTop,
         behavior: 'smooth'
       });
     }
- 
+
     // Delay highlight to allow scroll to settle
     setTimeout(() => {
       const tableWrapper = this.tableWrapper?.nativeElement;
@@ -917,10 +925,10 @@ onDialogShow() {
         const selectedRow = Array.from(rows).find((r: any) =>
           r.getAttribute('data-id') === String(this.selectedPointId)
         ) as HTMLElement;
- 
+
         if (selectedRow) {
           selectedRow.classList.add('temp-highlight');
- 
+
           // Remove highlight after 1.5 seconds
           setTimeout(() => {
             selectedRow.classList.remove('temp-highlight');
@@ -928,7 +936,7 @@ onDialogShow() {
         }
       }
     }, 400); // Adjusted delay for scroll + render
- 
+
     // Resize charts (safe placement)
     setTimeout(() => {
       this.chartInstances.forEach((chart) => {
@@ -947,13 +955,13 @@ onDialogShow() {
 
   loadData(event: any) {
     this.loading = true;
-  
+
     if (this.fullData.length === 0) {
       this.main_table = [];
       this.loading = false;
       return;
     }
-  
+
     const sourceUnits: { [key: string]: string } = {
       waterLevel: this.fullData[0].water_level_unit,
       currentSpeed: this.fullData[0].current_speed_unit,
@@ -961,18 +969,23 @@ onDialogShow() {
       battery: this.fullData[0].battery_unit,
       depth: this.fullData[0].depth_unit,
     };
-  
+
     const unitsMatch = Object.keys(this.units).every(
       key => this.units[key] === sourceUnits[key]
     );
     console.log('match', unitsMatch);
-  
+
     if (unitsMatch) {
       this.main_table = this.fullData;
     } else {
       this.main_table = this.fullData.map((item, index) => {
         const newItem = { ...item } as ApiData;
-  
+
+        // Date Format conversion
+        if (this.fullData[index].date.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+          this.fullData[index].date = formatDate(newItem.date, this.dateFormat, 'en-US');
+        }
+
         // if waterLevel unit mismatches → convert pressure
         if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
           if (newItem.pressure !== null && newItem.pressure !== undefined) {
@@ -981,7 +994,7 @@ onDialogShow() {
             this.fullData[index].pressure = converted.toString();
           }
         }
-  
+
         // if currentSpeed unit mismatches → convert speed
         if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
           if (newItem.speed !== null && newItem.speed !== undefined) {
@@ -990,7 +1003,7 @@ onDialogShow() {
             this.fullData[index].speed = converted.toString();
           }
         }
-  
+
         // if currentDirection unit mismatches → convert direction
         if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
           if (newItem.direction !== null && newItem.direction !== undefined) {
@@ -999,11 +1012,11 @@ onDialogShow() {
             this.fullData[index].direction = converted.toString();
           }
         }
-  
+
         return newItem;
       });
     }
-  
+
     console.log('converted', this.fullData);
     this.loading = false;
     this.cdr.detectChanges();
@@ -1139,7 +1152,7 @@ onDialogShow() {
               show: true,
               lineStyle: {
                 color: subText,
-                type: 'dotted',
+                type: 'dashed',
               },
             },
           },
@@ -1225,7 +1238,7 @@ onDialogShow() {
             name: 'High Water Time',
             data: this.fullData
               .filter((item) => item.high_water_level === 1)
-              .map((item) => [item.date, this.formatValue(item.pressure)]),
+              .map((item) => [item.date , this.formatValue(item.pressure)]),
             type: 'scatter',
             symbolSize: 20,
             itemStyle: {
@@ -1385,7 +1398,7 @@ onDialogShow() {
               show: true,
               lineStyle: {
                 color: subText,
-                type: 'dotted',
+                type: 'dashed',
               },
             },
           },
@@ -1600,7 +1613,7 @@ onDialogShow() {
               show: true,
               lineStyle: {
                 color: subText,
-                type: 'dotted',
+                type: 'dashed',
               },
             },
           },
@@ -1807,7 +1820,7 @@ onDialogShow() {
             color: mainText,
             rotate: 0,
           },
-          axisLine: { 
+          axisLine: {
             show: true,
             lineStyle: {
               color: mainText,
@@ -1827,17 +1840,17 @@ onDialogShow() {
             axisLabel: {
               color: mainText,
             },
-            axisLine: { 
+            axisLine: {
               show: true,
               lineStyle: {
                 color: mainText,
               },
             },
-            splitLine: { 
+            splitLine: {
               show: true,
               lineStyle: {
                 color: subText,
-                type: 'dotted',
+                type: 'dashed',
               },
             },
           },
@@ -2143,7 +2156,7 @@ onDialogShow() {
               show: false,
               lineStyle: {
                 color: subText,
-                type: 'dotted',
+                type: 'dashed',
               },
             },
             position: 'left',
@@ -2450,29 +2463,29 @@ onDialogShow() {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
- 
+
     const element = document.getElementById(elementId);
- 
+
     const speedUnit = this.units?.currentSpeed || 'm/s'; // default to m/s
     const directionUnit = this.units?.currentDirection || '°'; // default to degree
     if (!element) {
       console.error(`Element with id '${elementId}' not found`);
       return;
     }
- 
+
     const existingInstance = echarts.getInstanceByDom(element);
     if (existingInstance) {
       existingInstance.dispose();
     }
- 
+
     const chart = echarts.init(element);
- 
+
     const directionLabels = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
- 
+
     const speedLabelUnit = speedUnit === 'knots' ? 'knots' : 'm/s';
- 
+
     let graphic: any = undefined;
- 
+
     if (this.PolarSelectedInterVal !== 'all' || interval === 60) {
       graphic = {
         elements: [
@@ -2490,7 +2503,7 @@ onDialogShow() {
         ],
       };
     }
- 
+
     const speedCategories = [
       '<0.5',
       '0.5-2',
@@ -2507,10 +2520,10 @@ onDialogShow() {
       '#FF9933',
       '#FF3300',
     ];
- 
+
     type SpeedCategory = (typeof speedCategories)[number];
-    type DirectionBin = Record<SpeedCategory, number>;
- 
+    type DirectionBin = Record<SpeedCategory, { count: number; values: number[] }>;
+
     const categorizeSpeed = (speed: number): SpeedCategory => {
       if (speed < 0.5) return '<0.5';
       if (speed < 2) return '0.5-2';
@@ -2519,49 +2532,54 @@ onDialogShow() {
       if (speed < 8) return '6-8';
       return '>8';
     };
- 
+
     const dataBins: DirectionBin[] = directionLabels.map(() => ({
-      '<0.5': 0,
-      '0.5-2': 0,
-      '2-4': 0,
-      '4-6': 0,
-      '6-8': 0,
-      '>8': 0,
+      '<0.5': { count: 0, values: [] },
+      '0.5-2': { count: 0, values: [] },
+      '2-4': { count: 0, values: [] },
+      '4-6': { count: 0, values: [] },
+      '6-8': { count: 0, values: [] },
+      '>8': { count: 0, values: [] },
     }));
- 
+
     // averagedPolarData.forEach(({ speed, direction }) => {
     //   // const directionIndex = Math.round(direction / 22.5) % 16;
- 
+
     //   const directionIndex = Math.round(direction / 45) % 8;
     //   const speedCategory = categorizeSpeed(speed);
     //   dataBins[directionIndex][speedCategory] += 1;
     // });
- 
+
     averagedPolarData.forEach(({ speed, direction }) => {
       // Convert speed to m/s if needed
       // const normalizedSpeed = speedUnit === 'knots' ? speed * 0.514444 : speed;
- 
+
       // Convert direction to degrees if needed
       const normalizedDirection =
         directionUnit === 'radians' ? direction * (180 / Math.PI) : direction;
- 
+
       const directionIndex = Math.round(normalizedDirection / 45) % 8;
       const speedCategory = categorizeSpeed(speed);
- 
-      dataBins[directionIndex][speedCategory] += 1;
+
+      dataBins[directionIndex][speedCategory].count += 1;
+      dataBins[directionIndex][speedCategory].values.push(speed);
     });
- 
+
     const seriesData = speedCategories.map((speedCategory, index) => ({
       name: speedCategory,
       type: 'bar',
       stack: 'wind-speed',
       coordinateSystem: 'polar',
-      data: dataBins.map((bin) => bin[speedCategory]),
+      data: dataBins.map((bin) => ({
+        value: bin[speedCategory].count,
+        values: bin[speedCategory].values,
+      })),
       itemStyle: {
         color: speedColors[index],
       },
     }));
- 
+    console.log('seriesData',seriesData);
+
     const option = {
       title:
         this.PolarSelectedInterVal === 'all'
@@ -2609,7 +2627,7 @@ onDialogShow() {
               },
             },
       graphic,
- 
+
       angleAxis: {
         type: 'category',
         data: directionLabels,
@@ -2628,16 +2646,25 @@ onDialogShow() {
       },
       tooltip: {
         trigger: 'item',
-        formatter: '{a}: {c}',
+        renderMode: 'html',
+        formatter: (params: any) => {
+          const speedCategory = params.seriesName;
+          const count = params.data.value;
+          const values = params.data.values;
+          if (!values || !values.length) {
+            return `${speedCategory}: ${count}`;
+          }
+          return `Range: ${speedCategory}</br>Total Count: ${count}<br/>Speeds: ${values.map((v: number) => v.toFixed(3)).join(',<br/>')}`;
+        },
       },
       series: seriesData,
       animationDuration: 800,
     };
- 
+
     chart.setOption(option);
     window.addEventListener('resize', () => chart.resize());
   }
- 
+
   private formatInterval(interval: number): string {
     switch (interval) {
       case 30:
@@ -2652,8 +2679,8 @@ onDialogShow() {
         return `${interval} Minutes`;
     }
   }
- 
- 
+
+
   private groupByIntervalWithinDateRange(
     data: ApiData[],
     startDate: string,
@@ -2661,13 +2688,13 @@ onDialogShow() {
     intervalMinutes: number
   ): Record<string, { speed: number; direction: number }[]> {
     const grouped: Record<string, { speed: number; direction: number }[]> = {};
- 
+
     const dateStart = new Date(`${startDate}T00:00:00`);
     const dateEnd = new Date(`${endDate}T23:59:59`);
- 
+
     data.forEach((entry) => {
       const localTime = this.toIST(entry.date);
- 
+
       if (localTime >= dateStart && localTime <= dateEnd) {
         const roundedTime = new Date(
           Math.floor(localTime.getTime() / (intervalMinutes * 60 * 1000)) *
@@ -2675,29 +2702,29 @@ onDialogShow() {
             60 *
             1000
         );
- 
+
         const key = roundedTime.toISOString();
- 
+
         if (!grouped[key]) {
           grouped[key] = [];
         }
- 
+
         grouped[key].push({
           speed: parseFloat(entry.speed),
           direction: parseFloat(entry.direction),
         });
       }
     });
- 
+
     return grouped;
   }
- 
+
   private toIST(dateStr: string): Date {
     const utcDate = new Date(dateStr);
     const istOffset = 5.5 * 60 * 60 * 1000; // IST offset in ms
     return new Date(utcDate.getTime() + istOffset);
   }
- 
+
   private computeAverages(
     grouped: Record<string, { speed: number; direction: number }[]>
   ): { speed: number; direction: number }[] {
@@ -2709,7 +2736,7 @@ onDialogShow() {
       return { speed: avgSpeed, direction: avgDirection };
     });
   }
- 
+
   private formatDateToYMD(date: Date): string {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');

@@ -65,16 +65,16 @@ html {
     /* reporttable */
     --tablebgcolor: #f5faff;
     --row-stripe-color: #e6f0ff;
-   
+
     --highlight-row-color: #ffeb3b;
     --highlight-font-color: #212529;
-   
+
     --peak-row-color: #c5e1ff;
     --peak-font-color: #212529;
-   
+
     --before-row-color: #e0f7fa;
     --before-font-color: #212529;
-   
+
     --after-row-color: #fff3e0;
     --after-font-color: #212529;
 }
@@ -129,18 +129,18 @@ html {
   /* reporttable */
   --tablebgcolor: #000000;
   --row-stripe-color: #1a1a1a;
-  
+
   --highlight-row-color: #ffeb3b;
   --highlight-font-color: #212529;
-  
+
   --peak-row-color: #c5e1ff;
   --peak-font-color: #212529;
-  
+
   --before-row-color: #e0f7fa;
   --before-font-color: #212529;
-  
+
   --after-row-color: #fff3e0;
-  --after-font-color: #212529;  
+  --after-font-color: #212529;
 }
 
 
