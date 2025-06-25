@@ -8,6 +8,7 @@ export interface UnitSettings {
   battery: string;
   depth: string;
   latandlong: string;
+  datetime: string;
   [key: string]: string;
 }
 
@@ -24,6 +25,7 @@ export class UnitService {
     battery: '%',
     depth: 'm',
     latandlong: 'DD',
+    datetime: '01-Jan-2025 12:00:00',
   };
 
   private unitsSubject: BehaviorSubject<UnitSettings>;

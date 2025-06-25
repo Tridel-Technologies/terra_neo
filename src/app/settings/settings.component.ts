@@ -91,7 +91,7 @@ export class SettingsComponent {
     }
   }
   contextMenu = {
-    visible: true,
+    visible: false,
     x: 0,
     y: 0,
     type: 'blank', // 'file' | 'folder'
@@ -243,6 +243,9 @@ export class SettingsComponent {
             console.log(response);
             this.init();
           });
+        this.toastr.success('Folder created', 'Success', {
+          timeOut: 2000,
+        });
       }
     }
   }
@@ -284,6 +287,12 @@ export class SettingsComponent {
       iconClass: 'fas fa-map-marker-alt',
       units: ['dd', 'dms'],
     },
+    {
+      key: 'datetime',
+      label: 'DateTime',
+      iconClass: 'fas fa-clock',
+      units: ['01-Jan-2025 12:00:00', '30-03-2025 12:00:00', '03-30-2025 12:00:00'],
+    },
   ];
 
   getFileImage(fileName: string): string {
@@ -301,29 +310,34 @@ export class SettingsComponent {
   getTooltip(paramKey: string, unit: string): string {
     const tooltips: any = {
       waterLevel: {
-        m: 'Meters',
+        m: 'Meter',
         ft: 'Feet',
-        cm: 'Centimeters',
+        cm: 'Centimeter',
       },
       currentSpeed: {
-        'm/s': 'Meters per second',
+        'm/s': 'Meter per second',
         knots: 'Knots',
       },
       currentDirection: {
-        '°': 'Degrees',
-        radians: 'Radians',
+        '°': 'Degree',
+        radians: 'Radian',
       },
       battery: {
         '%': 'Percentage',
-        volts: 'Volts',
+        volts: 'Volt',
       },
       depth: {
-        m: 'Meters',
+        m: 'Meter',
         ft: 'Feet',
       },
       latandlong: {
-        DD: 'Decimal Degrees',
-        DMS: 'Degrees, Minutes, Seconds',
+        dd: 'Decimal Degree',
+        dms: 'Degree, Minute, Second',
+      },
+      datetime: {
+        '01-Jan-2025 12:00:00': 'dd-M-yyyy',
+        '30-03-2025 12:00:00': 'dd-mm-yyyy',
+        '03-30-2025 12:00:00': 'mm-dd-yyyy',
       },
     };
 

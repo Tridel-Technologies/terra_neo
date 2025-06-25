@@ -1,9 +1,9 @@
 <div class="fileCContainer" (contextmenu)="onContainerRightClick($event)">
-    <div class="newFolddr" *ngIf="showCreate">
+    <!-- <div class="newFolddr" *ngIf="showCreate">
         <p>Folder name</p>
         <input type="text">
         <button>Create</button>
-    </div>
+    </div> -->
     <h3>Explorer</h3>
     <h5>Processed Data</h5>
 
@@ -23,7 +23,7 @@
     </div>
     <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
         *ngIf="openedFile2.length !== 0" (click)="back2()"><i class="fa-solid fa-arrow-left"
-            style="align-self: center;margin-top: 5px;font-size: 17px;"></i>
+            style="align-self: center;margin-top: 5px;font-size: 17px; cursor: pointer;"></i>
         {{tappedFolder2.folder_name}}/
     </h2>
 
@@ -70,7 +70,7 @@
     </div>
     <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
         *ngIf="openedFile.length !== 0" (click)="back()"><i class="fa-solid fa-arrow-left"
-            style="align-self: center;margin-top: 5px;font-size: 17px;"></i>
+            style="align-self: center;margin-top: 5px;font-size: 17px; cursor: pointer;"></i>
         {{tappedFolder.folder_name}}/
     </h2>
     <!-- FILE VIEW -->

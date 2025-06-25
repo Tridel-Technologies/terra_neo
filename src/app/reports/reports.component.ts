@@ -119,6 +119,7 @@ export class ReportsComponent implements OnInit {
   loading: boolean = false;
   totalRecords: number = 0;
   unitSettings: { key: string }[] = [];
+  dateFormat!: string;
  
   before_data: any[] = [];
   after_data: any[] = [];
@@ -144,6 +145,7 @@ export class ReportsComponent implements OnInit {
     battery: '',
     depth: '',
     latandlong: '',
+    datetime: '',
   };
 
   summaryColumns!: Column[];
@@ -153,12 +155,13 @@ export class ReportsComponent implements OnInit {
     this.convertValues = new GlobalConfig().convertValue;
   }
 
+  unitssTo!:UnitSettings;
+
   ngOnInit(): void {
     this.unitSerive.units$.subscribe((u) => {
       this.units = u;
       this.setupColumns();
     });
-    console.log('units', this.units);
 
     this.files_list = [];
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
@@ -216,6 +219,19 @@ export class ReportsComponent implements OnInit {
     });
  
     this.setupColumns();
+
+    // check date format from settings
+    const unitss: any = localStorage.getItem('unitSettings') ?? '{"datetime": "01-Jan-2025 12:00:00"}';
+    this.unitssTo = JSON.parse(unitss);
+
+    if (this.unitssTo.datetime === '30-03-2025 12:00:00') {
+      this.dateFormat = 'dd-MM-Y hh:mm:ss';
+    } else if (this.unitssTo.datetime === '03-30-2025 12:00:00') {
+      this.dateFormat = 'MM-dd-Y hh:mm:ss';
+    } else {
+      this.dateFormat = 'dd MMM yyyy hh:mm:ss';
+    }
+
   }
  
   setupColumns() {
@@ -387,15 +403,46 @@ export class ReportsComponent implements OnInit {
           setTimeout(() => {
             this.main_table = data;
             for (let index = 0; index < response.length; index++) {
-              this.main_table.push(response[index]);
+              const row = { ...response[index] };
+ 
+              // 🕒 Convert 'timestamp' field if it exists
+              if (row.date) {
+                const date = new Date(row.date);
+                const months = [
+                  'Jan',
+                  'Feb',
+                  'Mar',
+                  'Apr',
+                  'May',
+                  'Jun',
+                  'Jul',
+                  'Aug',
+                  'Sep',
+                  'Oct',
+                  'Nov',
+                  'Dec',
+                ];
+ 
+                const formattedDate =
+                  String(date.getDate()).padStart(2, '0') +
+                  '-' +
+                  months[date.getMonth()] +
+                  '-' +
+                  date.getFullYear() +
+                  ' ' +
+                  String(date.getHours()).padStart(2, '0') +
+                  ':' +
+                  String(date.getMinutes()).padStart(2, '0') +
+                  ':' +
+                  String(date.getSeconds()).padStart(2, '0');
+ 
+                row.date = formattedDate;
+              }
+ 
+              this.main_table.push(row);
             }
+ 
             console.log('Main table data ', this.main_table);
-          }, 100);
-        } else {
-          this.main_table = [];
-          setTimeout(() => {
-            this.main_table = response;
-            this.checkForConversion();
           }, 100);
         }
       });
@@ -695,6 +742,32 @@ export class ReportsComponent implements OnInit {
  
     return {}; // Default
   }
+
+  getRowClass(row: any): string {
+    if (row.highlight) {
+      return 'highlight-row';
+    }
+ 
+    if (typeof row.name === 'string') {
+      if (row.name.includes('High Water')) {
+        return 'peak-row';
+      }
+ 
+      const match = row.name.match(/^(\d+)(?:st|nd|rd|th)$/);
+      if (match) {
+        const hour = +match[1];
+        const highIndex = this.toggleTableData.findIndex(
+          (r) => r.name === 'High Water Time'
+        );
+        const index = this.toggleTableData.findIndex((r) => r === row);
+ 
+        if (index < highIndex) return 'before-row';
+        if (index > highIndex) return 'after-row';
+      }
+    }
+ 
+    return '';
+  }
  
   onExportOptionSelect(event: any, dt2: any) {
     const selectedOption = event.value;
@@ -779,145 +852,228 @@ export class ReportsComponent implements OnInit {
   }
  
   exportExcel(dt: any) {
-    const filteredData = dt.value;
- 
+    const filteredData = dt.filteredValue || dt.value;
+   
     if (filteredData && filteredData.length > 0) {
       const activeColumns = this.showToggleTable
         ? this.summaryColumns
         : this.selectedColumns;
- 
+   
       const fixedHeaders = ['S No'];
+      const fixedFields: string[] = [];
+   
       const dynamicHeaders = activeColumns.map((col) => col.header);
       const dynamicFields = activeColumns.map((col) => col.field);
+   
       const headers = [...fixedHeaders, ...dynamicHeaders];
- 
-      const dataToExport = filteredData.map((row: any, index: number) => {
-        const selectedRow: any = {};
-        selectedRow['S No'] = index + 1;
- 
-        dynamicFields.forEach((field) => {
-          const value = row[field];
- 
-          // Check if value is an ISO date string and format it
-          if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
-            const date = new Date(value);
-            const formattedDate =
-              date.getFullYear() +
-              '-' +
-              String(date.getMonth() + 1).padStart(2, '0') +
-              '-' +
-              String(date.getDate()).padStart(2, '0') +
-              ' ' +
-              String(date.getHours()).padStart(2, '0') +
-              ':' +
-              String(date.getMinutes()).padStart(2, '0') +
-              ':' +
-              String(date.getSeconds()).padStart(2, '0');
-            selectedRow[field] = formattedDate;
-          } else {
-            selectedRow[field] = value;
-          }
-        });
- 
-        return selectedRow;
-      });
- 
-      const worksheet: XLSX.WorkSheet = XLSX.utils.json_to_sheet(dataToExport);
+      const fields = [...fixedFields, ...dynamicFields];
+   
+      // ⛳ Use array of arrays instead of CSV rows for Excel
+      const dataToExport: (string | number)[][] = [
+        headers, // header row as an array
+        ...filteredData.map((row: any, index: number) => {
+          const values = [
+            index + 1,
+            ...fields.map((field: string) => {
+              const value = row[field];
+              if (
+                typeof value === 'string' &&
+                value.match(/^\d{4}-\d{2}-\d{2}T/)
+              ) {
+                const date = new Date(value);
+                const formattedDate =
+                  date.getFullYear() +
+                  '-' +
+                  String(date.getMonth() + 1).padStart(2, '0') +
+                  '-' +
+                  String(date.getDate()).padStart(2, '0') +
+                  ' ' +
+                  String(date.getHours()).padStart(2, '0') +
+                  ':' +
+                  String(date.getMinutes()).padStart(2, '0') +
+                  ':' +
+                  String(date.getSeconds()).padStart(2, '0');
+                return formattedDate;
+              }
+              return value ?? '';
+            }),
+          ];
+          return values;
+        }),
+      ];
+   
+      const worksheet: XLSX.WorkSheet = XLSX.utils.aoa_to_sheet(dataToExport);
       const workbook: XLSX.WorkBook = {
         Sheets: { data: worksheet },
         SheetNames: ['data'],
       };
+   
       const excelBuffer: any = XLSX.write(workbook, {
         bookType: 'xlsx',
         type: 'array',
       });
+   
       this.saveAsExcelFile(excelBuffer, `${this.nameOffile}_download`);
     }
   }
- 
-  saveAsExcelFile(buffer: any, fileName: string): void {
-    const EXCEL_TYPE =
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
-    const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
-    saveAs(data, `${this.nameOffile}_download.xlsx`);
-  }
- 
-  exportPDF(dt: any) {
-    const filteredData: any[] = dt.value;
- 
-    if (filteredData && filteredData.length > 0) {
-      const activeColumns = this.showToggleTable
-        ? this.summaryColumns
-        : this.selectedColumns;
- 
-      const fixedHeaders = ['S No'];
-      const fixedFields: string[] = [];
- 
-      const dynamicHeaders = activeColumns.map((col) => col.header);
-      const dynamicFields = activeColumns.map((col) => col.field);
- 
-      const headers = [...fixedHeaders, ...dynamicHeaders];
-      const fields = [...fixedFields, ...dynamicFields];
- 
-      const data = filteredData.map((row: any, index: number) => {
-        const rowData: (string | number)[] = [index + 1];
- 
-        fields.forEach((field) => {
-          const value = row[field];
- 
-          if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
-            // Parse the ISO string and format as 'YYYY-MM-DD HH:mm:ss'
-            const date = new Date(value);
-            const formattedDate =
-              date.getFullYear() +
-              '-' +
-              String(date.getMonth() + 1).padStart(2, '0') +
-              '-' +
-              String(date.getDate()).padStart(2, '0') +
-              ' ' +
-              String(date.getHours()).padStart(2, '0') +
-              ':' +
-              String(date.getMinutes()).padStart(2, '0') +
-              ':' +
-              String(date.getSeconds()).padStart(2, '0');
-            rowData.push(formattedDate);
-          } else {
-            rowData.push(value || '');
-          }
-        });
- 
-        return rowData;
-      });
- 
-      const doc = new jsPDF('landscape');
-      autoTable(doc, {
-        head: [headers],
-        body: data,
-        styles: {
-          fontSize: 8,
-          cellPadding: 1,
-          overflow: 'linebreak',
-          valign: 'middle',
-        },
-        headStyles: {
-          fillColor: [41, 128, 185],
-          textColor: [255, 255, 255],
-          halign: 'center',
-          fontSize: 9,
-        },
-        bodyStyles: {
-          halign: 'center',
-        },
-        columnStyles: {
-          0: { cellWidth: 20 },
-        },
-        pageBreak: 'auto',
-        showHead: 'everyPage',
-      });
- 
-      doc.save(`${this.nameOffile}.pdf`);
-    } else {
-      console.warn('No data available for PDF export');
+   
+   
+   
+    saveAsExcelFile(buffer: any, fileName: string): void {
+      const EXCEL_TYPE =
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+      const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
+      saveAs(data, `${this.nameOffile}_download.xlsx`);
     }
-  }
+   
+    exportPDF(dt: any) {
+      const hexToRgb = (hex: string): [number, number, number] => {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) {
+          hex = hex
+            .split('')
+            .map((c) => c + c)
+            .join('');
+        }
+        const bigint = parseInt(hex, 16);
+        return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+      };
+   
+      const filteredData: any[] = dt.value;
+   
+      if (filteredData && filteredData.length > 0) {
+        const activeColumns = this.showToggleTable
+          ? this.summaryColumns
+          : this.selectedColumns;
+   
+        const fixedHeaders = ['S No'];
+        const fixedFields: string[] = [];
+   
+        const dynamicHeaders = activeColumns.map((col) => col.header);
+        const dynamicFields = activeColumns.map((col) => col.field);
+   
+        const headers = [...fixedHeaders, ...dynamicHeaders];
+        const fields = [...fixedFields, ...dynamicFields];
+   
+        const data = filteredData.map((row: any, index: number) => {
+          const rowData: (string | number)[] = [index + 1];
+          fields.forEach((field) => {
+            const value = row[field];
+            if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+              const date = new Date(value);
+              const formattedDate = `${date.getFullYear()}-${String(
+                date.getMonth() + 1
+              ).padStart(2, '0')}-${String(date.getDate()).padStart(
+                2,
+                '0'
+              )} ${String(date.getHours()).padStart(2, '0')}:${String(
+                date.getMinutes()
+              ).padStart(2, '0')}:${String(date.getSeconds()).padStart(2, '0')}`;
+              rowData.push(formattedDate);
+            } else {
+              rowData.push(value || '');
+            }
+          });
+          return rowData;
+        });
+   
+        // Get theme-based CSS variable values
+        const tableBgColor =
+          this.getCSSVariableValue('--tablebgcolor') || '#ffffff';
+        const rowStripeColor =
+          this.getCSSVariableValue('--row-stripe-color') || '#f9f9f9';
+        const fontColor = this.getCSSVariableValue('--font-color') || '#000000';
+   
+        const highlightRowColor =
+          this.getCSSVariableValue('--highlight-row-color') || '#ffeb3b';
+        const highlightFontColor =
+          this.getCSSVariableValue('--highlight-font-color') || '#212529';
+   
+        const peakRowColor =
+          this.getCSSVariableValue('--peak-row-color') || '#c5e1ff';
+        const peakFontColor =
+          this.getCSSVariableValue('--peak-font-color') || '#212529';
+   
+        const beforeRowColor =
+          this.getCSSVariableValue('--before-row-color') || '#e0f7fa';
+        const beforeFontColor =
+          this.getCSSVariableValue('--before-font-color') || '#212529';
+   
+        const afterRowColor =
+          this.getCSSVariableValue('--after-row-color') || '#fff3e0';
+        const afterFontColor =
+          this.getCSSVariableValue('--after-font-color') || '#212529';
+   
+        const doc = new jsPDF('landscape');
+        autoTable(doc, {
+          head: [headers],
+          body: data,
+          styles: {
+            fontSize: 8,
+            cellPadding: 1,
+            overflow: 'linebreak',
+            valign: 'middle',
+            textColor: hexToRgb(fontColor),
+          },
+          headStyles: {
+            fillColor: [41, 128, 185],
+            textColor: [255, 255, 255],
+            halign: 'center',
+            fontSize: 9,
+          },
+          bodyStyles: {
+            halign: 'center',
+          },
+          columnStyles: {
+            0: { cellWidth: 20 },
+          },
+          didParseCell: (data) => {
+            if (data.section === 'body') {
+              const rowIndex = data.row.index;
+              const rowData = filteredData[rowIndex];
+              const rowClass = this.getRowClass(rowData);
+   
+              switch (rowClass) {
+                case 'highlight-row':
+                  data.cell.styles.fillColor = hexToRgb(highlightRowColor);
+                  data.cell.styles.textColor = hexToRgb(highlightFontColor);
+                  break;
+                case 'peak-row':
+                  data.cell.styles.fillColor = hexToRgb(peakRowColor);
+                  data.cell.styles.textColor = hexToRgb(peakFontColor);
+                  break;
+                case 'before-row':
+                  data.cell.styles.fillColor = hexToRgb(beforeRowColor);
+                  data.cell.styles.textColor = hexToRgb(beforeFontColor);
+                  break;
+                case 'after-row':
+                  data.cell.styles.fillColor = hexToRgb(afterRowColor);
+                  data.cell.styles.textColor = hexToRgb(afterFontColor);
+                  break;
+                default:
+                  data.cell.styles.fillColor =
+                    rowIndex % 2 === 0
+                      ? hexToRgb(rowStripeColor)
+                      : hexToRgb(tableBgColor);
+                  data.cell.styles.textColor = hexToRgb(fontColor);
+                  break;
+              }
+            }
+          },
+          pageBreak: 'auto',
+          showHead: 'everyPage',
+        });
+   
+        doc.save(`${this.nameOffile}.pdf`);
+      } else {
+        console.warn('No data available for PDF export');
+      }
+    }
+   
+    getCSSVariableValue(variableName: string): string {
+      return getComputedStyle(document.body)
+        .getPropertyValue(variableName)
+        .trim();
+    }
 }
+   

@@ -6,7 +6,7 @@
     justify-content: start;
     align-items: start;
 }
-
+ 
 .files_container {
     width: 20%;
     height: 100%;
@@ -20,49 +20,49 @@
     overflow: hidden;
     overflow-y: auto;
 }
-
+ 
 .folder {
     width: 90%;
     margin: 10px 0;
     background-color: var(--background-color);
     border-radius: 8px;
 }
-
+ 
 .folder-header {
     display: flex;
     align-items: center;
     cursor: pointer;
     padding: 8px;
 }
-
+ 
 .folder-header img {
     width: 24px;
     height: 24px;
     margin-right: 10px;
 }
-
+ 
 .folder-info p {
     margin: 0;
     font-size: 14px;
     color: var(--font-color);
 }
-
+ 
 .folder-info span {
     font-size: 12px;
     color: var(--font-secondary-color);
 }
-
+ 
 .arrow {
     margin-left: auto;
     font-size: 18px;
     color: var(--font-color);
 }
-
+ 
 .file-list {
     padding-left: 36px;
     padding-bottom: 5px;
 }
-
+ 
 .file-item {
     display: flex;
     align-items: center;
@@ -72,7 +72,7 @@
     border-radius: 8px;
     /* background-color: rgba(165, 198, 240, 0.851); */
 }
-
+ 
 .file-item_active {
     display: flex;
     align-items: center;
@@ -82,39 +82,39 @@
     border-radius: 8px;
     background-color: rgba(165, 198, 240, 0.851);
 }
-
+ 
 .file-item img {
     width: 20px;
     height: 20px;
     margin-right: 8px;
 }
-
+ 
 .file-item p {
     margin: 0;
     font-size: 13px;
     color: var(--font-color);
     flex-grow: 1;
 }
-
+ 
 .file-item_active img {
     width: 20px;
     height: 20px;
     margin-right: 8px;
 }
-
+ 
 .file-item_active p {
     margin: 0;
     font-size: 13px;
     color: var(--font-color);
     flex-grow: 1;
 }
-
+ 
 .view-btn {
     color: blue;
     font-size: 12px;
     cursor: pointer;
 }
-
+ 
 .view {
     display: flex;
     justify-content: flex-end;
@@ -128,10 +128,10 @@
     font-weight: 500;
     color: var(--main-text);
 }
-
-
-
-
+ 
+ 
+ 
+ 
 .tablecontainer {
     /* height: 97%; */
     width: 80%;
@@ -143,7 +143,7 @@
     overflow: hidden;
     overflow-y: auto;
 }
-
+ 
 ::ng-deep .p-datatable-header {
     background-color: var(--tablebgcolor) !important;
     color: var(--font-secondary-color) !important;
@@ -155,7 +155,7 @@
     box-shadow: inset 0 2px 8px rgba(189, 221, 252, 0.4);
     /* margin: 0px 0px 100px 0px; */
 }
-
+ 
 ::ng-deep .p-datatable-thead th {
     background-color: var(--tablebgcolor) !important;
     color: var(--font-color) !important;
@@ -165,20 +165,29 @@
     padding: 14px;
     border-bottom: 1px solid #d0e4f7;
 }
-
+ 
 ::ng-deep .p-datatable-tbody td {
     /* background-color: #9f1414 !important; */
-    /* background-color: var(--tablebgcolor) !important;
-    color: var(--font-color) !important; */
+    /* background-color: var(--tablebgcolor) !important; */
+    color: var(--font-color) !important;
     font-size: 16px;
     padding: 14px;
     text-align: center;
     transition: background 0.3s;
 }
-
-
-
-
+ 
+::ng-deep .p-datatable-tbody>tr:nth-child(odd)>td {
+    background-color: var(--row-stripe-color);
+}
+ 
+::ng-deep .p-datatable-tbody>tr:nth-child(even)>td {
+    background-color: var(--tablebgcolor);
+}
+ 
+ 
+ 
+ 
+ 
 /* Paginator Container */
 ::ng-deep .p-paginator {
     background-color: var(--tablebgcolor) !important;
@@ -188,7 +197,7 @@
     border-radius: 0 0 20px 20px;
     padding: 20px;
 }
-
+ 
 /* Paginator Buttons */
 ::ng-deep .p-paginator .p-paginator-first,
 ::ng-deep .p-paginator .p-paginator-prev,
@@ -199,35 +208,35 @@
     border: none;
     font-weight: bold;
 }
-
+ 
 ::ng-deep .p-paginator .p-highlight {
     color: white !important;
     background-color: #007bff !important;
     border-radius: 8px;
 }
-
+ 
 /* Current Page Report Text */
 ::ng-deep .p-paginator-current {
     color: #666 !important;
     font-weight: 500;
 }
-
+ 
 .centered-cell {
     text-align: center;
     vertical-align: middle;
 }
-
-
-
+ 
+ 
+ 
 .caption {
     display: flex;
     flex-direction: column;
 }
-
+ 
 ::ng-deep .p-toggleswitch {
     margin-top: 8px;
 }
-
+ 
 .captionrow {
     /* width: 100%; */
     display: flex;
@@ -236,7 +245,7 @@
     /* color: #fff; */
     /* gap: 10; */
 }
-
+ 
 .captionrowinrow {
     /* width: 50%; */
     display: flex;
@@ -244,24 +253,36 @@
     gap: 10px;
     /* justify-content: space-between; */
 }
-
+ 
 #search {
     width: 250px;
+    position: relative;
+ 
 }
-
+ 
+.search-icon {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    color: var(--font-color);
+    /* Dynamic font color based on theme */
+}
+ 
 #search input[type=search] {
-    background: var(--background-color) url(https://static.tumblr.com/ftv85bp/MIXmud4tx/search-icon.png) no-repeat 9px center;
-    width: 100%;
-    height: 40px;
     background-color: var(--background-color);
     padding-left: 30px;
+    padding-right: 10px;
+    width: 100%;
+    height: 40px;
     border: 1px solid #ccc;
     border-radius: 10px;
     font-size: 16px;
     outline: none;
     margin-bottom: 10px;
     color: var(--font-color);
+    /* Apply dynamic text color */
 }
+ 
  
 #search input[type=search]:hover {
     background-color: var(--background-color);
@@ -284,21 +305,99 @@
     font-weight: bold;
 }
  
+#search input[type=search]::placeholder {
+    color: var(--font-color);
+    opacity: 1;
+    /* Optional: ensures the color is not faded */
+}
+ 
+/* For cross-browser compatibility */
+#search input[type=search]::-webkit-input-placeholder {
+    color: var(--font-color);
+}
+ 
+#search input[type=search]::-moz-placeholder {
+    color: var(--font-color);
+}
+ 
+#search input[type=search]:-ms-input-placeholder {
+    color: var(--font-color);
+}
+ 
+#search input[type=search]::-ms-input-placeholder {
+    color: var(--font-color);
+}
+ 
+ 
  
  
 .filter p-multiselect {
     width: 395px;
     height: 40px;
     border: 1px solid #ccc;
+    background: var(--background-color) !important;
+    color: var(--font-color) !important;
 }
  
 .filter p-multiselect:hover {
     border-color: #119C8D;
 }
  
+ 
+ 
 .export {
     width: 250px;
 }
+ 
+/* ::ng-deep .p-select {
+    background: var(--background-color) !important;
+    color: var(--font-color) !important;
+} */
+ 
+::ng-deep .p-select-label {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    flex: 1 1 auto;
+    width: 1%;
+    padding: var(--p-select-padding-y) var(--p-select-padding-x);
+    text-overflow: ellipsis;
+    cursor: pointer;
+    color: var(--font-color);
+    background: transparent;
+    border: 0 none;
+    outline: 0 none;
+}
+ 
+.export:hover {
+    border-color: #119C8D;
+}
+ 
+::ng-deep .p-select {
+    background: var(--background-color) !important;
+    color: var(--font-color) !important;    
+    border-radius: 10px;
+    height: 40px;
+    border: 1px solid #ccc;
+    font-size: 16px;
+}
+ 
+/* Placeholder color */
+::ng-deep .p-select-label {
+    color: var(--font-color) !important;
+    opacity: 1;
+}
+ 
+/* On hover */
+::ng-deep .p-select:hover {
+    border-color: #119C8D !important;
+}
+ 
+ 
+/* .custom-label {
+    color: var(--font-color);
+    font-size: 18px;
+} */
  
 ::ng-deep .custom-toggle .p-toggleswitch .p-toggleswitch-slider {
     background-color: var(--toggle-color) !important;
@@ -311,7 +410,7 @@
  
  
  
-.last-row-info {
+/* .last-row-info {
     background-color: #f9fafb;
     border-radius: 8px;
     padding: 12px;
@@ -320,20 +419,32 @@
  
 .last-row-info i {
     margin-right: 8px;
-}
+} */
  
-::ng-deep .p-select {
+ 
+/* ::ng-deep .p-multiselect {
     background: var(--background-color) !important;
     color: var(--font-color) !important;
+} */
+ 
+ 
+ 
+::ng-deep .highlight-row td {
+    background-color: #ffeb3b !important;
+    color: #212529 !important;
 }
  
-::ng-deep .p-dropdown{
-    background: var(--background-color) !important;
-    color: var(--font-color) !important;
+::ng-deep .peak-row td {
+    background-color: #c5e1ff !important;
+    color: #212529 !important;
 }
  
-::ng-deep .p-multiselect{
-    background: var(--background-color) !important;
-    color: var(--font-color) !important;
+::ng-deep .before-row td {
+    background-color: #e0f7fa !important;
+    color: #212529 !important;
 }
  
+::ng-deep .after-row td {
+    background-color: #fff3e0 !important;
+    color: #212529 !important;
+}

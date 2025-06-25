@@ -113,7 +113,7 @@
 .tooltip-text {
     visibility: hidden;
     width: max-content;
-    max-width: 150px;
+    max-width: 250px;
     background-color: var(--tooltip-bg, #333);
     color: var(--tooltip-text, #fff);
     text-align: center;
@@ -236,6 +236,7 @@
     color: rgb(0, 0, 0);
     border-radius: 10px;
     color: var(--font-color);
+    cursor: pointer;
 }
 
 .Folder:hover {
@@ -275,9 +276,9 @@
     padding: 5px 0;
     width: 120px;
     border-radius: 10px;
-    color: var(--font-color);
-
+    color: black;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+
 }
 
 .context-menu div {
@@ -289,10 +290,6 @@
     background-color: #eee;
 }
 
-
-
-
-
 .context-menu2 {
     position: absolute;
     background: white;
@@ -301,7 +298,7 @@
     padding: 5px 0;
     width: 120px;
     border-radius: 10px;
-    color: var(--font-color);
+    color: black;
 
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }

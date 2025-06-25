@@ -696,6 +696,7 @@ export class ImporterComponent {
     this.isFilesLoading = true;
     if (!this.FileName) {
       this.toast.warning('Please Enter Folder name', 'Warning');
+      this.isFilesLoading = false;
       return;
     }
     this.files_list = [];
@@ -730,6 +731,8 @@ export class ImporterComponent {
               }, 200);
             });
         }, 900);
+      }, (error) => {
+        this.isFilesLoading = false;
       });
   }
 }

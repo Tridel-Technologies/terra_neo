@@ -99,6 +99,7 @@ export class DashboardComponent implements OnInit {
     battery: '',
     depth: '',
     latandlong: '',
+    datetime: '',
   };
 
   truncate(value: string | number): number {

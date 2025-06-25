@@ -129,6 +129,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   changedRows: Set<number> = new Set();
   isProcessedData: boolean = false;
   unitSettings: { key: string }[] = [];
+  isFilesLoading: boolean = false;
 
   @ViewChild('table') table: any;
   @ViewChild('tableWrapper') tableWrapper!: ElementRef;
@@ -179,6 +180,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     battery: '',
     depth: '',
     latandlong: '',
+    datetime: '',
   };
 
   onColorChange(color: string, type: string): void {
@@ -222,6 +224,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 fileID!:number;
   ngOnInit(): void {
+    this.isFilesLoading = true;
     // Load saved data type preference
     const savedDataType = localStorage.getItem('isProcessedData');
 
@@ -321,6 +324,7 @@ fileID!:number;
     this.unitSerive.units$.subscribe((u) => {
       this.units = u;
     });
+    this.isFilesLoading = false;
     console.log('units', this.units);
   }
 
