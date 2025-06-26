@@ -221,12 +221,12 @@
 }
 
 /* Temporary highlight class */
-   
+
   .temp-highlight {
     animation: highlight-fade 1.5s ease-out;
     background-color: lightblue !important;
   }
-   
+
   @keyframes highlight-fade {
     0% { background-color: lightblue; }
     100% { background-color: transparent; }
@@ -365,6 +365,7 @@
     width: 49.5%;
     background-color: var(--background-secondary);
     border-radius: 10px;
+    align-content: center;
 }
 
 .selectionOption {

@@ -187,7 +187,7 @@ parseFloat(value: any): number {
       };
 
       this.selected_data = data;
-      
+
       this.isLive = !this.isLive;
       const bfMatches = this.filterByHour(bf[0]);
       const afMatches = this.filterByHour(af[0]);
@@ -421,7 +421,7 @@ parseFloat(value: any): number {
         console.log('files:', response, this.files_list);
         this.fileID = this.globe.fileId;
         console.log('file IFD', this.fileID);
-        
+
         let folderIndex = -1;
         let selectedFile = null;
         let selectedFolder = null;
@@ -478,7 +478,7 @@ parseFloat(value: any): number {
       });
 
     // Units
-    
+
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -541,9 +541,9 @@ parseFloat(value: any): number {
 
   convertValue(value: number, fromUnit: string, toUnit: string): number {
     if (fromUnit === toUnit) return value;
-  
-    const maxVolt = 4.2; // for battery conversion
-  
+
+    const maxVolt = 12.4; // for battery conversion
+
     const conversions: { [key: string]: (v: number) => number } = {
       'm-ft': (v) => v * 3.28084,
       'ft-m': (v) => v / 3.28084,
@@ -558,18 +558,18 @@ parseFloat(value: any): number {
       'volts-%': (v) => (v / maxVolt) * 100,
       '%-volts': (v) => (v * maxVolt) / 100,
     };
-  
+
     const key = `${fromUnit}-${toUnit}`;
     if (conversions[key]) {
       return this.parseFloat(conversions[key](value).toFixed(2));
     }
-  
+
     // no conversion available
     return parseFloat(value.toFixed(2));
-  }  
+  }
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
   if (fromUnit === toUnit) return value;
-  
+
   const maxVolt = 4.2; // for battery conversion
 
   const conversions: { [key: string]: (v: any) => any } = {
@@ -667,10 +667,10 @@ parseFloat(value: any): number {
             station_id:"$PRTI20",
             water_level_unit: "m"
           })
-          
+
         }
         console.log("dd",dd)
-        const ddddd = this.globall.convertValue(response[0].pressure, response[0].water_level_unit, 'ft') 
+        const ddddd = this.globall.convertValue(response[0].pressure, response[0].water_level_unit, 'ft')
         console.log("converted", ddddd)
         if (this.isMulti) {
           let data = this.main_table;

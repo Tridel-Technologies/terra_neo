@@ -18,9 +18,8 @@ import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GlobalConfig } from '../global/app.global';
 import { UnitService, UnitSettings } from '../settings/unit.service';
-import { array } from '@amcharts/amcharts5';
-import { BaseComponent } from '../base/base.component';
 import { formatDate } from '@angular/common';
+import * as ExcelJS from 'exceljs';
 
 interface Column {
   field: string;
@@ -135,6 +134,7 @@ export class ReportsComponent implements OnInit {
   selectedColumns!: Column[];
   globalFilterFields!: string[];
   searchQuery: string = '';
+  exportSelectedOption: any = null;
 
   private baseUrl: string;
   private convertValues;
@@ -151,12 +151,16 @@ export class ReportsComponent implements OnInit {
 
   summaryColumns!: Column[];
 
-  constructor(private http: HttpClient, private toast: ToastrService, private unitSerive: UnitService) {
+  constructor(
+    private http: HttpClient,
+    private toast: ToastrService,
+    private unitSerive: UnitService
+  ) {
     this.baseUrl = new GlobalConfig().baseUrl;
     this.convertValues = new GlobalConfig().convertValue;
   }
 
-  unitssTo!:UnitSettings;
+  unitssTo!: UnitSettings;
 
   ngOnInit(): void {
     this.unitSerive.units$.subscribe((u) => {
@@ -170,59 +174,61 @@ export class ReportsComponent implements OnInit {
       console.log('files:', response, this.files_list);
 
       let folderIndex = -1;
-        let selectedFile = null;
-        let selectedFolder = null;
+      let selectedFile = null;
+      let selectedFolder = null;
 
-        if (this.fileID) {
-          folderIndex = this.files_list.findIndex((folder) =>
-            folder.files.some((file) => file.file_id === this.fileID)
-          );
-          if (folderIndex !== -1) {
-            selectedFolder = this.files_list[folderIndex];
-            selectedFile = selectedFolder.files.find(
-              (file) => file.file_id === this.fileID
-            );
-          }
-        }
-
-        // If no matching file found, fallback to first folder with files
-        if (folderIndex === -1) {
-          folderIndex = this.files_list.findIndex(
-            (folder) => folder.files && folder.files.length > 0
-          );
-          if (folderIndex !== -1) {
-            selectedFolder = this.files_list[folderIndex];
-            selectedFile = selectedFolder.files[0];
-          }
-        }
-
-        // Expand the matched folder
-        this.expandedFolders = this.files_list.map(
-          (_, index) => index === folderIndex
+      if (this.fileID) {
+        folderIndex = this.files_list.findIndex((folder) =>
+          folder.files.some((file) => file.file_id === this.fileID)
         );
-
-        // Set folder and file details if found
-        if (selectedFolder && selectedFile) {
-          this.openedFolder = selectedFolder.folder_id;
-          this.selected_folder_name = selectedFolder.folder_name;
-
-          this.selectedFiles = [
-            {
-              file_name: selectedFile.file_name,
-              file_id: selectedFile.file_id,
-            },
-          ];
-          this.opened_file = selectedFile.file_name;
-
-          // Fetch data for the file
-          this.open_file(selectedFile.file_id);
+        if (folderIndex !== -1) {
+          selectedFolder = this.files_list[folderIndex];
+          selectedFile = selectedFolder.files.find(
+            (file) => file.file_id === this.fileID
+          );
         }
+      }
+
+      // If no matching file found, fallback to first folder with files
+      if (folderIndex === -1) {
+        folderIndex = this.files_list.findIndex(
+          (folder) => folder.files && folder.files.length > 0
+        );
+        if (folderIndex !== -1) {
+          selectedFolder = this.files_list[folderIndex];
+          selectedFile = selectedFolder.files[0];
+        }
+      }
+
+      // Expand the matched folder
+      this.expandedFolders = this.files_list.map(
+        (_, index) => index === folderIndex
+      );
+
+      // Set folder and file details if found
+      if (selectedFolder && selectedFile) {
+        this.openedFolder = selectedFolder.folder_id;
+        this.selected_folder_name = selectedFolder.folder_name;
+
+        this.selectedFiles = [
+          {
+            file_name: selectedFile.file_name,
+            file_id: selectedFile.file_id,
+          },
+        ];
+        this.opened_file = selectedFile.file_name;
+
+        // Fetch data for the file
+        this.open_file(selectedFile.file_id);
+      }
     });
 
     this.setupColumns();
 
     // check date format from settings
-    const unitss: any = localStorage.getItem('unitSettings') ?? '{"datetime": "01-Jan-2025 12:00:00"}';
+    const unitss: any =
+      localStorage.getItem('unitSettings') ??
+      '{"datetime": "01-Jan-2025 12:00:00"}';
     this.unitssTo = JSON.parse(unitss);
 
     if (this.unitssTo.datetime === '30-03-2025 12:00:00') {
@@ -232,39 +238,76 @@ export class ReportsComponent implements OnInit {
     } else {
       this.dateFormat = 'dd MMM yyyy hh:mm:ss';
     }
-
   }
 
   setupColumns() {
     if (!this.showToggleTable) {
       this.cols = [
         { field: 'station_id', header: 'Station ID', type: 'text' },
-        { field: 'date', header: 'Time Stamp', type: 'shortDate' },
-        { field: 'lat', header: 'LAT', type: 'text' },
-        { field: 'lon', header: 'LON', type: 'text' },
+        { field: 'date', header: 'Time Stamp', type: 'text' },
+        { field: 'lat', header: 'Lat', type: 'text' },
+        { field: 'lon', header: 'Long', type: 'text' },
         { field: 'depth', header: `Depth (${this.units.depth})`, type: 'text' },
-        { field: 'pressure', header: `Water Level (${this.units.waterLevel})`, type: 'text' },
-        { field: 'speed', header: `Current Speed (${this.units.currentSpeed})`, type: 'text' },
-        { field: 'direction', header: `Current Direction (${this.units.currentDirection})`, type: 'text' },
+        {
+          field: 'pressure',
+          header: `Water Level (${this.units.waterLevel})`,
+          type: 'text',
+        },
+        {
+          field: 'speed',
+          header: `Current Speed (${this.units.currentSpeed})`,
+          type: 'text',
+        },
+        {
+          field: 'direction',
+          header: `Current Direction (${this.units.currentDirection})`,
+          type: 'text',
+        },
       ];
     } else {
       this.cols = [
         { field: 'timestamp', header: 'Date', type: 'text' },
         { field: 'name', header: 'Time', type: 'text' },
-        { field: 'pressure', header: `Water Level (${this.units.waterLevel})`, type: 'text' },
-        { field: 'speed', header: `Speed (${this.units.currentSpeed})`, type: 'text' },
-        { field: 'direction', header: `Direction (${this.units.currentDirection})`, type: 'text' },
+        {
+          field: 'pressure',
+          header: `Water Level (${this.units.waterLevel})`,
+          type: 'text',
+        },
+        {
+          field: 'speed',
+          header: `Speed (${this.units.currentSpeed})`,
+          type: 'text',
+        },
+        {
+          field: 'direction',
+          header: `Direction (${this.units.currentDirection})`,
+          type: 'text',
+        },
       ];
     }
     this.summaryColumns = [
       { field: 'timestamp', header: 'DateTime', type: 'text' },
       { field: 'name', header: 'Sequence', type: 'text' },
-      { field: 'pressure', header: `Water Level (${this.units.waterLevel})`, type: 'text' },
-      { field: 'speed', header: `Speed (${this.units.currentSpeed})`, type: 'text' },
-      { field: 'direction', header: `Direction (${this.units.currentDirection})`, type: 'text' },
+      {
+        field: 'pressure',
+        header: `Water Level (${this.units.waterLevel})`,
+        type: 'text',
+      },
+      {
+        field: 'speed',
+        header: `Speed (${this.units.currentSpeed})`,
+        type: 'text',
+      },
+      {
+        field: 'direction',
+        header: `Direction (${this.units.currentDirection})`,
+        type: 'text',
+      },
     ];
     this.selectedColumns = this.cols;
-    this.globalFilterFields = (!this.showToggleTable ? this.cols : this.summaryColumns).map(col => col.field);
+    this.globalFilterFields = (
+      !this.showToggleTable ? this.cols : this.summaryColumns
+    ).map((col) => col.field);
   }
 
   selectedData: { name: string; value: string } = {
@@ -283,7 +326,7 @@ export class ReportsComponent implements OnInit {
   ];
   nameOffile!: string;
 
-  fileID!:number
+  fileID!: number;
 
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
@@ -420,7 +463,7 @@ export class ReportsComponent implements OnInit {
       });
   }
 
-  checkForConversion(){
+  checkForConversion() {
     console.log('here', this.main_table[0]);
     const sourceUnits: { [key: string]: string } = {
       waterLevel: this.main_table[0].water_level_unit,
@@ -431,18 +474,22 @@ export class ReportsComponent implements OnInit {
     };
 
     const unitsMatch = Object.keys(this.units).every(
-      key => this.units[key] === sourceUnits[key]
+      (key) => this.units[key] === sourceUnits[key]
     );
     console.log('match', unitsMatch);
 
-    if(!unitsMatch){
+    if (!unitsMatch) {
       this.main_table = this.main_table.map((item, index) => {
         const newItem = { ...item } as ApiData;
 
         // if waterLevel unit mismatches → convert pressure
         if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
           if (newItem.pressure !== null && newItem.pressure !== undefined) {
-            const converted = this.convertValues(+item.pressure, sourceUnits['waterLevel'], this.units['waterLevel']);
+            const converted = this.convertValues(
+              +item.pressure,
+              sourceUnits['waterLevel'],
+              this.units['waterLevel']
+            );
             newItem.pressure = converted.toString();
             this.main_table[index].pressure = converted.toString();
           }
@@ -451,16 +498,26 @@ export class ReportsComponent implements OnInit {
         // if currentSpeed unit mismatches → convert speed
         if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
           if (newItem.speed !== null && newItem.speed !== undefined) {
-            const converted = this.convertValues(+item.speed, sourceUnits['currentSpeed'], this.units['currentSpeed']);
+            const converted = this.convertValues(
+              +item.speed,
+              sourceUnits['currentSpeed'],
+              this.units['currentSpeed']
+            );
             newItem.speed = converted.toString();
             this.main_table[index].speed = converted.toString();
           }
         }
 
         // if currentDirection unit mismatches → convert direction
-        if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+        if (
+          sourceUnits['currentDirection'] !== this.units['currentDirection']
+        ) {
           if (newItem.direction !== null && newItem.direction !== undefined) {
-            const converted = this.convertValues(+item.direction, sourceUnits['currentDirection'], this.units['currentDirection']);
+            const converted = this.convertValues(
+              +item.direction,
+              sourceUnits['currentDirection'],
+              this.units['currentDirection']
+            );
             newItem.direction = converted.toString();
             this.main_table[index].direction = converted.toString();
           }
@@ -469,7 +526,11 @@ export class ReportsComponent implements OnInit {
         // depth
         if (sourceUnits['depth'] !== this.units['depth']) {
           if (newItem.depth !== null && newItem.depth !== undefined) {
-            const converted = this.convertValues(+item.depth, sourceUnits['depth'], this.units['depth']);
+            const converted = this.convertValues(
+              +item.depth,
+              sourceUnits['depth'],
+              this.units['depth']
+            );
             newItem.depth = converted.toString();
             this.main_table[index].depth = converted.toString();
           }
@@ -627,7 +688,11 @@ export class ReportsComponent implements OnInit {
       }
 
       const currentTimestamp = new Date(currentData.date);
-      const currentFormattedDate = formatDate(currentTimestamp, this.dateFormat, 'en-US');
+      const currentFormattedDate = formatDate(
+        currentTimestamp,
+        this.dateFormat,
+        'en-US'
+      );
       this.toggleTableData.push({
         name: 'High Water Time',
         timestamp: currentFormattedDate,
@@ -730,8 +795,8 @@ export class ReportsComponent implements OnInit {
     return '';
   }
 
-  onExportOptionSelect(event: any, dt2: any) {
-    const selectedOption = event.value;
+  onExportOptionSelect(selectedOption: string, dt2: any) {
+    // const selectedOption = event.value;
     switch (selectedOption) {
       case 'csv':
         this.exportCSV(dt2);
@@ -745,6 +810,10 @@ export class ReportsComponent implements OnInit {
       default:
         break;
     }
+
+    setTimeout(() => {
+      this.exportSelectedOption = null;
+    });
   }
 
   exportCSV(dt: any) {
@@ -786,7 +855,7 @@ export class ReportsComponent implements OnInit {
               return `'${value}`;
             }
             return value;
-          })
+          }),
         ];
         return values.map((cell) => `"${cell}"`).join(',');
       }),
@@ -794,9 +863,6 @@ export class ReportsComponent implements OnInit {
 
     return csvRows.join('\r\n');
   }
-
-
-
 
   exportExcel(dt: any) {
     const filteredData = dt.filteredValue || dt.value;
@@ -853,155 +919,153 @@ export class ReportsComponent implements OnInit {
     }
   }
 
+  saveAsExcelFile(buffer: any, fileName: string): void {
+    const EXCEL_TYPE =
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
+    const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
+    saveAs(data, `${this.nameOffile}_download.xlsx`);
+  }
 
-
-    saveAsExcelFile(buffer: any, fileName: string): void {
-      const EXCEL_TYPE =
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8';
-      const data: Blob = new Blob([buffer], { type: EXCEL_TYPE });
-      saveAs(data, `${this.nameOffile}_download.xlsx`);
-    }
-
-    exportPDF(dt: any) {
-      const hexToRgb = (hex: string): [number, number, number] => {
-        hex = hex.replace('#', '');
-        if (hex.length === 3) {
-          hex = hex
-            .split('')
-            .map((c) => c + c)
-            .join('');
-        }
-        const bigint = parseInt(hex, 16);
-        return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
-      };
-
-      const filteredData: any[] = dt.value;
-
-      if (filteredData && filteredData.length > 0) {
-        const activeColumns = this.showToggleTable
-          ? this.summaryColumns
-          : this.selectedColumns;
-
-        const fixedHeaders = ['S No'];
-        const fixedFields: string[] = [];
-
-        const dynamicHeaders = activeColumns.map((col) => col.header);
-        const dynamicFields = activeColumns.map((col) => col.field);
-
-        const headers = [...fixedHeaders, ...dynamicHeaders];
-        const fields = [...fixedFields, ...dynamicFields];
-
-        const data = filteredData.map((row: any, index: number) => {
-          const rowData: (string | number)[] = [index + 1];
-          fields.forEach((field) => {
-            const value = row[field];
-            if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
-              // const date = new Date(value);
-              // const formattedDate = formatDate(date, this.dateFormat, 'en-US');
-              rowData.push(value);
-            } else {
-              rowData.push(value || '');
-            }
-          });
-          return rowData;
-        });
-
-        // Get theme-based CSS variable values
-        const tableBgColor =
-          this.getCSSVariableValue('--tablebgcolor') || '#ffffff';
-        const rowStripeColor =
-          this.getCSSVariableValue('--row-stripe-color') || '#f9f9f9';
-        const fontColor = this.getCSSVariableValue('--font-color') || '#000000';
-
-        const highlightRowColor =
-          this.getCSSVariableValue('--highlight-row-color') || '#ffeb3b';
-        const highlightFontColor =
-          this.getCSSVariableValue('--highlight-font-color') || '#212529';
-
-        const peakRowColor =
-          this.getCSSVariableValue('--peak-row-color') || '#c5e1ff';
-        const peakFontColor =
-          this.getCSSVariableValue('--peak-font-color') || '#212529';
-
-        const beforeRowColor =
-          this.getCSSVariableValue('--before-row-color') || '#e0f7fa';
-        const beforeFontColor =
-          this.getCSSVariableValue('--before-font-color') || '#212529';
-
-        const afterRowColor =
-          this.getCSSVariableValue('--after-row-color') || '#fff3e0';
-        const afterFontColor =
-          this.getCSSVariableValue('--after-font-color') || '#212529';
-
-        const doc = new jsPDF('landscape');
-        autoTable(doc, {
-          head: [headers],
-          body: data,
-          styles: {
-            fontSize: 8,
-            cellPadding: 1,
-            overflow: 'linebreak',
-            valign: 'middle',
-            textColor: hexToRgb(fontColor),
-          },
-          headStyles: {
-            fillColor: [41, 128, 185],
-            textColor: [255, 255, 255],
-            halign: 'center',
-            fontSize: 9,
-          },
-          bodyStyles: {
-            halign: 'center',
-          },
-          columnStyles: {
-            0: { cellWidth: 20 },
-          },
-          didParseCell: (data) => {
-            if (data.section === 'body') {
-              const rowIndex = data.row.index;
-              const rowData = filteredData[rowIndex];
-              const rowClass = this.getRowClass(rowData);
-
-              switch (rowClass) {
-                case 'highlight-row':
-                  data.cell.styles.fillColor = hexToRgb(highlightRowColor);
-                  data.cell.styles.textColor = hexToRgb(highlightFontColor);
-                  break;
-                case 'peak-row':
-                  data.cell.styles.fillColor = hexToRgb(peakRowColor);
-                  data.cell.styles.textColor = hexToRgb(peakFontColor);
-                  break;
-                case 'before-row':
-                  data.cell.styles.fillColor = hexToRgb(beforeRowColor);
-                  data.cell.styles.textColor = hexToRgb(beforeFontColor);
-                  break;
-                case 'after-row':
-                  data.cell.styles.fillColor = hexToRgb(afterRowColor);
-                  data.cell.styles.textColor = hexToRgb(afterFontColor);
-                  break;
-                default:
-                  data.cell.styles.fillColor =
-                    rowIndex % 2 === 0
-                      ? hexToRgb(rowStripeColor)
-                      : hexToRgb(tableBgColor);
-                  data.cell.styles.textColor = hexToRgb(fontColor);
-                  break;
-              }
-            }
-          },
-          pageBreak: 'auto',
-          showHead: 'everyPage',
-        });
-
-        doc.save(`${this.nameOffile}.pdf`);
-      } else {
-        console.warn('No data available for PDF export');
+  exportPDF(dt: any) {
+    const hexToRgb = (hex: string): [number, number, number] => {
+      hex = hex.replace('#', '');
+      if (hex.length === 3) {
+        hex = hex
+          .split('')
+          .map((c) => c + c)
+          .join('');
       }
-    }
+      const bigint = parseInt(hex, 16);
+      return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
+    };
 
-    getCSSVariableValue(variableName: string): string {
-      return getComputedStyle(document.body)
-        .getPropertyValue(variableName)
-        .trim();
+    const filteredData: any[] = dt.value;
+
+    if (filteredData && filteredData.length > 0) {
+      const activeColumns = this.showToggleTable
+        ? this.summaryColumns
+        : this.selectedColumns;
+
+      const fixedHeaders = ['S No'];
+      const fixedFields: string[] = [];
+
+      const dynamicHeaders = activeColumns.map((col) => col.header);
+      const dynamicFields = activeColumns.map((col) => col.field);
+
+      const headers = [...fixedHeaders, ...dynamicHeaders];
+      const fields = [...fixedFields, ...dynamicFields];
+
+      const data = filteredData.map((row: any, index: number) => {
+        const rowData: (string | number)[] = [index + 1];
+        fields.forEach((field) => {
+          const value = row[field];
+          if (typeof value === 'string' && value.match(/^\d{4}-\d{2}-\d{2}T/)) {
+            // const date = new Date(value);
+            // const formattedDate = formatDate(date, this.dateFormat, 'en-US');
+            rowData.push(value);
+          } else {
+            rowData.push(value || '');
+          }
+        });
+        return rowData;
+      });
+
+      // Get theme-based CSS variable values
+      const tableBgColor =
+        this.getCSSVariableValue('--tablebgcolor') || '#ffffff';
+      const rowStripeColor =
+        this.getCSSVariableValue('--row-stripe-color') || '#f9f9f9';
+      const fontColor = this.getCSSVariableValue('--font-color') || '#000000';
+
+      const highlightRowColor =
+        this.getCSSVariableValue('--highlight-row-color') || '#ffeb3b';
+      const highlightFontColor =
+        this.getCSSVariableValue('--highlight-font-color') || '#212529';
+
+      const peakRowColor =
+        this.getCSSVariableValue('--peak-row-color') || '#c5e1ff';
+      const peakFontColor =
+        this.getCSSVariableValue('--peak-font-color') || '#212529';
+
+      const beforeRowColor =
+        this.getCSSVariableValue('--before-row-color') || '#e0f7fa';
+      const beforeFontColor =
+        this.getCSSVariableValue('--before-font-color') || '#212529';
+
+      const afterRowColor =
+        this.getCSSVariableValue('--after-row-color') || '#fff3e0';
+      const afterFontColor =
+        this.getCSSVariableValue('--after-font-color') || '#212529';
+
+      const doc = new jsPDF('landscape');
+      autoTable(doc, {
+        head: [headers],
+        body: data,
+        styles: {
+          fontSize: 8,
+          cellPadding: 1,
+          overflow: 'linebreak',
+          valign: 'middle',
+          textColor: hexToRgb(fontColor),
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: [255, 255, 255],
+          halign: 'center',
+          fontSize: 9,
+        },
+        bodyStyles: {
+          halign: 'center',
+        },
+        columnStyles: {
+          0: { cellWidth: 20 },
+        },
+        didParseCell: (data) => {
+          if (data.section === 'body') {
+            const rowIndex = data.row.index;
+            const rowData = filteredData[rowIndex];
+            const rowClass = this.getRowClass(rowData);
+
+            switch (rowClass) {
+              case 'highlight-row':
+                data.cell.styles.fillColor = hexToRgb(highlightRowColor);
+                data.cell.styles.textColor = hexToRgb(highlightFontColor);
+                break;
+              case 'peak-row':
+                data.cell.styles.fillColor = hexToRgb(peakRowColor);
+                data.cell.styles.textColor = hexToRgb(peakFontColor);
+                break;
+              case 'before-row':
+                data.cell.styles.fillColor = hexToRgb(beforeRowColor);
+                data.cell.styles.textColor = hexToRgb(beforeFontColor);
+                break;
+              case 'after-row':
+                data.cell.styles.fillColor = hexToRgb(afterRowColor);
+                data.cell.styles.textColor = hexToRgb(afterFontColor);
+                break;
+              default:
+                data.cell.styles.fillColor =
+                  rowIndex % 2 === 0
+                    ? hexToRgb(rowStripeColor)
+                    : hexToRgb(tableBgColor);
+                data.cell.styles.textColor = hexToRgb(fontColor);
+                break;
+            }
+          }
+        },
+        pageBreak: 'auto',
+        showHead: 'everyPage',
+      });
+
+      doc.save(`${this.nameOffile}.pdf`);
+    } else {
+      console.warn('No data available for PDF export');
     }
+  }
+
+  getCSSVariableValue(variableName: string): string {
+    return getComputedStyle(document.body)
+      .getPropertyValue(variableName)
+      .trim();
+  }
 }

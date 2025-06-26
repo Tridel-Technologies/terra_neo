@@ -33,7 +33,7 @@ export class BatteryComponent implements OnInit, OnChanges {
   }
 
   private updateValues() {
-    const maxVoltage = 40;
+    const maxVoltage = 12.4;
     let voltage = Math.min(this.voltage, maxVoltage);
 
     const voltagePercentage = Math.round((voltage / maxVoltage) * 100);

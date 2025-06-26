@@ -191,7 +191,7 @@
                     </thead>
                     <tbody>
                         <tr *ngFor="let row of main_table; let i=index" (click)="onRowClick(row, i)"
-                            [class.selected]="selectedRowIndex === i">
+                            [class.selected]="selectedRowIndex === i" [attr.id] = "'row-' + i">
                             <td>{{ row.station_id }}</td>
                             <td>{{ row.date | date: 'yyyy-MMM-dd HH:mm:ss' }}</td>
                             <td>{{ row.speed }}</td>

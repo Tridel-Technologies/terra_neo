@@ -53,12 +53,12 @@ export class ImporterComponent {
   high_water_level!: string;
   selectedRowIndex: number | null = null;
   selectedRowData: any = null;
-  lonDeg!:number;
-  lonMin!:number;
-  lonSec!:number;
-  latDeg!:number;
-  latMin!:number;
-  latSec!:number;
+  lonDeg!: number;
+  lonMin!: number;
+  lonSec!: number;
+  latDeg!: number;
+  latMin!: number;
+  latSec!: number;
   row_isempty: boolean = false;
 
   unitSettings = [
@@ -136,7 +136,7 @@ export class ImporterComponent {
 
   selectUnit(paramKey: string, unit: string) {
     this.selectedUnits[paramKey] = unit;
-    console.log("units", this.selectedUnits);
+    console.log('units', this.selectedUnits);
   }
 
   onRowClick(row: any, index: number) {
@@ -156,16 +156,23 @@ export class ImporterComponent {
   }
 
   update_Values() {
-    if(this.unitssTo.latandlong ==='dd'){
+    if (this.unitssTo.latandlong === 'dd') {
       if (this.latitude === null && this.lon === null) {
         this.toast.warning('Please enter coordinates', 'Error', {
           timeOut: 1000,
         });
         return;
       }
-    }else{
-      if(this.latDeg ===null || this.latMin===null ||this.latSec===null ||this.lonDeg===null||this.lonMin===null||this.lonSec===null){
-         this.toast.warning('Please enter coordinates', 'Error', {
+    } else {
+      if (
+        this.latDeg === null ||
+        this.latMin === null ||
+        this.latSec === null ||
+        this.lonDeg === null ||
+        this.lonMin === null ||
+        this.lonSec === null
+      ) {
+        this.toast.warning('Please enter coordinates', 'Error', {
           timeOut: 1000,
         });
         return;
@@ -177,21 +184,29 @@ export class ImporterComponent {
       files.push(this.selectedFiles[index]);
     }
     // file_name, lat, lon, high_water_level
-    let data = {}
-    if(this.unitssTo.latandlong ==='dd'){
-       data = {
+    let data = {};
+    if (this.unitssTo.latandlong === 'dd') {
+      data = {
         file_name: files,
         lat: this.latitude,
         lon: this.lon,
         high_water_level: this.high_water_level,
       };
-    }else{
+    } else {
       const lat = `${this.latDeg}° ${this.latMin}' ${this.latSec}''`;
       const lon = `${this.lonDeg}° ${this.lonMin}' ${this.lonSec}''`;
       data = {
         file_name: files,
-        lat: this.convertcoored(parseFloat(lat), 'dms', this.unitssTo.latandlong),
-        lon: this.convertcoored(parseFloat(lon), 'dms', this.unitssTo.latandlong),
+        lat: this.convertcoored(
+          parseFloat(lat),
+          'dms',
+          this.unitssTo.latandlong
+        ),
+        lon: this.convertcoored(
+          parseFloat(lon),
+          'dms',
+          this.unitssTo.latandlong
+        ),
         high_water_level: this.high_water_level,
       };
     }
@@ -259,65 +274,98 @@ export class ImporterComponent {
           setTimeout(() => {
             this.main_table = data;
             let maxPressureRow = this.main_table.reduce((max, item) => {
-              return parseFloat(item.pressure) > parseFloat(max.pressure) ? item : max;
+              return parseFloat(item.pressure) > parseFloat(max.pressure)
+                ? item
+                : max;
             });
 
-            console.log("Row with Max Pressure:", maxPressureRow);
-            if (this.unitssTo.latandlong ==='dd') {
+            console.log('Row with Max Pressure:', maxPressureRow);
+            if (this.unitssTo.latandlong === 'dd') {
               this.latitude = this.main_table[0].lat;
               this.lon = this.main_table[0].lon;
-            }else{
-             const latDms = this.ddtoDms(parseFloat(this.main_table[0].lat), 'dd', 'dms');
-  this.latDeg = latDms.deg;
-  this.latMin = latDms.min;
-  this.latSec = latDms.sec;
+            } else {
+              const latDms = this.ddtoDms(
+                parseFloat(this.main_table[0].lat),
+                'dd',
+                'dms'
+              );
+              this.latDeg = latDms.deg;
+              this.latMin = latDms.min;
+              this.latSec = latDms.sec;
 
-  // Convert Longitude DD to DMS
-  const lonDms = this.ddtoDms(parseFloat(this.main_table[0].lon), 'dd', 'dms');
-  this.lonDeg = lonDms.deg;
-  this.lonMin = lonDms.min;
-  this.lonSec = lonDms.sec;
+              // Convert Longitude DD to DMS
+              const lonDms = this.ddtoDms(
+                parseFloat(this.main_table[0].lon),
+                'dd',
+                'dms'
+              );
+              this.lonDeg = lonDms.deg;
+              this.lonMin = lonDms.min;
+              this.lonSec = lonDms.sec;
             }
-
           }, 100);
         } else {
           this.main_table = [];
           setTimeout(() => {
             this.main_table = response;
-             let maxPressureIndex = 0;
-              let maxPressureValue = parseFloat(this.main_table[0].pressure);
+            let maxPressureIndex = 0;
+            let maxPressureValue = parseFloat(this.main_table[0].pressure);
 
-              for (let i = 1; i < this.main_table.length; i++) {
-                let currentPressure = parseFloat(this.main_table[i].pressure);
-                if (currentPressure > maxPressureValue) {
-                  maxPressureValue = currentPressure;
-                  maxPressureIndex = i;
-                }
+            for (let i = 1; i < this.main_table.length; i++) {
+              let currentPressure = parseFloat(this.main_table[i].pressure);
+              if (currentPressure > maxPressureValue) {
+                maxPressureValue = currentPressure;
+                maxPressureIndex = i;
               }
+            }
 
-              let maxPressureRow = this.main_table[maxPressureIndex];
-              this.selectedRowIndex = maxPressureIndex;
-              const date = new Date(maxPressureRow.date);
-    const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
-    console.log(formattedDate);
-    this.high_water_level = `${formattedDate}`;
-              console.log("Row with Max Pressure:", maxPressureRow);
-              console.log("Index of Max Pressure Row:", maxPressureIndex);
+            let maxPressureRow = this.main_table[maxPressureIndex];
+            this.selectedRowIndex = maxPressureIndex;
 
-             if (this.unitssTo.latandlong ==='dd') {
+            // Scroll to that row
+            setTimeout(() => {
+              const rowElement = document.getElementById(
+                `row-${this.selectedRowIndex}`
+              );
+              if (rowElement) {
+                rowElement.scrollIntoView({
+                  behavior: 'smooth',
+                  block: 'center',
+                });
+              }
+            }, 100);
+            const date = new Date(maxPressureRow.date);
+            const formattedDate = this.datePipe.transform(
+              date,
+              'yyyy-MM-dd HH:mm:ss'
+            );
+            console.log(formattedDate);
+            this.high_water_level = `${formattedDate}`;
+            console.log('Row with Max Pressure:', maxPressureRow);
+            console.log('Index of Max Pressure Row:', maxPressureIndex);
+
+            if (this.unitssTo.latandlong === 'dd') {
               this.latitude = this.main_table[0].lat;
               this.lon = this.main_table[0].lon;
-            }else{
-             const latDms = this.ddtoDms(parseFloat(this.main_table[0].lat), 'dd', 'dms');
-  this.latDeg = latDms.deg;
-  this.latMin = latDms.min;
-  this.latSec = latDms.sec;
+            } else {
+              const latDms = this.ddtoDms(
+                parseFloat(this.main_table[0].lat),
+                'dd',
+                'dms'
+              );
+              this.latDeg = latDms.deg;
+              this.latMin = latDms.min;
+              this.latSec = latDms.sec;
 
-  // Convert Longitude DD to DMS
-  const lonDms = this.ddtoDms(parseFloat(this.main_table[0].lon), 'dd', 'dms');
-  this.lonDeg = lonDms.deg;
-  this.lonMin = lonDms.min;
-  this.lonSec = lonDms.sec;
+              // Convert Longitude DD to DMS
+              const lonDms = this.ddtoDms(
+                parseFloat(this.main_table[0].lon),
+                'dd',
+                'dms'
+              );
+              this.lonDeg = lonDms.deg;
+              this.lonMin = lonDms.min;
+              this.lonSec = lonDms.sec;
             }
 
             const high = this.main_table.filter(
@@ -336,35 +384,35 @@ export class ImporterComponent {
     console.log(this.expandedFolders);
   }
   ddtoDms(value: any, fromUnit: string, toUnit: string): any {
-  if (fromUnit === toUnit) return value;
+    if (fromUnit === toUnit) return value;
 
-  const conversions: { [key: string]: (v: any) => any } = {
-    'dd-dms': (v: number) => {
-      const deg = Math.floor(v);
-      const minFloat = (v - deg) * 60;
-      const min = Math.floor(minFloat);
-      const sec = parseFloat(((minFloat - min) * 60).toFixed(3));
-      return { deg, min, sec };
-    },
+    const conversions: { [key: string]: (v: any) => any } = {
+      'dd-dms': (v: number) => {
+        const deg = Math.floor(v);
+        const minFloat = (v - deg) * 60;
+        const min = Math.floor(minFloat);
+        const sec = parseFloat(((minFloat - min) * 60).toFixed(3));
+        return { deg, min, sec };
+      },
 
-    'dms-dd': (v: string) => {
-      const regex = /(\d+)°(\d+)'([\d.]+)"/;
-      const match = v.match(regex);
-      if (!match) return 0;
-      const deg = parseInt(match[1]);
-      const min = parseInt(match[2]);
-      const sec = parseFloat(match[3]);
-      return parseFloat((deg + (min / 60) + (sec / 3600)).toFixed(6));
+      'dms-dd': (v: string) => {
+        const regex = /(\d+)°(\d+)'([\d.]+)"/;
+        const match = v.match(regex);
+        if (!match) return 0;
+        const deg = parseInt(match[1]);
+        const min = parseInt(match[2]);
+        const sec = parseFloat(match[3]);
+        return parseFloat((deg + min / 60 + sec / 3600).toFixed(6));
+      },
+    };
+
+    const key = `${fromUnit}-${toUnit}`;
+    if (conversions[key]) {
+      return conversions[key](value);
     }
-  };
 
-  const key = `${fromUnit}-${toUnit}`;
-  if (conversions[key]) {
-    return conversions[key](value);
+    return value;
   }
-
-  return value;
-}
 
   changinglat() {
     console.log(this.latitude);
@@ -413,24 +461,22 @@ export class ImporterComponent {
     return isSelected ? 'file-item_active' : 'file-item';
     // }
   }
-  unitssTo!:UnitSettings;
+  unitssTo!: UnitSettings;
   ngOnInit(): void {
-    const unitss:any = localStorage.getItem('unitSettings');
+    const unitss: any = localStorage.getItem('unitSettings');
     this.unitssTo = JSON.parse(unitss);
-    console.log("Unitsss", this.unitssTo)
+    console.log('Unitsss', this.unitssTo);
     this.isFilesLoading = true;
     window.addEventListener('storage', (e) => {
       console.log('Storage event fired!', e);
     });
     this.files_list = [];
-    this.http
-      .get(`${this.baseUrl}files`)
-      .subscribe((response: any) => {
-        this.files_list = response['data'];
-        console.log('files:', response, this.files_list);
-        this.isFilesLoading=false;
-        this.expandedFolders = [false, false, false, false, false, false, true];
-      });
+    this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+      this.files_list = response['data'];
+      console.log('files:', response, this.files_list);
+      this.isFilesLoading = false;
+      this.expandedFolders = [false, false, false, false, false, false, true];
+    });
   }
 
   getFileImage(fileName: string): string {
@@ -447,9 +493,9 @@ export class ImporterComponent {
   }
   on_openImport() {
     this.is_show_import = !this.is_show_import;
-    this.historyData =[];
-    this.FileName =''
-    this.uploaded_files =[]
+    this.historyData = [];
+    this.FileName = '';
+    this.uploaded_files = [];
   }
 
   expectedHeaders = [
@@ -579,11 +625,11 @@ export class ImporterComponent {
             };
           });
 
-          if(this.row_isempty === true){
+          if (this.row_isempty === true) {
             this.toast.warning(
               `Empty or NaN values in the file ${file.name} have been replaced with NULL.`,
               'Warning'
-            );          
+            );
           }
 
           resolve({ fileName: file.name, data: formattedData });
@@ -595,45 +641,46 @@ export class ImporterComponent {
       reader.readAsArrayBuffer(file);
     });
   }
- convertcoored(value: any, fromUnit: string, toUnit: string): any {
-  if (fromUnit === toUnit) return value;
-  
-  const maxVolt = 4.2; // for battery conversion
+  convertcoored(value: any, fromUnit: string, toUnit: string): any {
+    if (fromUnit === toUnit) return value;
 
-  const conversions: { [key: string]: (v: any) => any } = {
-    'm-ft': (v) => v * 3.28084,
-    'ft-m': (v) => v / 3.28084,
-    'm-cm': (v) => v * 100,
-    'cm-m': (v) => v / 100,
-    'ft-cm': (v) => (v / 3.28084) * 100,
-    'cm-ft': (v) => (v / 100) * 3.28084,
-    'm/s-knots': (v) => v * 1.94384,
-    'knots-m/s': (v) => v / 1.94384,
-    'radians-°': (v) => v * (180 / Math.PI),
-    '°-radians': (v) => v * (Math.PI / 180),
-    'volts-%': (v) => (v / maxVolt) * 100,
-    '%-volts': (v) => (v * maxVolt) / 100,
+    const maxVolt = 4.2; // for battery conversion
 
-    // DD to DMS
-    'dd-dms': (v) => {
-      const deg = Math.floor(v);
-      const minFloat = (v - deg) * 60;
-      const min = Math.floor(minFloat);
-      const sec = (minFloat - min) * 60;
-      return `${deg}°${min}'${sec.toFixed(2)}"`;
-    },
+    const conversions: { [key: string]: (v: any) => any } = {
+      'm-ft': (v) => v * 3.28084,
+      'ft-m': (v) => v / 3.28084,
+      'm-cm': (v) => v * 100,
+      'cm-m': (v) => v / 100,
+      'ft-cm': (v) => (v / 3.28084) * 100,
+      'cm-ft': (v) => (v / 100) * 3.28084,
+      'm/s-knots': (v) => v * 1.94384,
+      'knots-m/s': (v) => v / 1.94384,
+      'radians-°': (v) => v * (180 / Math.PI),
+      '°-radians': (v) => v * (Math.PI / 180),
+      'volts-%': (v) => (v / maxVolt) * 100,
+      '%-volts': (v) => (v * maxVolt) / 100,
 
-    // DMS to DD
-    'dms-dd': (v) => {
-      const regex = /(\d+)°(\d+)'([\d.]+)"/;
-      const match = v.match(regex);
-      if (!match) return 0;
-      const deg = parseInt(match[1]);
-      const min = parseInt(match[2]);
-      const sec = parseFloat(match[3]);
-      return parseFloat((deg + (min / 60) + (sec / 3600)).toFixed(6));
-    }
-  }};
+      // DD to DMS
+      'dd-dms': (v) => {
+        const deg = Math.floor(v);
+        const minFloat = (v - deg) * 60;
+        const min = Math.floor(minFloat);
+        const sec = (minFloat - min) * 60;
+        return `${deg}°${min}'${sec.toFixed(2)}"`;
+      },
+
+      // DMS to DD
+      'dms-dd': (v) => {
+        const regex = /(\d+)°(\d+)'([\d.]+)"/;
+        const match = v.match(regex);
+        if (!match) return 0;
+        const deg = parseInt(match[1]);
+        const min = parseInt(match[2]);
+        const sec = parseFloat(match[3]);
+        return parseFloat((deg + min / 60 + sec / 3600).toFixed(6));
+      },
+    };
+  }
   excelSerialDateToJSDate(serial: number): string {
     const excelEpoch = new Date(1899, 11, 30); // Excel epoch starts from 1900-01-01 but needs an offset
     const days = Math.floor(serial);
@@ -704,13 +751,12 @@ export class ImporterComponent {
       folder_name: this.FileName,
       file_name: Object.keys(this.fileWiseUploadData),
       data: this.fileWiseUploadData,
-      units: this.selectedUnits
+      units: this.selectedUnits,
     };
 
     console.log(file);
-    this.http
-      .post(`${this.baseUrl}createFile`, file)
-      .subscribe((response: any) => {
+    this.http.post(`${this.baseUrl}createFile`, file).subscribe(
+      (response: any) => {
         this.toast.success(response.message, 'Success');
 
         this.historyData = [];
@@ -719,20 +765,20 @@ export class ImporterComponent {
         this.fileWiseUploadData = {};
 
         setTimeout(() => {
-          this.http
-            .get(`${this.baseUrl}files`)
-            .subscribe((response: any) => {
-              this.files_list = response['data'];
-              console.log('files', response, this.files_list);
-              this.expandedFolders = this.files_list.map(() => false);
-              setTimeout(() => {
-                this.isFilesLoading = false;
-                this.is_show_import = false;
-              }, 200);
-            });
+          this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+            this.files_list = response['data'];
+            console.log('files', response, this.files_list);
+            this.expandedFolders = this.files_list.map(() => false);
+            setTimeout(() => {
+              this.isFilesLoading = false;
+              this.is_show_import = false;
+            }, 200);
+          });
         }, 900);
-      }, (error) => {
+      },
+      (error) => {
         this.isFilesLoading = false;
-      });
+      }
+    );
   }
 }

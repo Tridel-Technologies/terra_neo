@@ -70,7 +70,7 @@
             <h4>{{selected_folder_name}} -> {{selectedFiles[0].file_name}}</h4>
             <div class="content">
                 <p *ngFor="let dates of main_table" (click)="tap_date(dates.date, dates.time)" [ngStyle]="{
-                            'background-color': 
+                            'background-color':
                             selected_data.dateTime === dates.date
                             ? 'rgba(165, 198, 240, 0.851)' : 'transparent'
                         }">
@@ -87,9 +87,9 @@
                 <div class="date-time">
                     <h5 class="title">Date & Time</h5>
                     <p class="sub-title">
-                        {{ isLive ? (selected_data.dateTime | date: 'yyyy-MMM-dd HH:mm:ss' :'UTC') : (currentData.date |
+                        {{ isLive ? (selected_data.dateTime | date: 'yyyy-MMM-dd HH:mm:ss') : (currentData.date |
                         date:
-                        'yyyy-MMM-dd HH:mm:ss' : 'UTC') }}
+                        'yyyy-MMM-dd HH:mm:ss') }}
                     </p>
 
                 </div>

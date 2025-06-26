@@ -217,13 +217,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private ngZone: NgZone,
     private base: BaseComponent,
     private themeService: ThemeService,
-    private unitSerive: UnitService,
-
+    private unitSerive: UnitService
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
     this.convertValues = new GlobalConfig().convertValue;
   }
-fileID!:number;
+  fileID!: number;
   ngOnInit(): void {
     this.isFilesLoading = true;
     // Load saved data type preference
@@ -234,64 +233,62 @@ fileID!:number;
     }
 
     this.files_list = [];
-    this.http
-      .get(`${this.baseUrl}files`)
-      .subscribe((response: any) => {
-        this.files_list = response['data'];
-        console.log('files:', response, this.files_list);
-        this.expandedFolders = this.files_list.map(() => false);
-        this.fileID = this.base.fileId!;
-        console.log('file IFD', this.fileID);
+    this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+      this.files_list = response['data'];
+      console.log('files:', response, this.files_list);
+      this.expandedFolders = this.files_list.map(() => false);
+      this.fileID = this.base.fileId!;
+      console.log('file IFD', this.fileID);
 
-        let folderIndex = -1;
-        let selectedFile = null;
-        let selectedFolder = null;
+      let folderIndex = -1;
+      let selectedFile = null;
+      let selectedFolder = null;
 
-        if (this.fileID) {
-          folderIndex = this.files_list.findIndex((folder) =>
-            folder.files.some((file) => file.file_id === this.fileID)
-          );
-          if (folderIndex !== -1) {
-            selectedFolder = this.files_list[folderIndex];
-            selectedFile = selectedFolder.files.find(
-              (file) => file.file_id === this.fileID
-            );
-          }
-        }
-
-        // If no matching file found, fallback to first folder with files
-        if (folderIndex === -1) {
-          folderIndex = this.files_list.findIndex(
-            (folder) => folder.files && folder.files.length > 0
-          );
-          if (folderIndex !== -1) {
-            selectedFolder = this.files_list[folderIndex];
-            selectedFile = selectedFolder.files[0];
-          }
-        }
-
-        // Expand the matched folder
-        this.expandedFolders = this.files_list.map(
-          (_, index) => index === folderIndex
+      if (this.fileID) {
+        folderIndex = this.files_list.findIndex((folder) =>
+          folder.files.some((file) => file.file_id === this.fileID)
         );
-
-        // Set folder and file details if found
-        if (selectedFolder && selectedFile) {
-          this.openedFolder = selectedFolder.folder_id;
-          this.selected_folder_name = selectedFolder.folder_name;
-
-          this.selectedFiles = [
-            {
-              file_name: selectedFile.file_name,
-              file_id: selectedFile.file_id,
-            },
-          ];
-          this.opened_file = selectedFile.file_name;
-
-          // Fetch data for the file
-          this.open_file(selectedFile.file_id);
+        if (folderIndex !== -1) {
+          selectedFolder = this.files_list[folderIndex];
+          selectedFile = selectedFolder.files.find(
+            (file) => file.file_id === this.fileID
+          );
         }
-      });
+      }
+
+      // If no matching file found, fallback to first folder with files
+      if (folderIndex === -1) {
+        folderIndex = this.files_list.findIndex(
+          (folder) => folder.files && folder.files.length > 0
+        );
+        if (folderIndex !== -1) {
+          selectedFolder = this.files_list[folderIndex];
+          selectedFile = selectedFolder.files[0];
+        }
+      }
+
+      // Expand the matched folder
+      this.expandedFolders = this.files_list.map(
+        (_, index) => index === folderIndex
+      );
+
+      // Set folder and file details if found
+      if (selectedFolder && selectedFile) {
+        this.openedFolder = selectedFolder.folder_id;
+        this.selected_folder_name = selectedFolder.folder_name;
+
+        this.selectedFiles = [
+          {
+            file_name: selectedFile.file_name,
+            file_id: selectedFile.file_id,
+          },
+        ];
+        this.opened_file = selectedFile.file_name;
+
+        // Fetch data for the file
+        this.open_file(selectedFile.file_id);
+      }
+    });
     this.viewModes = [
       {
         name: 'Line Plot',
@@ -612,7 +609,7 @@ fileID!:number;
     if (newRows.length > 0) {
       // Check for units conversion
       const unitsMatch = Object.keys(this.units).every(
-        key => this.units[key] === sourceUnits[key]
+        (key) => this.units[key] === sourceUnits[key]
       );
       console.log('units', unitsMatch);
       const newRowsPromises = newRows.map((newRow) => {
@@ -624,7 +621,7 @@ fileID!:number;
 
         let newRowPayload: any;
 
-        if(unitsMatch){
+        if (unitsMatch) {
           newRowPayload = {
             id: newRow.id,
             file_id: newRow.file_id,
@@ -656,7 +653,9 @@ fileID!:number;
           }
 
           // Convert direction if units don't match
-          if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+          if (
+            sourceUnits['currentDirection'] !== this.units['currentDirection']
+          ) {
             if (newRow.direction !== null && newRow.direction !== undefined) {
               newRowPayload.direction = this.convertValues(
                 parseFloat(newRow.direction),
@@ -694,7 +693,7 @@ fileID!:number;
     if (changedRows.length > 0) {
       // Check for units conversion
       const unitsMatch = Object.keys(this.units).every(
-        key => this.units[key] === sourceUnits[key]
+        (key) => this.units[key] === sourceUnits[key]
       );
       console.log('units', unitsMatch);
 
@@ -707,12 +706,12 @@ fileID!:number;
             file_id: row.file_id,
             speed: parseFloat(row.speed),
             direction: parseFloat(row.direction),
-            pressure: parseFloat(row.pressure)
+            pressure: parseFloat(row.pressure),
           };
         } else {
           rowPayload = {
             id: row.id,
-            file_id: row.file_id
+            file_id: row.file_id,
           };
 
           // Convert speed if units don't match
@@ -729,7 +728,9 @@ fileID!:number;
           }
 
           // Convert direction if units don't match
-          if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+          if (
+            sourceUnits['currentDirection'] !== this.units['currentDirection']
+          ) {
             if (row.direction !== null && row.direction !== undefined) {
               rowPayload.direction = this.convertValues(
                 parseFloat(row.direction),
@@ -762,7 +763,7 @@ fileID!:number;
       const updatePromise = this.http
         .put(`${this.baseUrl}updateData`, updatePayload)
         .toPromise()
-        .catch(error => {
+        .catch((error) => {
           console.error('Failed to update rows:', error);
           throw error;
         });
@@ -839,7 +840,7 @@ fileID!:number;
         current_speed_unit: item.current_speed_unit,
         current_direction_unit: item.current_direction_unit,
         battery_unit: item.battery_unit,
-        depth_unit: item.depth_unit
+        depth_unit: item.depth_unit,
       };
       this.main_table.splice(currentIndex + 1, 0, newRow);
       this.fullData = [...this.main_table];
@@ -883,70 +884,73 @@ fileID!:number;
     this.themeChange$.complete();
   }
 
-
-onDialogShow() {
-  if (this.main_table.length === 0 && this.fullData.length > 0) {
-    this.main_table = this.fullData;
-  }
-
-  const indexToHighlight = this.main_table.findIndex(item => item.id === this.selectedPointId);
-
-  if (
-    indexToHighlight !== null &&
-    indexToHighlight >= 0 &&
-    indexToHighlight < this.main_table.length
-  ) {
-    this.selectedPointId = this.main_table[indexToHighlight].id;
-
-    const rowHeight = 46; // should match your virtualScrollItemSize
-    const tableWrapper = this.tableWrapper?.nativeElement;
-
-    if (this.table?.scrollToVirtualIndex) {
-      this.table.scrollToVirtualIndex(indexToHighlight);
-    } else if (tableWrapper) {
-      // Center the row manually
-      const visibleHeight = tableWrapper.clientHeight;
-      const targetScrollTop = (indexToHighlight * rowHeight) - (visibleHeight / 2) + (rowHeight / 2);
-      const maxScroll = tableWrapper.scrollHeight - visibleHeight;
-
-      const scrollTop = Math.min(Math.max(targetScrollTop, 0), maxScroll);
-
-      tableWrapper.scrollTo({
-        top: scrollTop,
-        behavior: 'smooth'
-      });
+  onDialogShow() {
+    if (this.main_table.length === 0 && this.fullData.length > 0) {
+      this.main_table = this.fullData;
     }
 
-    // Delay highlight to allow scroll to settle
-    setTimeout(() => {
+    const indexToHighlight = this.main_table.findIndex(
+      (item) => item.id === this.selectedPointId
+    );
+
+    if (
+      indexToHighlight !== null &&
+      indexToHighlight >= 0 &&
+      indexToHighlight < this.main_table.length
+    ) {
+      this.selectedPointId = this.main_table[indexToHighlight].id;
+
+      const rowHeight = 46; // should match your virtualScrollItemSize
       const tableWrapper = this.tableWrapper?.nativeElement;
-      if (tableWrapper) {
-        const rows = tableWrapper.querySelectorAll('tr');
-        const selectedRow = Array.from(rows).find((r: any) =>
-          r.getAttribute('data-id') === String(this.selectedPointId)
-        ) as HTMLElement;
 
-        if (selectedRow) {
-          selectedRow.classList.add('temp-highlight');
+      if (this.table?.scrollToVirtualIndex) {
+        this.table.scrollToVirtualIndex(indexToHighlight);
+      } else if (tableWrapper) {
+        // Center the row manually
+        const visibleHeight = tableWrapper.clientHeight;
+        const targetScrollTop =
+          indexToHighlight * rowHeight - visibleHeight / 2 + rowHeight / 2;
+        const maxScroll = tableWrapper.scrollHeight - visibleHeight;
 
-          // Remove highlight after 1.5 seconds
-          setTimeout(() => {
-            selectedRow.classList.remove('temp-highlight');
-          }, 1500);
-        }
+        const scrollTop = Math.min(Math.max(targetScrollTop, 0), maxScroll);
+
+        tableWrapper.scrollTo({
+          top: scrollTop,
+          behavior: 'smooth',
+        });
       }
-    }, 400); // Adjusted delay for scroll + render
 
-    // Resize charts (safe placement)
-    setTimeout(() => {
-      this.chartInstances.forEach((chart) => {
-        if (!chart.isDisposed()) {
-          chart.resize();
+      // Delay highlight to allow scroll to settle
+      setTimeout(() => {
+        const tableWrapper = this.tableWrapper?.nativeElement;
+        if (tableWrapper) {
+          const rows = tableWrapper.querySelectorAll('tr');
+          const selectedRow = Array.from(rows).find(
+            (r: any) =>
+              r.getAttribute('data-id') === String(this.selectedPointId)
+          ) as HTMLElement;
+
+          if (selectedRow) {
+            selectedRow.classList.add('temp-highlight');
+
+            // Remove highlight after 1.5 seconds
+            setTimeout(() => {
+              selectedRow.classList.remove('temp-highlight');
+            }, 1500);
+          }
         }
-      });
-    }, 500);
+      }, 400); // Adjusted delay for scroll + render
+
+      // Resize charts (safe placement)
+      setTimeout(() => {
+        this.chartInstances.forEach((chart) => {
+          if (!chart.isDisposed()) {
+            chart.resize();
+          }
+        });
+      }, 500);
+    }
   }
-}
 
   closeDialog() {
     this.visible = false;
@@ -971,7 +975,7 @@ onDialogShow() {
     };
 
     const unitsMatch = Object.keys(this.units).every(
-      key => this.units[key] === sourceUnits[key]
+      (key) => this.units[key] === sourceUnits[key]
     );
     console.log('match', unitsMatch);
 
@@ -982,14 +986,26 @@ onDialogShow() {
         const newItem = { ...item } as ApiData;
 
         // Date Format conversion
-        if (this.fullData[index].date.match(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
-          this.fullData[index].date = formatDate(newItem.date, this.dateFormat, 'en-US');
+        if (
+          this.fullData[index].date.match(
+            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+          )
+        ) {
+          this.fullData[index].date = formatDate(
+            newItem.date,
+            this.dateFormat,
+            'en-US'
+          );
         }
 
         // if waterLevel unit mismatches → convert pressure
         if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
           if (newItem.pressure !== null && newItem.pressure !== undefined) {
-            const converted = this.convertValues(+item.pressure, sourceUnits['waterLevel'], this.units['waterLevel']);
+            const converted = this.convertValues(
+              +item.pressure,
+              sourceUnits['waterLevel'],
+              this.units['waterLevel']
+            );
             newItem.pressure = converted.toString();
             this.fullData[index].pressure = converted.toString();
           }
@@ -998,16 +1014,26 @@ onDialogShow() {
         // if currentSpeed unit mismatches → convert speed
         if (sourceUnits['currentSpeed'] !== this.units['currentSpeed']) {
           if (newItem.speed !== null && newItem.speed !== undefined) {
-            const converted = this.convertValues(+item.speed, sourceUnits['currentSpeed'], this.units['currentSpeed']);
+            const converted = this.convertValues(
+              +item.speed,
+              sourceUnits['currentSpeed'],
+              this.units['currentSpeed']
+            );
             newItem.speed = converted.toString();
             this.fullData[index].speed = converted.toString();
           }
         }
 
         // if currentDirection unit mismatches → convert direction
-        if (sourceUnits['currentDirection'] !== this.units['currentDirection']) {
+        if (
+          sourceUnits['currentDirection'] !== this.units['currentDirection']
+        ) {
           if (newItem.direction !== null && newItem.direction !== undefined) {
-            const converted = this.convertValues(+item.direction, sourceUnits['currentDirection'], this.units['currentDirection']);
+            const converted = this.convertValues(
+              +item.direction,
+              sourceUnits['currentDirection'],
+              this.units['currentDirection']
+            );
             newItem.direction = converted.toString();
             this.fullData[index].direction = converted.toString();
           }
@@ -1028,7 +1054,7 @@ onDialogShow() {
     endValue: number
   ) {
     const option = chart.getOption() as EChartsOption;
-
+    console.log('dates', startValue, endValue);
     // Calculate time difference in days
     const startDate = new Date(startValue);
     const endDate = new Date(endValue);
@@ -1059,7 +1085,9 @@ onDialogShow() {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
+    const subText = computedStyle
+      .getPropertyValue('--font-secondary-color')
+      .trim();
     // const text = computedStyle.getPropertyValue('--circuit-color-pulse').trim();
 
     // Load saved color from localStorage or use default
@@ -1238,7 +1266,7 @@ onDialogShow() {
             name: 'High Water Time',
             data: this.fullData
               .filter((item) => item.high_water_level === 1)
-              .map((item) => [item.date , this.formatValue(item.pressure)]),
+              .map((item) => [item.date, this.formatValue(item.pressure)]),
             type: 'scatter',
             symbolSize: 20,
             itemStyle: {
@@ -1308,7 +1336,9 @@ onDialogShow() {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
+    const subText = computedStyle
+      .getPropertyValue('--font-secondary-color')
+      .trim();
 
     if (speed) {
       const existingInstance = echarts.getInstanceByDom(speed);
@@ -1522,7 +1552,9 @@ onDialogShow() {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
+    const subText = computedStyle
+      .getPropertyValue('--font-secondary-color')
+      .trim();
 
     if (direction) {
       const existingInstance = echarts.getInstanceByDom(direction);
@@ -1770,7 +1802,9 @@ onDialogShow() {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
+    const subText = computedStyle
+      .getPropertyValue('--font-secondary-color')
+      .trim();
 
     if (chartContainer) {
       const existingInstance = echarts.getInstanceByDom(chartContainer);
@@ -2035,7 +2069,9 @@ onDialogShow() {
     const computedStyle = getComputedStyle(document.body);
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
-    const subText = computedStyle.getPropertyValue('--font-secondary-color').trim();
+    const subText = computedStyle
+      .getPropertyValue('--font-secondary-color')
+      .trim();
 
     if (mid) {
       const existingInstance = echarts.getInstanceByDom(mid);
@@ -2522,7 +2558,10 @@ onDialogShow() {
     ];
 
     type SpeedCategory = (typeof speedCategories)[number];
-    type DirectionBin = Record<SpeedCategory, { count: number; values: number[] }>;
+    type DirectionBin = Record<
+      SpeedCategory,
+      { count: number; averageSpeed: number; totalSpeed: number }
+    >;
 
     const categorizeSpeed = (speed: number): SpeedCategory => {
       if (speed < 0.5) return '<0.5';
@@ -2534,21 +2573,13 @@ onDialogShow() {
     };
 
     const dataBins: DirectionBin[] = directionLabels.map(() => ({
-      '<0.5': { count: 0, values: [] },
-      '0.5-2': { count: 0, values: [] },
-      '2-4': { count: 0, values: [] },
-      '4-6': { count: 0, values: [] },
-      '6-8': { count: 0, values: [] },
-      '>8': { count: 0, values: [] },
+      '<0.5': { count: 0, averageSpeed: 0, totalSpeed: 0 },
+      '0.5-2': { count: 0, averageSpeed: 0, totalSpeed: 0 },
+      '2-4': { count: 0, averageSpeed: 0, totalSpeed: 0 },
+      '4-6': { count: 0, averageSpeed: 0, totalSpeed: 0 },
+      '6-8': { count: 0, averageSpeed: 0, totalSpeed: 0 },
+      '>8': { count: 0, averageSpeed: 0, totalSpeed: 0 },
     }));
-
-    // averagedPolarData.forEach(({ speed, direction }) => {
-    //   // const directionIndex = Math.round(direction / 22.5) % 16;
-
-    //   const directionIndex = Math.round(direction / 45) % 8;
-    //   const speedCategory = categorizeSpeed(speed);
-    //   dataBins[directionIndex][speedCategory] += 1;
-    // });
 
     averagedPolarData.forEach(({ speed, direction }) => {
       // Convert speed to m/s if needed
@@ -2562,7 +2593,10 @@ onDialogShow() {
       const speedCategory = categorizeSpeed(speed);
 
       dataBins[directionIndex][speedCategory].count += 1;
-      dataBins[directionIndex][speedCategory].values.push(speed);
+      dataBins[directionIndex][speedCategory].totalSpeed += speed;
+      dataBins[directionIndex][speedCategory].averageSpeed =
+        dataBins[directionIndex][speedCategory].totalSpeed /
+        dataBins[directionIndex][speedCategory].count;
     });
 
     const seriesData = speedCategories.map((speedCategory, index) => ({
@@ -2572,13 +2606,13 @@ onDialogShow() {
       coordinateSystem: 'polar',
       data: dataBins.map((bin) => ({
         value: bin[speedCategory].count,
-        values: bin[speedCategory].values,
+        averageSpeed: bin[speedCategory].averageSpeed,
       })),
       itemStyle: {
         color: speedColors[index],
       },
     }));
-    console.log('seriesData',seriesData);
+    console.log('seriesData', seriesData);
 
     const option = {
       title:
@@ -2650,11 +2684,13 @@ onDialogShow() {
         formatter: (params: any) => {
           const speedCategory = params.seriesName;
           const count = params.data.value;
-          const values = params.data.values;
-          if (!values || !values.length) {
-            return `${speedCategory}: ${count}`;
+          const averageSpeed = params.data.averageSpeed;
+          if (count === 0) {
+            return `${speedCategory}: No data`;
           }
-          return `Range: ${speedCategory}</br>Total Count: ${count}<br/>Speeds: ${values.map((v: number) => v.toFixed(3)).join(',<br/>')}`;
+          return `Range: ${speedCategory}</br>No.of sample: ${count}<br/>Average Speed: ${averageSpeed.toFixed(
+            3
+          )} ${speedUnit}`;
         },
       },
       series: seriesData,
@@ -2679,7 +2715,6 @@ onDialogShow() {
         return `${interval} Minutes`;
     }
   }
-
 
   private groupByIntervalWithinDateRange(
     data: ApiData[],
@@ -2738,10 +2773,10 @@ onDialogShow() {
   }
 
   private formatDateToYMD(date: Date): string {
+    console.log('datee', date);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   }
-
 }

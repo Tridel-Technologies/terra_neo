@@ -47,8 +47,8 @@
             [globalFilterFields]="globalFilterFields" [paginator]="true" [rows]="15" responsiveLayout="scroll"
             [rowsPerPageOptions]="[10,15,20]" [scrollable]="true" [resizableColumns]="true" columnResizeMode="expand"
             [exportHeader]="'exportHeader'" selectionMode="multiple"
-            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} entries" [filterDelay]="0"
-            [tableStyle]="{'min-width': '50rem'}" responsiveLayout="stack" [breakpoint]="'960px'" stripedRows="tr"
+            currentPageReportTemplate="Showing {first} to {last} of {totalRecords} Entries" [filterDelay]="0"
+            [tableStyle]="{'min-width': '50rem'}" responsiveLayout="stack" [breakpoint]="'260px'" stripedRows="tr"
             rowHover="true" showCurrentPageReport="true">
 
             <ng-template #caption>
@@ -60,7 +60,7 @@
                                 (input)="onSearch($any($event).target.value, dt)" />
                         </div>
                         <div class="filter">
-                            <p-multiselect display="chip" [options]="cols" [(ngModel)]="selectedColumns"
+                            <p-multiselect *ngIf="!showToggleTable" display="chip" [options]="cols" [(ngModel)]="selectedColumns"
                                 optionLabel="header" selectedItemsLabel="{0} columns selected"
                                 [style]="{ 'min-width': '200px' }" placeholder="Choose Columns" [filter]="true"
                                 [showToggleAll]="true" [maxSelectedLabels]="9" />
@@ -69,8 +69,8 @@
 
 
                     <div class="captionrow">
-                        <p-select class="export" [options]="exportOptions" placeholder="Export"
-                            (onChange)="onExportOptionSelect($event, dt)">
+                        <p-select class="export" [(ngModel)]="exportSelectedOption" [options]="exportOptions" placeholder="Export"
+                            (ngModelChange)="onExportOptionSelect($event, dt)">
                             <ng-template let-option pTemplate="selectedItem">
                                 <span>{{ option.label }}</span>
                             </ng-template>
@@ -100,9 +100,10 @@
 
             <ng-template #header let-columns>
                 <tr>
-                    <th class="centered-cell">Serial No <p-sortIcon></p-sortIcon></th>
-                    <th *ngFor="let col of columns" [pSortableColumn]="col.field" class="centered-cell">
-                        {{ col.header }} <p-sortIcon [field]="col.field"></p-sortIcon>
+                    <th class="centered-cell">Serial No</th>
+
+                    <th *ngFor="let col of columns" [pSortableColumn]="!showToggleTable ? col.field : null" class="centered-cell">
+                        {{ col.header }} <p-sortIcon *ngIf="!showToggleTable" [field]="col.field"></p-sortIcon>
                     </th>
                 </tr>
             </ng-template>
