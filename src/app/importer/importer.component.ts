@@ -67,30 +67,35 @@ export class ImporterComponent {
       label: 'Water Level',
       iconClass: 'fas fa-water', // or use another icon library
       units: ['m', 'ft', 'cm'],
+      unitslabels: ['m', 'ft', 'cm'],
     },
     {
       key: 'currentSpeed',
       label: 'Current Speed',
       iconClass: 'fas fa-tachometer-alt',
       units: ['m/s', 'knots'],
+      unitslabels: ['m/s', 'knots'],
     },
     {
       key: 'currentDirection',
       label: 'Current Direction',
       iconClass: 'fas fa-compass',
       units: ['°', 'radians'],
+      unitslabels: ['deg (°)', 'radians'],
     },
     {
       key: 'battery',
       label: 'Battery',
       iconClass: 'fas fa-battery-full',
       units: ['%', 'volts'],
+      unitslabels: ['percent (%)', 'volts'],
     },
     {
       key: 'depth',
       label: 'Depth',
       iconClass: 'fas fa-arrows-down-to-line',
       units: ['m', 'ft'],
+      unitslabels: ['m', 'ft'],
     },
     // {
     //   key: 'latandlong',
@@ -250,13 +255,13 @@ export class ImporterComponent {
   }
 
   main_table_headers = [
-    'STRING',
-    'date',
-    'speedms',
-    'direction',
-    'dept',
-    'battery',
-    'pressure_in_bar',
+    'String',
+    'Date',
+    'Speed',
+    'Direction',
+    'Depth',
+    'Battery',
+    'Pressure',
   ];
   open_file(file_name: string, file_id: number) {
     this.opened_file = file_name;
@@ -463,6 +468,11 @@ export class ImporterComponent {
   }
   unitssTo!: UnitSettings;
   ngOnInit(): void {
+    const lastFolder = localStorage.getItem('lastUploadFolder');
+    if (lastFolder) {
+      this.FileName = lastFolder;
+    }
+
     const unitss: any = localStorage.getItem('unitSettings');
     this.unitssTo = JSON.parse(unitss);
     console.log('Unitsss', this.unitssTo);
@@ -509,13 +519,13 @@ export class ImporterComponent {
     'pressure_in_bar',
   ];
   tableHeaders = [
-    'STRING',
+    'String',
     'Date',
-    'speedms',
-    'direction',
-    'bin_depth',
-    'battery',
-    'pressure_in_bar',
+    'Speed',
+    'Direction',
+    'Bin_depth',
+    'Battery',
+    'Pressure_in_bar',
   ];
   onFilesSelected(event: any) {
     const files: FileList = event.target.files;
@@ -560,8 +570,24 @@ export class ImporterComponent {
         this.tableData = [...allRows];
         this.displayedColumns = this.expectedHeaders;
         this.fileWiseUploadData = fileWiseData; // <- store for import step
+        this.onFileClick(this.uploaded_files[0]);
+        console.log('All rows', allRows);
       }
     });
+  }
+
+  filterhistorydata: any[] = [];
+  selected_filelist: String = '';
+
+  onFileClick(file_Name: string): void {
+    this.filterhistorydata = [];
+    this.selected_filelist = file_Name;
+    setTimeout(() => {
+      this.filterhistorydata = this.historyData.filter(
+        (item: any) => item.fileName === file_Name
+      );
+      console.log('All rows', this.filterhistorydata);
+    }, 50);
   }
 
   async processFile(file: File): Promise<{ fileName: string; data: any[] }> {
@@ -613,6 +639,7 @@ export class ImporterComponent {
             const dateTime = `${date}T${time}Z`;
 
             return {
+              fileName: file.name,
               station_id: cleanedRow['STRING'],
               date: dateTime,
               speed: cleanedRow['speedms'],

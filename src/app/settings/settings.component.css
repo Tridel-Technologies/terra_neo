@@ -1,151 +1,238 @@
 :host {
-    height: 100%;
-    width: 100%;
-    gap: 10px;
-    display: flex;
-    flex-direction: row;
-    justify-content: start;
-    align-items: center;
+  height: 100%;
+  width: 100%;
+  gap: 10px;
+  display: flex;
+  flex-direction: row;
+  justify-content: start;
+  align-items: center;
 }
 
 /* .files_containerr {
-    width: 50%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    background-color: var(--background-secondary);
-    color: var(--font-color);
+  width: 50%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: var(--background-secondary);
+  color: var(--font-color);
 } */
 
+/* Units */
 .units_container {
-    width: 50%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    background-color: var(--background-secondary);
-    color: var(--font-color);
-    overflow: hidden;
-    overflow-y: auto;
+  width: 50%;
+  height: 100%;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  background-color: var(--background-secondary);
+  color: var(--font-color);
+  overflow: hidden;
+  overflow-y: auto;
 }
 
-.units_container h3 {
-    margin-bottom: 20px;
+.units-header {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: start;
+  gap: 10px;
+  background-color: var(--background-color);
+  padding: 10px;
+  margin-bottom: 10px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.3s ease;
+}
+
+.header-icon {
+  font-size: 24px;
+  color: var(--button-bg);
 }
 
 .units_container h2 {
-    text-align: center;
-    margin-bottom: 20px;
-    font-size: 24px;
+  text-align: center;
+  margin: 0px;
+  font-size: 24px;
+}
+
+.parameter-grid {
+display: grid;
+grid-template-columns: repeat(2, 1fr);
+gap: 24px;
+width: 100%;
+justify-items: center;
+}
+
+@media (max-width: 768px) {
+.parameter-grid {
+  grid-template-columns: 1fr;
+}
 }
 
 .parameter-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 70%;
-    gap: 16px;
-    margin-bottom: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-color);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.3s ease;
 }
 
 .parameter-card {
-    flex: 1;
-    background-color: var(--background-color);
-    padding: 16px;
-    border-radius: 12px;
-    box-shadow: var(--shd, 0 1px 4px rgba(0, 0, 0, 0.308));
-    display: flex;
-    align-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .parameter-content {
-    display: flex;
-    align-items: center;
-    color: var(--font-color);
-    gap: 10px;
-    font-size: 18px;
-    font-weight: 600;
+  display: flex;
+  align-items: center;
+  color: var(--font-color);
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
 }
 
 .parameter-icon {
-    font-size: 22px;
-    color: var(--button-bg);
+  font-size: 22px;
+  color: var(--button-bg);
 }
 
 .unit-selection {
-    flex: 1;
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: flex-end;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
 }
 
 .unit-button {
-    padding: 8px 16px;
-    border: 2px solid #ccc;
-    border-radius: 20px;
-    background-color: var(--background-color);
-    color: var(--font-color);
-    cursor: pointer;
-    font-size: 14px;
-    transition: 0.3s ease;
+  padding: 8px 16px;
+  border: 2px solid #ccc;
+  border-radius: 20px;
+  background-color: var(--background-color);
+  color: var(--font-color);
+  cursor: pointer;
+  font-size: 14px;
+  transition: 0.3s ease;
 }
 
 .unit-button:hover {
-    border-color: var(--button-bg);
-    color: var(--button-bg);
+  border-color: var(--button-bg);
+  color: var(--button-bg);
 }
 
 .unit-button.selected {
-    background-color: var(--button-bg);
-    color: var(--tooltip-text);
-    border-color: var(--button-bg);
+  background-color: var(--button-bg);
+  color: var(--tooltip-text);
+  border-color: var(--button-bg);
 }
 
 .tooltip-container {
-    position: relative;
-    display: inline-block;
+  position: relative;
+  display: inline-block;
 }
 
 .tooltip-text {
-    visibility: hidden;
-    width: max-content;
-    max-width: 250px;
-    background-color: var(--tooltip-bg, #333);
-    color: var(--tooltip-text, #fff);
-    text-align: center;
-    border-radius: 6px;
-    padding: 6px 8px;
-    position: absolute;
-    z-index: 1;
-    bottom: 125%;
-    /* Show above the button */
-    left: 50%;
-    transform: translateX(-50%);
-    opacity: 0;
-    transition: opacity 0.3s;
-    white-space: nowrap;
+  visibility: hidden;
+  width: max-content;
+  max-width: 250px;
+  background-color: var(--tooltip-bg, #333);
+  color: var(--tooltip-text, #fff);
+  text-align: center;
+  border-radius: 6px;
+  padding: 6px 8px;
+  position: absolute;
+  z-index: 1;
+  bottom: 125%;
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.3s;
+  white-space: nowrap;
 }
 
 .tooltip-container:hover .tooltip-text {
-    visibility: visible;
-    opacity: 1;
+  visibility: visible;
+  opacity: 1;
 }
 
-/* Optional arrow */
 .tooltip-text::after {
-    content: '';
-    position: absolute;
-    top: 100%;
-    /* bottom of the tooltip */
-    left: 50%;
-    margin-left: -5px;
-    border-width: 5px;
-    border-style: solid;
-    border-color: var(--tooltip-bg, #333) transparent transparent transparent;
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: var(--tooltip-bg, #333) transparent transparent transparent;
+}
+
+.path-row {
+  margin-top: 20px;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--background-color);
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 0 0 2px transparent;
+  transition: box-shadow 0.3s ease;
+}
+
+.path-content {
+  display: flex;
+  color: var(--font-color);
+  gap: 12px;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.path-selection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+}
+
+.path-input-group {
+display: flex;
+width: 100%;
+gap: 20px;
+}
+
+.path-input {
+flex: 1;
+padding: 8px 12px;
+border: 2px solid #ccc;
+border-radius: 50px;
+background-color: var(--background-color);
+color: var(--font-color);
+}
+
+.browse-button {
+padding: 8px 16px;
+background-color: var(--button-bg);
+color: var(--tooltip-text);
+border: none;
+border-radius: 10px;
+cursor: pointer;
+transition: background 0.3s ease;
+}
+
+.browse-button:hover {
+background-color: var(--button-bg-hover);
 }
 
 
@@ -153,161 +240,161 @@
 
 /* Files */
 .fileCContainer {
-    height: 100%;
-    width: 60%;
-    padding: 10px;
-    color: var(--font-color);
-    position: relative;
-    overflow: hidden;
-    overflow-y: auto;
+  height: 100%;
+  width: 60%;
+  padding: 10px;
+  color: var(--font-color);
+  position: relative;
+  overflow: hidden;
+  /* overflow-y: auto; */
 }
 
 .newFolddr {
-    height: 150px;
-    width: 300px;
-    position: absolute;
-    top: 40%;
-    left: 40%;
-    background-color: var(--background-secondary);
-    border-radius: 10px;
-    box-shadow: 2px 2px 6px rgba(186, 185, 185, 0.499);
-    display: flex;
-    flex-direction: column;
-    align-items: self-start;
-    justify-content: space-evenly;
-    color: var(--font-color);
-    padding: 20px;
+  height: 150px;
+  width: 300px;
+  position: absolute;
+  top: 40%;
+  left: 40%;
+  background-color: var(--background-secondary);
+  border-radius: 10px;
+  box-shadow: 2px 2px 6px rgba(186, 185, 185, 0.499);
+  display: flex;
+  flex-direction: column;
+  align-items: self-start;
+  justify-content: space-evenly;
+  color: var(--font-color);
+  padding: 20px;
 }
 
 .newFolddr p {
-    margin: 0;
-    /* margin-left: 25px;
-    margin-top: 10px; */
+  margin: 0;
+  /* margin-left: 25px;
+  margin-top: 10px; */
 }
 
 .newFolddr input {
-    height: 30px;
-    width: 90%;
-    /* margin-left: 30px; */
-    border-radius: 10px;
-    border: none;
-    background-color: var(--background-color);
-    border: 1px solid rgb(179, 177, 177);
-    color: var(--font-color);
+  height: 30px;
+  width: 90%;
+  /* margin-left: 30px; */
+  border-radius: 10px;
+  border: none;
+  background-color: var(--background-color);
+  border: 1px solid rgb(179, 177, 177);
+  color: var(--font-color);
 }
 
 .newFolddr button {
-    height: 25px;
-    width: 100px;
-    background-color: var(--button-bg);
-    color: white;
-    border: none;
-    align-self: flex-end;
-    border-radius: 5px;
-    margin-right: 25px;
+  height: 25px;
+  width: 100px;
+  background-color: var(--button-bg);
+  color: white;
+  border: none;
+  align-self: flex-end;
+  border-radius: 5px;
+  margin-right: 25px;
 
 }
 
 .files_cont {
-    align-self: self-start;
-    height: auto;
-    width: 100%;
-    /* background-color: #333; */
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    padding: 10px;
-    overflow-y: auto;
-    color: var(--font-color);
-    align-items: start;
+  align-self: self-start;
+  height: auto;
+  width: 100%;
+  /* background-color: #333; */
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  padding: 10px;
+  overflow-y: auto;
+  color: var(--font-color);
+  align-items: start;
 }
 
 
 .Folder {
-    background-color: var(--background-secondary);
-    height: 100px;
-    width: 100%;
-    margin: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
-    color: rgb(0, 0, 0);
-    border-radius: 10px;
-    color: var(--font-color);
-    cursor: pointer;
+  background-color: var(--background-secondary);
+  height: 100px;
+  width: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  color: rgb(0, 0, 0);
+  border-radius: 10px;
+  color: var(--font-color);
+  cursor: pointer;
 }
 
 .Folder:hover {
-    background-color: rgba(205, 203, 203, 0.598);
+  background-color: rgba(205, 203, 203, 0.598);
 }
 
 .Folder img {
-    height: 50%;
-    width: 50%;
+  height: 50%;
+  width: 50%;
 }
 
 .Folder p {
-    margin: 0;
-    font-size: 14px;
-    text-align: center;
+  margin: 0;
+  font-size: 14px;
+  text-align: center;
 }
 
 
 .files_list {
-    align-self: self-start;
-    height: auto;
-    width: 100%;
-    /* background-color: #333; */
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 10px;
-    padding: 10px;
-    overflow-y: auto;
-    align-items: start;
+  align-self: self-start;
+  height: auto;
+  width: 100%;
+  /* background-color: #333; */
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+  padding: 10px;
+  overflow-y: auto;
+  align-items: start;
 }
 
 .context-menu {
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    z-index: 1000;
-    padding: 5px 0;
-    width: 120px;
-    border-radius: 10px;
-    color: black;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  z-index: 1000;
+  padding: 5px 0;
+  width: 120px;
+  border-radius: 10px;
+  color: black;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 
 }
 
 .context-menu div {
-    padding: 8px 12px;
-    cursor: pointer;
+  padding: 8px 12px;
+  cursor: pointer;
 }
 
 .context-menu div:hover {
-    background-color: #eee;
+  background-color: #eee;
 }
 
 .context-menu2 {
-    position: absolute;
-    background: white;
-    border: 1px solid #ccc;
-    z-index: 1000;
-    padding: 5px 0;
-    width: 120px;
-    border-radius: 10px;
-    color: black;
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  z-index: 1000;
+  padding: 5px 0;
+  width: 120px;
+  border-radius: 10px;
+  color: black;
 
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
 .context-menu2 div {
-    padding: 8px 12px;
-    cursor: pointer;
+  padding: 8px 12px;
+  cursor: pointer;
 }
 
 .context-menu2 div:hover {
-    background-color: #eee;
+  background-color: #eee;
 }

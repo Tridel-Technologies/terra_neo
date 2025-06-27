@@ -1,123 +1,247 @@
 <div class="fileCContainer" (contextmenu)="onContainerRightClick($event)">
-    <!-- <div class="newFolddr" *ngIf="showCreate">
+  <!-- <div class="newFolddr" *ngIf="showCreate">
         <p>Folder name</p>
         <input type="text">
         <button>Create</button>
     </div> -->
-    <h3>Explorer</h3>
-    <h5>Processed Data</h5>
+  <h3>Explorer</h3>
+  <h5>Processed Data</h5>
 
-    <!-- FOLDER VIEW -->
-    <div class="files_cont" *ngIf="openedFile2.length === 0">
-        <ng-container *ngFor="let folder of non_processed">
-            <div class="Folder" (click)="Foldertaped2(folder.files, folder)"
-                *ngIf="folder.files && folder.files.length > 0">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30px" height="30px"
-                    fill="var(--folder-color1)">
-                    <path
-                        d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z" />
-                </svg>
-                <p>{{ folder.folder_name }}</p>
-            </div>
-        </ng-container>
+  <!-- FOLDER VIEW -->
+  <div class="files_cont" *ngIf="openedFile2.length === 0">
+    <ng-container *ngFor="let folder of non_processed">
+      <div
+        class="Folder"
+        (click)="Foldertaped2(folder.files, folder)"
+        *ngIf="folder.files && folder.files.length > 0"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 30 30"
+          width="30px"
+          height="30px"
+          fill="var(--folder-color1)"
+        >
+          <path
+            d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z"
+          />
+        </svg>
+        <p>{{ folder.folder_name }}</p>
+      </div>
+    </ng-container>
+  </div>
+  <h2
+    style="
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--font-color);
+      margin-bottom: 3px;
+    "
+    *ngIf="openedFile2.length !== 0"
+    (click)="back2()"
+  >
+    <i
+      class="fa-solid fa-arrow-left"
+      style="
+        align-self: center;
+        margin-top: 5px;
+        font-size: 17px;
+        cursor: pointer;
+      "
+    ></i>
+    {{ tappedFolder2.folder_name }}/
+  </h2>
+
+  <!-- FILE VIEW -->
+  <div class="files_list" *ngIf="openedFile2.length !== 0">
+    <div
+      class="Folder"
+      *ngFor="let file of openedFile2"
+      (contextmenu)="onFileRightClick($event, file)"
+    >
+      <img [src]="getFileClass(file.file_name)" alt="" />
+      <p>{{ file.file_name }}</p>
     </div>
-    <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
-        *ngIf="openedFile2.length !== 0" (click)="back2()"><i class="fa-solid fa-arrow-left"
-            style="align-self: center;margin-top: 5px;font-size: 17px; cursor: pointer;"></i>
-        {{tappedFolder2.folder_name}}/
-    </h2>
+  </div>
 
-    <!-- FILE VIEW -->
-    <div class="files_list" *ngIf="openedFile2.length !== 0">
-        <div class="Folder" *ngFor="let file of openedFile2" (contextmenu)="onFileRightClick($event, file)">
-            <img [src]="getFileClass(file.file_name)" alt="">
-            <p>{{ file.file_name }}</p>
-        </div>
-    </div>
-
-    <!-- CONTEXT MENU -->
-    <div class="context-menu2" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
-        [style.top.px]="contextMenu.y">
-        <ng-container *ngIf="contextMenu.type === 'file'">
-            <div (click)="moveFile({file_name:'', file_id:2, is_processed:true})">Move</div>
-            <div (click)="cancelContext()">Cancel</div>
-        </ng-container>
-        <ng-container *ngIf="contextMenu.type === 'folder'">
-            <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
-            <div (click)="cancelContext()">Cancel</div>
-        </ng-container>
-        <ng-container *ngIf="contextMenu.type === 'blank'">
-            <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+  <!-- CONTEXT MENU -->
+  <div
+    class="context-menu2"
+    *ngIf="contextMenu.visible"
+    [style.left.px]="contextMenu.x"
+    [style.top.px]="contextMenu.y"
+  >
+    <ng-container *ngIf="contextMenu.type === 'file'">
+      <div
+        (click)="moveFile({ file_name: '', file_id: 2, is_processed: true })"
+      >
+        Move
+      </div>
+      <div (click)="cancelContext()">Cancel</div>
+    </ng-container>
+    <ng-container *ngIf="contextMenu.type === 'folder'">
+      <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+      <div (click)="cancelContext()">Cancel</div>
+    </ng-container>
+    <ng-container *ngIf="contextMenu.type === 'blank'">
+      <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
                     <div (click)="cancelContext()">Cancel</div> -->
-        </ng-container>
-    </div>
+    </ng-container>
+  </div>
 
-    <h5>Raw Data</h5>
-    <!-- FOLDER VIEW -->
-    <div class="files_cont" *ngIf="openedFile.length === 0">
-        <ng-container *ngFor="let folder of processedFiles">
-            <div class="Folder"
-                (click)="Foldertaped(folder.files, folder)" (contextmenu)="onFolderRightClick($event, folder)">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30px" height="30px"
-                    fill="var(--folder-color1)">
-                    <path
-                        d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z" />
-                </svg>
-                <p>{{ folder.folder_name }}</p>
-            </div>
-        </ng-container>
-
+  <h5>Raw Data</h5>
+  <!-- FOLDER VIEW -->
+  <div class="files_cont" *ngIf="openedFile.length === 0">
+    <ng-container *ngFor="let folder of processedFiles">
+      <div
+        class="Folder"
+        (click)="Foldertaped(folder.files, folder)"
+        (contextmenu)="onFolderRightClick($event, folder)"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 30 30"
+          width="30px"
+          height="30px"
+          fill="var(--folder-color1)"
+        >
+          <path
+            d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z"
+          />
+        </svg>
+        <p>{{ folder.folder_name }}</p>
+      </div>
+    </ng-container>
+  </div>
+  <h2
+    style="
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--font-color);
+      margin-bottom: 3px;
+    "
+    *ngIf="openedFile.length !== 0"
+    (click)="back()"
+  >
+    <i
+      class="fa-solid fa-arrow-left"
+      style="
+        align-self: center;
+        margin-top: 5px;
+        font-size: 17px;
+        cursor: pointer;
+      "
+    ></i>
+    {{ tappedFolder.folder_name }}/
+  </h2>
+  <!-- FILE VIEW -->
+  <div class="files_list" *ngIf="openedFile.length !== 0">
+    <div
+      class="Folder"
+      *ngFor="let file of openedFile"
+      (contextmenu)="onFileRightClick($event, file)"
+    >
+      <img [src]="getFileClass(file.file_name)" alt="" />
+      <p>{{ file.file_name }}</p>
     </div>
-    <h2 style="font-size: 17px; font-weight: 600; color: var(--font-color); margin-bottom: 3px;"
-        *ngIf="openedFile.length !== 0" (click)="back()"><i class="fa-solid fa-arrow-left"
-            style="align-self: center;margin-top: 5px;font-size: 17px; cursor: pointer;"></i>
-        {{tappedFolder.folder_name}}/
-    </h2>
-    <!-- FILE VIEW -->
-    <div class="files_list" *ngIf="openedFile.length !== 0">
-        <div class="Folder" *ngFor="let file of openedFile" (contextmenu)="onFileRightClick($event, file)">
-            <img [src]="getFileClass(file.file_name)" alt="">
-            <p>{{ file.file_name }}</p>
-        </div>
-    </div>
+  </div>
 
-    <!-- CONTEXT MENU -->
-    <div class="context-menu" *ngIf="contextMenu.visible" [style.left.px]="contextMenu.x"
-        [style.top.px]="contextMenu.y">
-        <ng-container *ngIf="contextMenu.type === 'file'">
-            <div (click)="moveFile({file_name:'', file_id:2, is_processed:true})">Move</div>
-            <div (click)="cancelContext()">Cancel</div>
-        </ng-container>
-        <ng-container *ngIf="contextMenu.type === 'folder'">
-            <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
-            <div (click)="cancelContext()">Cancel</div>
-        </ng-container>
-        <ng-container *ngIf="contextMenu.type === 'blank'">
-            <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+  <!-- CONTEXT MENU -->
+  <div
+    class="context-menu"
+    *ngIf="contextMenu.visible"
+    [style.left.px]="contextMenu.x"
+    [style.top.px]="contextMenu.y"
+  >
+    <ng-container *ngIf="contextMenu.type === 'file'">
+      <div
+        (click)="moveFile({ file_name: '', file_id: 2, is_processed: true })"
+      >
+        Move
+      </div>
+      <div (click)="cancelContext()">Cancel</div>
+    </ng-container>
+    <ng-container *ngIf="contextMenu.type === 'folder'">
+      <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
+      <div (click)="cancelContext()">Cancel</div>
+    </ng-container>
+    <ng-container *ngIf="contextMenu.type === 'blank'">
+      <!-- <div (click)="pasteFile(contextMenu.folder)">Paste Here</div>
                     <div (click)="cancelContext()">Cancel</div> -->
-        </ng-container>
-    </div>
+    </ng-container>
+  </div>
 </div>
 
 <div class="units_container">
-    <h2>Parameter Settings</h2>
-    <div *ngFor="let param of unitSettings" class="parameter-row">
-        <div class="parameter-card">
-            <div class="parameter-content">
-                <span class="parameter-icon">
-                    <i [ngClass]="param.iconClass"></i>
-                </span>
-                <span class="parameter-label">{{ param.label }}</span>
-            </div>
+  <div class="units-header">
+    <span class="header-icon">
+      <i class="fa-solid fa-cog"></i>
+    </span>
+    <span><h2>Parameter Settings</h2></span>
+  </div>
+
+  <div class="parameter-grid">
+    <div
+      *ngFor="let param of unitSettings; let i = index"
+      class="parameter-row"
+      [ngStyle]="
+        i === unitSettings.length - 1
+          ? { 'grid-column': 'span 2' }
+          : { 'grid-column': 'span 1' }
+      "
+    >
+      <div class="parameter-card">
+        <div class="parameter-content">
+          <span class="parameter-icon">
+            <i [ngClass]="param.iconClass"></i>
+          </span>
+          <span class="parameter-label">{{ param.label }}</span>
         </div>
-        <div class="unit-selection">
-            <div class="tooltip-container" *ngFor="let unit of param.units">
-                <button class="unit-button" [class.selected]="selectedUnits[param.key] === unit"
-                    (click)="selectUnit(param.key, unit)">
-                    {{ unit }}
-                </button>
-                <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
-            </div>
+      </div>
+      <div class="unit-selection">
+        <div
+          class="tooltip-container"
+          *ngFor="let unit of param.units; let j = index"
+        >
+          <button
+            class="unit-button"
+            [class.selected]="selectedUnits[param.key] === unit"
+            (click)="selectUnit(param.key, unit)"
+          >
+            {{ param.unitslabels[j] }}
+          </button>
+          <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
         </div>
+      </div>
     </div>
+  </div>
+  <div class="path-row">
+    <div class="parameter-card">
+      <div class="path-content">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 30 30"
+          width="35px"
+          height="35px"
+          fill="var(--folder-color1)"
+        >
+          <path
+            d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z"
+          />
+        </svg>
+        <h2>Choose Your Workstream</h2>
+      </div>
+      <div class="path-selection">
+        <div class="path-input-group">
+          <input
+            type="text"
+            class="path-input"
+            placeholder="Select path..."
+            readonly
+          />
+          <button class="browse-button">Browse</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

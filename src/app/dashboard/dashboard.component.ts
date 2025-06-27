@@ -51,7 +51,7 @@ interface dashdata {
   ],
   templateUrl: './dashboard.component.html',
   styleUrl: './dashboard.component.css',
-  providers:[GlobalConfig]
+  providers: [GlobalConfig],
 })
 export class DashboardComponent implements OnInit {
   expandedFolders: boolean[] = [];
@@ -77,8 +77,8 @@ export class DashboardComponent implements OnInit {
   isbefore: boolean = true;
   currentData!: any;
   dir: boolean = false;
-  latutude!:string;
-  longitude!:string;
+  latutude!: string;
+  longitude!: string;
   private baseUrl: string;
 
   constructor(
@@ -86,7 +86,7 @@ export class DashboardComponent implements OnInit {
     private toast: ToastrService,
     private unitSerive: UnitService,
     private globe: BaseComponent,
-    private globall:GlobalConfig
+    private globall: GlobalConfig
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
   }
@@ -105,9 +105,9 @@ export class DashboardComponent implements OnInit {
   truncate(value: string | number): number {
     return Math.floor(parseFloat(value as string));
   }
-parseFloat(value: any): number {
-  return parseFloat(value);
-}
+  parseFloat(value: any): number {
+    return parseFloat(value);
+  }
   toggle_tap() {
     // try {
     const filter = this.main_table.filter(
@@ -349,11 +349,17 @@ parseFloat(value: any): number {
       current_dir_after_6: '',
     };
     this.selected_data = data;
-    this.latutude = this.convertcoored(this.selected_data.lat,
-                        this.coor_unit, 'dms')
-    this.longitude = this.convertcoored(this.selected_data.lon,
-    this.coor_unit, 'dms')
-      console.log("latitude====", this.latutude)
+    this.latutude = this.convertcoored(
+      this.selected_data.lat,
+      this.coor_unit,
+      this.units.latandlong
+    );
+    this.longitude = this.convertcoored(
+      this.selected_data.lon,
+      this.coor_unit,
+      this.units.latandlong
+    );
+    console.log('latitude====', this.latutude);
     this.dir = false;
     console.log('selected', this.selected_data);
     this.directionTo = this.directionValue(
@@ -402,83 +408,80 @@ parseFloat(value: any): number {
       return 'NNW'; // North-Northwest
     }
   }
-  fileID:number | undefined;
+  fileID: number | undefined;
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
-  unitssTo!:UnitSettings;
+  unitssTo!: UnitSettings;
   ngOnInit(): void {
     this.unitSerive.units$.subscribe((u) => {
       this.units = u;
     });
     this.files_list = [];
-    const unitss:any = localStorage.getItem('unitSettings');
+    const unitss: any = localStorage.getItem('unitSettings');
     this.unitssTo = JSON.parse(unitss);
-    console.log("Unitsss", this.unitssTo)
-    this.http
-      .get(`${this.baseUrl}files`)
-      .subscribe((response: any) => {
-        console.log('resposnse==', response);
-        this.files_list = response['data'];
-        console.log('files:', response, this.files_list);
-        this.fileID = this.globe.fileId;
-        console.log('file IFD', this.fileID);
+    console.log('Unitsss', this.unitssTo);
+    this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+      console.log('resposnse==', response);
+      this.files_list = response['data'];
+      console.log('files:', response, this.files_list);
+      this.fileID = this.globe.fileId;
+      console.log('file IFD', this.fileID);
 
-        let folderIndex = -1;
-        let selectedFile = null;
-        let selectedFolder = null;
+      let folderIndex = -1;
+      let selectedFile = null;
+      let selectedFolder = null;
 
-        if (this.fileID) {
-          folderIndex = this.files_list.findIndex((folder) =>
-            folder.files.some((file) => file.file_id === this.fileID)
-          );
-          if (folderIndex !== -1) {
-            selectedFolder = this.files_list[folderIndex];
-            selectedFile = selectedFolder.files.find(
-              (file) => file.file_id === this.fileID
-            );
-          }
-        }
-
-        // If no matching file found, fallback to first folder with files
-        if (folderIndex === -1) {
-          folderIndex = this.files_list.findIndex(
-            (folder) => folder.files && folder.files.length > 0
-          );
-          if (folderIndex !== -1) {
-            selectedFolder = this.files_list[folderIndex];
-            selectedFile = selectedFolder.files[0];
-          }
-        }
-
-        // Expand the matched folder
-        this.expandedFolders = this.files_list.map(
-          (_, index) => index === folderIndex
+      if (this.fileID) {
+        folderIndex = this.files_list.findIndex((folder) =>
+          folder.files.some((file) => file.file_id === this.fileID)
         );
-
-        // Set folder and file details if found
-        if (selectedFolder && selectedFile) {
-          this.openedFolder = selectedFolder.folder_id;
-          this.selected_folder_name = selectedFolder.folder_name;
-
-          this.selectedFiles = [
-            {
-              file_name: selectedFile.file_name,
-              file_id: selectedFile.file_id,
-            },
-          ];
-          this.opened_file = selectedFile.file_name;
-
-          // Fetch data for the file
-          this.open_file(selectedFile.file_name, selectedFile.file_id);
+        if (folderIndex !== -1) {
+          selectedFolder = this.files_list[folderIndex];
+          selectedFile = selectedFolder.files.find(
+            (file) => file.file_id === this.fileID
+          );
         }
+      }
 
-        setTimeout(() => {
-          // this.globe.fileId = undefined;
-        }, 100);
-        // this.isFilesLoading = false;
-      });
+      // If no matching file found, fallback to first folder with files
+      if (folderIndex === -1) {
+        folderIndex = this.files_list.findIndex(
+          (folder) => folder.files && folder.files.length > 0
+        );
+        if (folderIndex !== -1) {
+          selectedFolder = this.files_list[folderIndex];
+          selectedFile = selectedFolder.files[0];
+        }
+      }
+
+      // Expand the matched folder
+      this.expandedFolders = this.files_list.map(
+        (_, index) => index === folderIndex
+      );
+
+      // Set folder and file details if found
+      if (selectedFolder && selectedFile) {
+        this.openedFolder = selectedFolder.folder_id;
+        this.selected_folder_name = selectedFolder.folder_name;
+
+        this.selectedFiles = [
+          {
+            file_name: selectedFile.file_name,
+            file_id: selectedFile.file_id,
+          },
+        ];
+        this.opened_file = selectedFile.file_name;
+
+        // Fetch data for the file
+        this.open_file(selectedFile.file_name, selectedFile.file_id);
+      }
+
+      setTimeout(() => {
+        // this.globe.fileId = undefined;
+      }, 100);
+      // this.isFilesLoading = false;
+    });
 
     // Units
-
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -538,7 +541,6 @@ parseFloat(value: any): number {
     }
   }
 
-
   convertValue(value: number, fromUnit: string, toUnit: string): number {
     if (fromUnit === toUnit) return value;
 
@@ -568,60 +570,60 @@ parseFloat(value: any): number {
     return parseFloat(value.toFixed(2));
   }
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
-  if (fromUnit === toUnit) return value;
+    if (fromUnit === toUnit) return value;
 
-  const maxVolt = 4.2; // for battery conversion
+    const maxVolt = 4.2; // for battery conversion
 
-  const conversions: { [key: string]: (v: any) => any } = {
-    'm-ft': (v) => v * 3.28084,
-    'ft-m': (v) => v / 3.28084,
-    'm-cm': (v) => v * 100,
-    'cm-m': (v) => v / 100,
-    'ft-cm': (v) => (v / 3.28084) * 100,
-    'cm-ft': (v) => (v / 100) * 3.28084,
-    'm/s-knots': (v) => v * 1.94384,
-    'knots-m/s': (v) => v / 1.94384,
-    'radians-°': (v) => v * (180 / Math.PI),
-    '°-radians': (v) => v * (Math.PI / 180),
-    'volts-%': (v) => (v / maxVolt) * 100,
-    '%-volts': (v) => (v * maxVolt) / 100,
+    const conversions: { [key: string]: (v: any) => any } = {
+      'm-ft': (v) => v * 3.28084,
+      'ft-m': (v) => v / 3.28084,
+      'm-cm': (v) => v * 100,
+      'cm-m': (v) => v / 100,
+      'ft-cm': (v) => (v / 3.28084) * 100,
+      'cm-ft': (v) => (v / 100) * 3.28084,
+      'm/s-knots': (v) => v * 1.94384,
+      'knots-m/s': (v) => v / 1.94384,
+      'radians-°': (v) => v * (180 / Math.PI),
+      '°-radians': (v) => v * (Math.PI / 180),
+      'volts-%': (v) => (v / maxVolt) * 100,
+      '%-volts': (v) => (v * maxVolt) / 100,
 
-    // DD to DMS
-    'dd-dms': (v) => {
-      const deg = Math.floor(v);
-      const minFloat = (v - deg) * 60;
-      const min = Math.floor(minFloat);
-      const sec = (minFloat - min) * 60;
-      return `${deg}°${min}'${sec.toFixed(2)}"`;
-    },
+      // DD to DMS
+      'dd-dms': (v) => {
+        const deg = Math.floor(v);
+        const minFloat = (v - deg) * 60;
+        const min = Math.floor(minFloat);
+        const sec = (minFloat - min) * 60;
+        return `${deg}°${min}'${sec.toFixed(2)}"`;
+      },
 
-    // DMS to DD
-    'dms-dd': (v) => {
-      const regex = /(\d+)°(\d+)'([\d.]+)"/;
-      const match = v.match(regex);
-      if (!match) return 0;
-      const deg = parseInt(match[1]);
-      const min = parseInt(match[2]);
-      const sec = parseFloat(match[3]);
-      return parseFloat((deg + (min / 60) + (sec / 3600)).toFixed(6));
+      // DMS to DD
+      'dms-dd': (v) => {
+        const regex = /(\d+)°(\d+)'([\d.]+)"/;
+        const match = v.match(regex);
+        if (!match) return 0;
+        const deg = parseInt(match[1]);
+        const min = parseInt(match[2]);
+        const sec = parseFloat(match[3]);
+        return parseFloat((deg + min / 60 + sec / 3600).toFixed(6));
+      },
+    };
+
+    const key = `${fromUnit}-${toUnit}`;
+    if (conversions[key]) {
+      return conversions[key](value);
     }
-  };
 
-  const key = `${fromUnit}-${toUnit}`;
-  if (conversions[key]) {
-    return conversions[key](value);
+    // No conversion found
+    return value;
   }
 
-  // No conversion found
-  return value;
-}
-
-  bet_unit!:string;
-  wat_unit!:string;
-  coor_unit!:string;
-  depth_unit!:string;
-  speed_unit!:string;
-  directtion_unit!:string;
+  bet_unit!: string;
+  wat_unit!: string;
+  coor_unit!: string;
+  depth_unit!: string;
+  speed_unit!: string;
+  directtion_unit!: string;
   open_file(file_name: string, file_id: number) {
     console.log('h');
     this.opened_file = file_name;
@@ -641,37 +643,66 @@ parseFloat(value: any): number {
         this.speed_unit = response[0].current_speed_unit;
         this.directtion_unit = response[0].current_direction_unit;
 
-        console.log("unitss====",
-          this.bet_unit, this.wat_unit, this.coor_unit, this.directtion_unit, this.speed_unit, this.depth_unit
-        )
-        console.log(this.unitssTo.waterLevel)
-        let dd = []
+        console.log(
+          'unitss====',
+          this.bet_unit,
+          this.wat_unit,
+          this.coor_unit,
+          this.directtion_unit,
+          this.speed_unit,
+          this.depth_unit
+        );
+        console.log(this.unitssTo.waterLevel);
+        let dd = [];
         // Unitsss {"waterLevel":"m","currentSpeed":"m/s","currentDirection":"°","battery":"volts","depth":"m","latandlong":"DMS"}
         for (let index = 0; index < response.length; index++) {
           dd.push({
-            battery : this.globall.convertValue(response[index].battery, response[index].battery_unit, this.unitssTo.battery),
-            battery_unit: "volts",
-            current_direction_unit: "°",
-            current_speed_unit: "m/s",
-            date: "2025-04-01T00:00:54.000Z",
-            depth: this.globall.convertValue(response[index].depth, response[index].depth_unit, this.unitssTo.depth),
-            depth_unit: "m",
-            direction: this.globall.convertValue(response[index].direction, response[index].current_direction_unit, this.unitssTo.currentDirection),
+            battery: this.globall.convertValue(
+              response[index].battery,
+              response[index].battery_unit,
+              this.unitssTo.battery
+            ),
+            battery_unit: 'volts',
+            current_direction_unit: '°',
+            current_speed_unit: 'm/s',
+            date: '2025-04-01T00:00:54.000Z',
+            depth: this.globall.convertValue(
+              response[index].depth,
+              response[index].depth_unit,
+              this.unitssTo.depth
+            ),
+            depth_unit: 'm',
+            direction: this.globall.convertValue(
+              response[index].direction,
+              response[index].current_direction_unit,
+              this.unitssTo.currentDirection
+            ),
             file_id: 17,
             high_water_level: 0,
             id: 1,
-            lat: "18.3",
-            lon: "52.3",
-            pressure:  this.globall.convertValue(response[index].pressure, response[index].water_level_unit, this.unitssTo.waterLevel),
-            speed:this.globall.convertValue(response[index].speed, response[index].current_speed_unit, this.unitssTo.currentSpeed),
-            station_id:"$PRTI20",
-            water_level_unit: "m"
-          })
-
+            lat: '18.3',
+            lon: '52.3',
+            pressure: this.globall.convertValue(
+              response[index].pressure,
+              response[index].water_level_unit,
+              this.unitssTo.waterLevel
+            ),
+            speed: this.globall.convertValue(
+              response[index].speed,
+              response[index].current_speed_unit,
+              this.unitssTo.currentSpeed
+            ),
+            station_id: '$PRTI20',
+            water_level_unit: 'm',
+          });
         }
-        console.log("dd",dd)
-        const ddddd = this.globall.convertValue(response[0].pressure, response[0].water_level_unit, 'ft')
-        console.log("converted", ddddd)
+        console.log('dd', dd);
+        const ddddd = this.globall.convertValue(
+          response[0].pressure,
+          response[0].water_level_unit,
+          'ft'
+        );
+        console.log('converted', ddddd);
         if (this.isMulti) {
           let data = this.main_table;
           this.main_table = [];

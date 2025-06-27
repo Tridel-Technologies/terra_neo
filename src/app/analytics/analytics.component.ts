@@ -25,7 +25,7 @@ import { SelectModule } from 'primeng/select';
 import { ColorPickerModule } from 'primeng/colorpicker';
 import { CalendarModule } from 'primeng/calendar';
 import { DatePickerModule } from 'primeng/datepicker';
-import { BehaviorSubject } from 'rxjs';
+import { BehaviorSubject, skip } from 'rxjs';
 import { BaseComponent } from '../base/base.component';
 import { CascadeSelectModule } from 'primeng/cascadeselect';
 import { ThemeService } from '../theme_service/theme.service';
@@ -60,6 +60,7 @@ interface ApiData {
   current_direction_unit: string;
   battery_unit: string;
   depth_unit: string;
+  coord_unit: string;
   [key: string]: any;
 }
 
@@ -608,10 +609,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     // Handle new rows
     if (newRows.length > 0) {
       // Check for units conversion
-      const unitsMatch = Object.keys(this.units).every(
-        (key) => this.units[key] === sourceUnits[key]
-      );
+      const unitsMatch = Object.keys(this.units)
+        .filter(
+          (key) => !['datetime', 'battery', 'latandlong', 'depth'].includes(key)
+        )
+        .every((key) => this.units[key] === sourceUnits[key]);
+
       console.log('units', unitsMatch);
+
       const newRowsPromises = newRows.map((newRow) => {
         // Parse the date string to get hours and minutes
         const date = new Date(newRow.date);
@@ -692,9 +697,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     // Handle updated rows
     if (changedRows.length > 0) {
       // Check for units conversion
-      const unitsMatch = Object.keys(this.units).every(
-        (key) => this.units[key] === sourceUnits[key]
-      );
+      const unitsMatch = Object.keys(this.units)
+        .filter(
+          (key) => !['datetime', 'battery', 'latandlong', 'depth'].includes(key)
+        )
+        .every((key) => this.units[key] === sourceUnits[key]);
+
       console.log('units', unitsMatch);
 
       const updatePayload = changedRows.map((row) => {
@@ -841,6 +849,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         current_direction_unit: item.current_direction_unit,
         battery_unit: item.battery_unit,
         depth_unit: item.depth_unit,
+        coord_unit: '',
       };
       this.main_table.splice(currentIndex + 1, 0, newRow);
       this.fullData = [...this.main_table];
@@ -972,31 +981,51 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       currentDirection: this.fullData[0].current_direction_unit,
       battery: this.fullData[0].battery_unit,
       depth: this.fullData[0].depth_unit,
+      latandlong: this.fullData[0].coord_unit,
     };
 
-    const unitsMatch = Object.keys(this.units).every(
-      (key) => this.units[key] === sourceUnits[key]
-    );
+    const unitsMatch = Object.keys(this.units).every((key) => {
+      if (key == 'datetime') {
+        return true;
+      }
+      return this.units[key] == sourceUnits[key];
+    });
     console.log('match', unitsMatch);
 
     if (unitsMatch) {
       this.main_table = this.fullData;
+      // this.main_table = this.fullData.map((item, index) => {
+      //   const newItem = { ...item } as ApiData;
+      //   // Date Format conversion
+      //   if (
+      //     this.fullData[index].date.match(
+      //       /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+      //     )
+      //   ) {
+      //     this.fullData[index].date = formatDate(
+      //       newItem.date,
+      //       this.dateFormat,
+      //       'en-US'
+      //     );
+      //   }
+      //   return newItem;
+      // });
     } else {
       this.main_table = this.fullData.map((item, index) => {
         const newItem = { ...item } as ApiData;
 
         // Date Format conversion
-        if (
-          this.fullData[index].date.match(
-            /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
-          )
-        ) {
-          this.fullData[index].date = formatDate(
-            newItem.date,
-            this.dateFormat,
-            'en-US'
-          );
-        }
+        // if (
+        //   this.fullData[index].date.match(
+        //     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+        //   )
+        // ) {
+        //   this.fullData[index].date = formatDate(
+        //     newItem.date,
+        //     this.dateFormat,
+        //     'en-US'
+        //   );
+        // }
 
         // if waterLevel unit mismatches → convert pressure
         if (sourceUnits['waterLevel'] !== this.units['waterLevel']) {
@@ -1054,7 +1083,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     endValue: number
   ) {
     const option = chart.getOption() as EChartsOption;
-    console.log('dates', startValue, endValue);
     // Calculate time difference in days
     const startDate = new Date(startValue);
     const endDate = new Date(endValue);
@@ -1116,6 +1144,28 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: (params: any) => {
+            // params[0] is the main series point
+            if (params && params.length > 0) {
+              const date = params[0].data[0];
+              let formattedDate = date;
+              try {
+                formattedDate = formatDate(
+                  new Date(date),
+                  this.dateFormat,
+                  'en-US'
+                );
+              } catch (e) {
+                // fallback to original date string
+              }
+              let tooltip = `<b>Date:</b> ${formattedDate}`;
+              params.forEach((item: any) => {
+                tooltip += `<br/><b>${item.seriesName}:</b> ${item.data[1]}`;
+              });
+              return tooltip;
+            }
+            return '';
+          },
         },
         xAxis: [
           {
@@ -1356,7 +1406,31 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             fontSize: 20,
           },
         },
-        tooltip: { trigger: 'axis' },
+        tooltip: {
+          trigger: 'axis',
+          formatter: (params: any) => {
+            // params[0] is the main series point
+            if (params && params.length > 0) {
+              const date = params[0].data[0];
+              let formattedDate = date;
+              try {
+                formattedDate = formatDate(
+                  new Date(date),
+                  this.dateFormat,
+                  'en-US'
+                );
+              } catch (e) {
+                // fallback to original date string
+              }
+              let tooltip = `<b>Date:</b> ${formattedDate}`;
+              params.forEach((item: any) => {
+                tooltip += `<br/><b>${item.seriesName}:</b> ${item.data[1]}`;
+              });
+              return tooltip;
+            }
+            return '';
+          },
+        },
         // grid: { left: '7%', right: '5%' },
         xAxis: [
           {
@@ -1572,7 +1646,31 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             fontSize: 20,
           },
         },
-        tooltip: { trigger: 'axis' },
+        tooltip: {
+          trigger: 'axis',
+          formatter: (params: any) => {
+            // params[0] is the main series point
+            if (params && params.length > 0) {
+              const date = params[0].data[0];
+              let formattedDate = date;
+              try {
+                formattedDate = formatDate(
+                  new Date(date),
+                  this.dateFormat,
+                  'en-US'
+                );
+              } catch (e) {
+                // fallback to original date string
+              }
+              let tooltip = `<b>Date:</b> ${formattedDate}`;
+              params.forEach((item: any) => {
+                tooltip += `<br/><b>${item.seriesName}:</b> ${item.data[1]}`;
+              });
+              return tooltip;
+            }
+            return '';
+          },
+        },
         // grid: { left: '7%', right: '5%' },
 
         xAxis: [
@@ -1827,6 +1925,28 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           trigger: 'axis',
           axisPointer: {
             type: 'cross',
+          },
+          formatter: (params: any) => {
+            // params[0] is the main series point
+            if (params && params.length > 0) {
+              const date = params[0].data[0];
+              let formattedDate = date;
+              try {
+                formattedDate = formatDate(
+                  new Date(date),
+                  this.dateFormat,
+                  'en-US'
+                );
+              } catch (e) {
+                // fallback to original date string
+              }
+              let tooltip = `<b>Date:</b> ${formattedDate}`;
+              params.forEach((item: any) => {
+                tooltip += `<br/><b>${item.seriesName}:</b> ${item.data[1]}`;
+              });
+              return tooltip;
+            }
+            return '';
           },
         },
         // grid: { left: '7%', right: '7%' },
@@ -2094,6 +2214,28 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         tooltip: {
           trigger: 'axis',
+          formatter: (params: any) => {
+            // params[0] is the main series point
+            if (params && params.length > 0) {
+              const date = params[0].data[0];
+              let formattedDate = date;
+              try {
+                formattedDate = formatDate(
+                  new Date(date),
+                  this.dateFormat,
+                  'en-US'
+                );
+              } catch (e) {
+                // fallback to original date string
+              }
+              let tooltip = `<b>Date:</b> ${formattedDate}`;
+              params.forEach((item: any) => {
+                tooltip += `<br/><b>${item.seriesName}:</b> ${item.data[1]}`;
+              });
+              return tooltip;
+            }
+            return '';
+          },
         },
         // grid: {
         //   left: '9%',
@@ -2442,7 +2584,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     //   this.toast.warning('Please select a date range');
     //   return;
     // }
-
     const startDate = this.formatDateToYMD(this.selectedPolarDateRange[0]);
     const endDate = this.formatDateToYMD(this.selectedPolarDateRange[1]);
 
@@ -2522,15 +2663,48 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     let graphic: any = undefined;
 
-    if (this.PolarSelectedInterVal !== 'all' || interval === 60) {
+    // if (this.PolarSelectedInterVal !== 'all' || interval === 60) {
+    //   graphic = {
+    //     elements: [
+    //       {
+    //         type: 'text',
+    //         right: '0%',
+    //         top: '0%',
+    //         style: {
+    //           text: `Current Speed (${speedLabelUnit})`,
+    //           fill: mainText,
+    //           font: 'bold 12px sans-serif',
+    //           textAlign: 'left',
+    //         },
+    //       },
+    //     ],
+    //   };
+    // }
+    if (this.PolarSelectedInterVal !== 'all') {
       graphic = {
         elements: [
           {
             type: 'text',
-            right: '0%',
+            right: '2.5%',
             top: '0%',
             style: {
-              text: `Current Speed (${speedLabelUnit})`,
+              text: `(${speedLabelUnit})`,
+              fill: mainText,
+              font: 'bold 12px sans-serif',
+              textAlign: 'left',
+            },
+          },
+        ],
+      };
+    } else {
+      graphic = {
+        elements: [
+          {
+            type: 'text',
+            right: '5%',
+            top: '0%',
+            style: {
+              text: `(${speedLabelUnit})`,
               fill: mainText,
               font: 'bold 12px sans-serif',
               textAlign: 'left',
@@ -2636,30 +2810,41 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               },
             },
       polar: { center: ['50%', '55%'] },
-      legend:
-        this.PolarSelectedInterVal === 'all'
-          ? {
-              show: interval == 60,
-              // data: ['30 min', '60 min', '360 min', '1440 min'],
-              orient: 'vertical',
-              top: '5%',
-              right: '0%',
-              textStyle: {
-                color: mainText,
-                fontSize: 12,
-              },
-            }
-          : {
-              show: true,
-              data: speedCategories,
-              orient: 'vertical',
-              top: '2%',
-              right: '0%',
-              textStyle: {
-                color: mainText,
-                fontSize: 12,
-              },
-            },
+      // legend:
+      //   this.PolarSelectedInterVal === 'all'
+      //     ? {
+      //         show: interval == 60,
+      //         // data: ['30 min', '60 min', '360 min', '1440 min'],
+      //         orient: 'vertical',
+      //         top: '5%',
+      //         right: '0%',
+      //         textStyle: {
+      //           color: mainText,
+      //           fontSize: 12,
+      //         },
+      //       }
+      //     : {
+      //         show: true,
+      //         data: speedCategories,
+      //         orient: 'vertical',
+      //         top: '2%',
+      //         right: '0%',
+      //         textStyle: {
+      //           color: mainText,
+      //           fontSize: 12,
+      //         },
+      //       },
+      legend: {
+        show: true,
+        data: speedCategories,
+        orient: 'vertical',
+        top: '3%',
+        right: '0%',
+        textStyle: {
+          color: mainText,
+          fontSize: 12,
+        },
+      },
       graphic,
 
       angleAxis: {
@@ -2773,7 +2958,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private formatDateToYMD(date: Date): string {
-    console.log('datee', date);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');

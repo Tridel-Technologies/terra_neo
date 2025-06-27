@@ -1,63 +1,88 @@
 <div class="importer_base">
-    <div class="poup" *ngIf="showoption">
-        <p class="lab">Are you want to open updated file in dashboard?</p>
-        <div class="buttonns">
-            <button (click)="onCancel()">Cancel</button>
-            <button (click)="onYes()">Yes</button>
-        </div>
+  <div class="poup" *ngIf="showoption">
+    <p class="lab">Are you want to open updated file in dashboard?</p>
+    <div class="buttonns">
+      <button (click)="onCancel()">Cancel</button>
+      <button (click)="onYes()">Yes</button>
     </div>
+  </div>
 
-    <button class="import_button" (click)="on_openImport()">Import</button>
+  <button class="import_button" (click)="on_openImport()">Import</button>
 
-    <div class="files_container">
-        <h4 style="align-self: flex-start; margin-left: 20px; color: var(--font-color);">Explorer</h4>
+  <div class="files_container">
+    <h4
+      style="
+        align-self: flex-start;
+        margin-left: 20px;
+        color: var(--font-color);
+      "
+    >
+      Explorer
+    </h4>
 
-        <div class="folder" *ngFor="let folder of files_list; let i = index">
-            <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
+    <div class="folder" *ngFor="let folder of files_list; let i = index">
+      <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
+        <ng-container *ngIf="expandedFolders[i]; else closedFolder">
+          <!-- Opened Folder SVG -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 30 30"
+            width="30px"
+            height="30px"
+            fill="var(--folder-color1)"
+          >
+            <path
+              d="M 5 4 C 3.895 4 3 4.895 3 6 L 3 9 L 3 11 L 22 11 L 27 11 L 27 8 C 27 6.895 26.105 6 25 6 L 12.199219 6 L 11.582031 4.9707031 C 11.221031 4.3687031 10.570187 4 9.8671875 4 L 5 4 z M 2.5019531 13 C 1.4929531 13 0.77040625 13.977406 1.0664062 14.941406 L 4.0351562 24.587891 C 4.2941563 25.426891 5.0692656 26 5.9472656 26 L 15 26 L 24.052734 26 C 24.930734 26 25.705844 25.426891 25.964844 24.587891 L 28.933594 14.941406 C 29.229594 13.977406 28.507047 13 27.498047 13 L 15 13 L 2.5019531 13 z"
+            />
+          </svg>
+        </ng-container>
 
-                <ng-container *ngIf="expandedFolders[i]; else closedFolder">
-                    <!-- Opened Folder SVG -->
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30px" height="30px"
-                        fill="var(--folder-color1)">
-                        <path
-                            d="M 5 4 C 3.895 4 3 4.895 3 6 L 3 9 L 3 11 L 22 11 L 27 11 L 27 8 C 27 6.895 26.105 6 25 6 L 12.199219 6 L 11.582031 4.9707031 C 11.221031 4.3687031 10.570187 4 9.8671875 4 L 5 4 z M 2.5019531 13 C 1.4929531 13 0.77040625 13.977406 1.0664062 14.941406 L 4.0351562 24.587891 C 4.2941563 25.426891 5.0692656 26 5.9472656 26 L 15 26 L 24.052734 26 C 24.930734 26 25.705844 25.426891 25.964844 24.587891 L 28.933594 14.941406 C 29.229594 13.977406 28.507047 13 27.498047 13 L 15 13 L 2.5019531 13 z" />
-                    </svg>
-                </ng-container>
+        <ng-template #closedFolder>
+          <!-- Closed Folder SVG -->
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 30 30"
+            width="30px"
+            height="30px"
+            fill="var(--folder-color1)"
+          >
+            <path
+              d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z"
+            />
+          </svg>
+        </ng-template>
 
-                <ng-template #closedFolder>
-                    <!-- Closed Folder SVG -->
-                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" width="30px" height="30px"
-                        fill="var(--folder-color1)">
-                        <path
-                            d="M 4 3 C 2.895 3 2 3.895 2 5 L 2 8 L 13 8 L 28 8 L 28 7 C 28 5.895 27.105 5 26 5 L 11.199219 5 L 10.582031 3.9707031 C 10.221031 3.3687031 9.5701875 3 8.8671875 3 L 4 3 z M 3 10 C 2.448 10 2 10.448 2 11 L 2 23 C 2 24.105 2.895 25 4 25 L 26 25 C 27.105 25 28 24.105 28 23 L 28 11 C 28 10.448 27.552 10 27 10 L 3 10 z" />
-                    </svg>
-                </ng-template>
-
-                <!-- <div [innerHTML]="expandedFolders[i] ? openedFolderSvg : closedFolderSvg"></div> -->
-                <div class="folder-info">
-                    <p>{{ folder.folder_name }}<br><span>{{ folder.timestamp | date:'short' }}</span></p>
-                </div>
-                <span class="arrow">{{ expandedFolders[i] ? '▾' : '▸' }}</span>
-            </div>
-            <div class="file-list" *ngIf="expandedFolders[i]">
-                <div *ngFor="let f of folder.files" [ngClass]="getFileClass(f.file_name, folder.folder_id)"
-                    (click)="toggleFileSelection(f.file_name, $event, f.file_id)">
-                    <img [src]="getFileImage(f.file_name)" alt="file" />
-                    <p>{{ f.file_name }}</p>
-                    <i *ngIf="f.is_processed" class="pi pi-file-edit" style="font-size: 1rem; color: var(--font-color);"
-                        title="Processed File"></i>
-
-                </div>
-            </div>
+        <!-- <div [innerHTML]="expandedFolders[i] ? openedFolderSvg : closedFolderSvg"></div> -->
+        <div class="folder-info">
+          <p>
+            {{ folder.folder_name }}<br /><span>{{
+              folder.timestamp | date : "short"
+            }}</span>
+          </p>
         </div>
-
+        <span class="arrow">{{ expandedFolders[i] ? "▾" : "▸" }}</span>
+      </div>
+      <div class="file-list" *ngIf="expandedFolders[i]">
+        <div
+          *ngFor="let f of folder.files"
+          [ngClass]="getFileClass(f.file_name, folder.folder_id)"
+          (click)="toggleFileSelection(f.file_name, $event, f.file_id)"
+        >
+          <img [src]="getFileImage(f.file_name)" alt="file" />
+          <p>{{ f.file_name }}</p>
+          <i
+            *ngIf="f.is_processed"
+            class="pi pi-file-edit"
+            style="font-size: 1rem; color: var(--font-color)"
+            title="Processed File"
+          ></i>
+        </div>
+      </div>
     </div>
+  </div>
 
-
-    <div class="main_section">
-
-
-        <!-- <div class="dashboard">
+  <div class="main_section">
+    <!-- <div class="dashboard">
             <div class="widget">
                 <h3>Station ID</h3>
                 <p>0123A</p>
@@ -123,172 +148,318 @@
                 </div>
             </div>
         </div> -->
-        <div class="table_container" *ngIf="!isMulti">
-            <!-- <p *ngIf="main_table.length === 0">No Files Selected</p> -->
-            <div *ngIf="main_table.length === 0" class="land">
-                <app-landing></app-landing>
-                <!-- <p class="chip-text">Advance Processing of Oceanographic Current Profilers</p> -->
+    <div class="table_container" *ngIf="!isMulti">
+      <!-- <p *ngIf="main_table.length === 0">No Files Selected</p> -->
+      <div *ngIf="main_table.length === 0" class="land">
+        <app-landing></app-landing>
+        <!-- <p class="chip-text">Advance Processing of Oceanographic Current Profilers</p> -->
+      </div>
+      <div class="bod" *ngIf="main_table.length > 0">
+        <div class="coordinates">
+          <h4 *ngIf="unitssTo.latandlong === 'dms'">Latitude (DMS)</h4>
+          <div
+            style="display: flex; gap: 15px"
+            *ngIf="unitssTo.latandlong === 'dms'"
+          >
+            <input
+              type="number"
+              placeholder="Deg"
+              min="0"
+              max="90"
+              [(ngModel)]="latDeg"
+            />
+            <input
+              type="number"
+              placeholder="Min"
+              min="0"
+              max="59"
+              [(ngModel)]="latMin"
+            />
+            <input
+              type="number"
+              placeholder="Sec"
+              min="0"
+              max="59.999"
+              step="any"
+              [(ngModel)]="latSec"
+            />
+          </div>
+
+          <div
+            *ngIf="latDeg > 90 || latMin >= 60 || latSec >= 60"
+            class="error1"
+          >
+            Invalid Latitude DMS values.
+          </div>
+          <h4 *ngIf="unitssTo.latandlong == 'dms'">Longitude (DMS)</h4>
+          <div
+            style="display: flex; gap: 15px"
+            *ngIf="unitssTo.latandlong === 'dms'"
+          >
+            <input
+              type="number"
+              placeholder="Deg"
+              min="0"
+              max="180"
+              [(ngModel)]="lonDeg"
+            />
+            <input
+              type="number"
+              placeholder="Min"
+              min="0"
+              max="59"
+              [(ngModel)]="lonMin"
+            />
+            <input
+              type="number"
+              placeholder="Sec"
+              min="0"
+              max="59.999"
+              step="any"
+              [(ngModel)]="lonSec"
+            />
+          </div>
+
+          <div
+            *ngIf="lonDeg > 180 || lonMin >= 60 || lonSec >= 60"
+            class="error"
+          >
+            Invalid Longitude DMS values.
+          </div>
+
+          <div
+            class="inputssss"
+            *ngIf="unitssTo.latandlong === 'dd'"
+            style="width: 100%"
+          >
+            <h4 *ngIf="unitssTo.latandlong === 'dd'">Latitude (DD)</h4>
+            <input
+              type="number"
+              step="any"
+              min="-90"
+              max="90"
+              placeholder="Latitude (-90 to 90)"
+              [(ngModel)]="latitude"
+              name="latitude"
+              #lat="ngModel"
+              (change)="changinglat()"
+            />
+            <div
+              *ngIf="lat.invalid && unitssTo.latandlong === 'dd'"
+              class="error1"
+            >
+              Latitude must be between -90° and +90°.
             </div>
-            <div class="bod" *ngIf="main_table.length > 0">
-                <div class="coordinates">
-                    <h4 *ngIf="unitssTo.latandlong ==='dms'">Latitude (DMS)</h4>
-                    <div style="display: flex; gap: 15px;" *ngIf="unitssTo.latandlong ==='dms'">
-                        <input type="number" placeholder="Deg" min="0" max="90" [(ngModel)]="latDeg">
-                        <input type="number" placeholder="Min" min="0" max="59" [(ngModel)]="latMin">
-                        <input type="number" placeholder="Sec" min="0" max="59.999" step="any" [(ngModel)]="latSec">
-                    </div>
+            <h4 *ngIf="unitssTo.latandlong === 'dd'">Longitude (DD)</h4>
+            <input
+              type="number"
+              step="any"
+              min="-180"
+              max="180"
+              placeholder="Longitude (-180 to 180)"
+              [(ngModel)]="lon"
+              name="longitude"
+              #long="ngModel"
+            />
+            <div
+              *ngIf="long.invalid && unitssTo.latandlong === 'dd'"
+              class="error"
+            >
+              Longitude must be between -180° and +180°.
+            </div>
+          </div>
 
-                    <div *ngIf="(latDeg > 90 || latMin >= 60 || latSec >= 60)" class="error1">
-                        Invalid Latitude DMS values.
-                    </div>
-                    <h4 *ngIf="unitssTo.latandlong =='dms'">Longitude (DMS)</h4>
-                    <div style="display: flex; gap: 15px;" *ngIf="unitssTo.latandlong ==='dms'">
-                        <input type="number" placeholder="Deg" min="0" max="180" [(ngModel)]="lonDeg">
-                        <input type="number" placeholder="Min" min="0" max="59" [(ngModel)]="lonMin">
-                        <input type="number" placeholder="Sec" min="0" max="59.999" step="any" [(ngModel)]="lonSec">
-                    </div>
-
-                    <div *ngIf="(lonDeg > 180 || lonMin >= 60 || lonSec >= 60) " class="error">
-                        Invalid Longitude DMS values.
-                    </div>
-
-
-
-
-                    <div class="inputssss" *ngIf="unitssTo.latandlong ==='dd'" style="width: 100%;">
-                        <h4 *ngIf="unitssTo.latandlong ==='dd'">Latitude (DD)</h4>
-                        <input type="number" step="any" min="-90" max="90" placeholder="Latitude (-90 to 90)"
-                            [(ngModel)]="latitude" name="latitude" #lat="ngModel" (change)="changinglat()">
-                        <div *ngIf="lat.invalid &&  unitssTo.latandlong ==='dd'" class="error1">
-                            Latitude must be between -90° and +90°.
-                        </div>
-                        <h4 *ngIf="unitssTo.latandlong ==='dd'">Longitude (DD)</h4>
-                        <input type="number" step="any" min="-180" max="180" placeholder="Longitude (-180 to 180)"
-                            [(ngModel)]="lon" name="longitude" #long="ngModel">
-                        <div *ngIf="long.invalid && unitssTo.latandlong ==='dd'" class="error">
-                            Longitude must be between -180° and +180°.
-                        </div>
-
-
-                    </div>
-
-                    <h4 *ngIf="!isMulti">Select High Water Time</h4>
-                    <input type="text" [(ngModel)]="high_water_level" *ngIf="!isMulti" readonly>
-                    <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
+          <h4 *ngIf="!isMulti">Select High Water Time</h4>
+          <input
+            type="text"
+            [(ngModel)]="high_water_level"
+            *ngIf="!isMulti"
+            readonly
+          />
+          <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
                         <option value="1">-- Please Select High Water Level from Table - -></option>
                         <option value="2">one</option>
                         <option value="3">two</option>
                     </select> -->
-                    <!-- <div class="spacer"></div> -->
-                    <button class="update" (click)="update_Values()">Update</button>
-                </div>
-
-                <table class="styled-table">
-                    <thead>
-                        <tr>
-                            <th *ngFor="let column of main_table_headers">{{ column }}</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let row of main_table; let i=index" (click)="onRowClick(row, i)"
-                            [class.selected]="selectedRowIndex === i" [attr.id] = "'row-' + i">
-                            <td>{{ row.station_id }}</td>
-                            <td>{{ row.date | date: 'yyyy-MMM-dd HH:mm:ss' }}</td>
-                            <td>{{ row.speed }}</td>
-                            <td>{{ row.direction }}</td>
-                            <td>{{ row.depth }}</td>
-                            <td>{{ row.battery }}</td>
-                            <td>{{ row.pressure }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+          <!-- <div class="spacer"></div> -->
+          <button class="update" (click)="update_Values()">Update</button>
         </div>
+
+        <div class="styled-table">
+          <table>
+            <thead>
+              <tr>
+                <th *ngFor="let column of main_table_headers">{{ column }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr
+                *ngFor="let row of main_table; let i = index"
+                (click)="onRowClick(row, i)"
+                [class.selected]="selectedRowIndex === i"
+                [attr.id]="'row-' + i"
+              >
+                <td>{{ row.station_id }}</td>
+                <td>{{ row.date | date : "yyyy-MMM-dd HH:mm:ss" }}</td>
+                <td>{{ row.speed }}</td>
+                <td>{{ row.direction }}</td>
+                <td>{{ row.depth }}</td>
+                <td>{{ row.battery }}</td>
+                <td>{{ row.pressure }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
+  </div>
 
-    <div class="home_main" *ngIf="is_show_import">
-
-        <div class="table_container">
-            <p style="color:var(--font-color)" *ngIf="historyData.length === 0">No Files Selected</p>
-            <div class="bod" *ngIf="historyData.length > 0">
-                <table class="styled-table">
-                    <thead>
-                        <tr>
-                            <th *ngFor="let column of tableHeaders">{{ column }}</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngFor="let row of historyData; let i=index">
-                            <td>{{ row.station_id }}</td>
-                            <td>{{ row.date | date:'yyyy MMM dd HH:mm:ss'}}</td>
-                            <!-- <td>{{ row.Time }}</td> -->
-                            <td>{{ row.speed }}</td>
-                            <td>{{ row.direction }}</td>
-                            <td>{{ row.depth }}</td>
-                            <td>{{ row.battery }}</td>
-                            <td>{{ row.pressure }}</td>
-                            <td>
-                                <!-- <button cli>Delete</button>-->
-                                <i id="trash" class="fa-solid fa-trash" title="Delete" (click)="deleteRow(i)" style="color: red;"></i>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <div class="file_upload_container">
-
-
-            <h1 (click)="on_openImport()" style="color: var(--font-color); cursor: pointer;">X</h1>
-
-            <!-- Toggle for allowing folder upload -->
-            <div class="checkbox-container" style="width: 90%;" *ngIf="uploaded_files.length ===0">
-                <label class="lab">
-                    <input type="checkbox" [(ngModel)]="allowFolderUpload" />
-                    Allow Folder Upload
-                </label>
-            </div>
-
-            <div class="file-upload" *ngIf="uploaded_files.length ===0">
-                <input type="file" style="background-color: var(--button-bg);
-    color: var(--button-text-color);" id="fileUpload" accept=".xlsx, .csv" (change)="onFilesSelected($event)" multiple
-                    [attr.webkitdirectory]="allowFolderUpload ? '' : null" />
-                <label for="fileUpload">📁 Upload File (.xlsx, .csv)</label>
-
-                <div *ngIf="FileName !== ''" class="file-name lab">{{ FileName }} </div>
-            </div>
-            <div class="uploaded_files" style="margin-left: 40px;">
-                <p *ngFor="let file of uploaded_files">{{file}}
-
-                    <!-- <span
-                        style="align-items: flex-end; text-align: right;color: red;cursor: pointer; font-size: 18px; position: absolute; right: 15px;">x</span> -->
-                </p>
-            </div>
-            <input class="nameField" type="text" placeholder="File Name" [(ngModel)]="FileName" />
-            <div style="width: 90%;" *ngIf="historyData.length !==0">
-                <p style="font-weight: 400; font-size: larger; text-align: center; color:var(--font-color);">Select
-                    Units</p>
-                <div *ngFor="let param of unitSettings" class="parameter-row">
-                    <div class="parameter-content">
-                        <span class="parameter-label" style="color: var(--font-color);">{{ param.label }}</span>
-                    </div>
-                    <div class="unit-selection">
-                        <div class="tooltip-container" *ngFor="let unit of param.units">
-                            <button class="unit-button" [class.selected]="selectedUnits[param.key] === unit"
-                                (click)="selectUnit(param.key, unit)">
-                                {{ unit }}
-                            </button>
-                            <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <button class="importtt" type="submit" *ngIf="historyData.length !==0" (click)="import()">Submit</button>
-        </div>
+  <div class="home_main" *ngIf="is_show_import">
+    <div class="table_container">
+      <p style="color: var(--font-color)" *ngIf="historyData.length === 0">
+        No Files Selected
+      </p>
+      <div class="bod" *ngIf="historyData.length > 0">
+        <table class="styled-table">
+          <thead>
+            <tr>
+              <th *ngFor="let column of tableHeaders">{{ column }}</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let row of filterhistorydata; let i = index">
+              <td>{{ row.station_id }}</td>
+              <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" }}</td>
+              <!-- <td>{{ row.Time }}</td> -->
+              <td>{{ row.speed }}</td>
+              <td>{{ row.direction }}</td>
+              <td>{{ row.depth }}</td>
+              <td>{{ row.battery }}</td>
+              <td>{{ row.pressure }}</td>
+              <td>
+                <!-- <button cli>Delete</button>-->
+                <i
+                  id="trash"
+                  class="fa-solid fa-trash"
+                  title="Delete"
+                  (click)="deleteRow(i)"
+                  style="color: red"
+                ></i>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+    <div class="file_upload_container">
+      <h1
+        (click)="on_openImport()"
+        style="color: var(--font-color); cursor: pointer"
+      >
+        X
+      </h1>
+
+      <!-- Toggle for allowing folder upload -->
+      <div
+        class="checkbox-container"
+        style="width: 90%"
+        *ngIf="uploaded_files.length === 0"
+      >
+        <label class="lab">
+          <input type="checkbox" [(ngModel)]="allowFolderUpload" />
+          Allow Folder Upload
+        </label>
+      </div>
+
+      <div class="file-upload" *ngIf="uploaded_files.length === 0">
+        <input
+          type="file"
+          style="
+            background-color: var(--button-bg);
+            color: var(--button-text-color);
+          "
+          id="fileUpload"
+          accept=".xlsx, .csv"
+          (change)="onFilesSelected($event)"
+          multiple
+          [attr.webkitdirectory]="allowFolderUpload ? '' : null"
+        />
+        <label for="fileUpload">📁 Upload File</label>
+
+        <div *ngIf="FileName !== ''" class="file-name lab">{{ FileName }}</div>
+      </div>
+      <span
+        *ngIf="uploaded_files.length === 0"
+        style="color: red; font-size: 12px; margin: -10px"
+        >Upload only .xlsx, .csv file format</span
+      >
+      <div class="uploaded_files" style="margin-left: 40px">
+        <p
+          *ngFor="let file of uploaded_files"
+          [ngStyle]="{
+            cursor: 'pointer',
+            color: selected_filelist === file ? 'blue' : ''
+          }"
+          (click)="onFileClick(file)"
+        >
+          {{ file }}
+        </p>
+      </div>
+      <input
+        class="nameField"
+        type="text"
+        placeholder="File Name"
+        [(ngModel)]="FileName"
+      />
+      <div style="width: 90%" *ngIf="historyData.length !== 0">
+        <p
+          style="
+            font-weight: 400;
+            font-size: larger;
+            text-align: center;
+            color: var(--font-color);
+          "
+        >
+          Select Units
+        </p>
+        <div *ngFor="let param of unitSettings" class="parameter-row">
+          <div class="parameter-content">
+            <span class="parameter-label" style="color: var(--font-color)">{{
+              param.label
+            }}</span>
+          </div>
+          <div class="unit-selection">
+            <div
+              class="tooltip-container"
+              *ngFor="let unit of param.units; let j = index"
+            >
+              <button
+                class="unit-button"
+                [class.selected]="selectedUnits[param.key] === unit"
+                (click)="selectUnit(param.key, unit)"
+              >
+                {{ param.unitslabels[j] }}
+              </button>
+              <span class="tooltip-text">{{
+                getTooltip(param.key, unit)
+              }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <button
+        class="importtt"
+        type="submit"
+        *ngIf="historyData.length !== 0"
+        (click)="import()"
+      >
+        Submit
+      </button>
+    </div>
+  </div>
 </div>
 
 <div *ngIf="isFilesLoading" class="loader-overlay">
-    <img src="../../assets/809.gif"><img />
+  <img src="../../assets/809.gif" /><img />
 </div>

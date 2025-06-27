@@ -55,6 +55,7 @@ interface ApiData {
   current_direction_unit: string;
   battery_unit: string;
   depth_unit: string;
+  coord_unit: string;
   [key: string]: any;
 }
 
@@ -245,8 +246,16 @@ export class ReportsComponent implements OnInit {
       this.cols = [
         { field: 'station_id', header: 'Station ID', type: 'text' },
         { field: 'date', header: 'Time Stamp', type: 'text' },
-        { field: 'lat', header: 'Lat', type: 'text' },
-        { field: 'lon', header: 'Long', type: 'text' },
+        {
+          field: 'lat',
+          header: `Lat (${this.units.latandlong})`,
+          type: 'text',
+        },
+        {
+          field: 'lon',
+          header: `Long (${this.units.latandlong})`,
+          type: 'text',
+        },
         { field: 'depth', header: `Depth (${this.units.depth})`, type: 'text' },
         {
           field: 'pressure',
@@ -327,6 +336,12 @@ export class ReportsComponent implements OnInit {
   nameOffile!: string;
 
   fileID!: number;
+
+  // Decimal conversion
+  formatValue(value: any): string {
+    const num = parseFloat(value);
+    return isNaN(num) ? '' : num.toFixed(4);
+  }
 
   onSearch(query: string, dt: any): void {
     this.searchQuery = query;
@@ -454,9 +469,16 @@ export class ReportsComponent implements OnInit {
                 row.date = formatDate(date, this.dateFormat, 'en-US');
               }
 
+              // Decimal conversion
+              ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
+                if (row[key] != null) {
+                  row[key] = this.formatValue(row[key]);
+                }
+              });
+
               this.main_table.push(row);
             }
-
+            this.checkForConversion();
             console.log('Main table data ', this.main_table);
           }, 100);
         }
@@ -471,11 +493,15 @@ export class ReportsComponent implements OnInit {
       currentDirection: this.main_table[0].current_direction_unit,
       battery: this.main_table[0].battery_unit,
       depth: this.main_table[0].depth_unit,
+      latandlong: this.main_table[0].coord_unit,
     };
 
-    const unitsMatch = Object.keys(this.units).every(
-      (key) => this.units[key] === sourceUnits[key]
-    );
+    const unitsMatch = Object.keys(this.units).every((key) => {
+      if (key == 'datetime') {
+        return true;
+      }
+      return this.units[key] == sourceUnits[key];
+    });
     console.log('match', unitsMatch);
 
     if (!unitsMatch) {
@@ -533,6 +559,32 @@ export class ReportsComponent implements OnInit {
             );
             newItem.depth = converted.toString();
             this.main_table[index].depth = converted.toString();
+          }
+        }
+
+        // lat conversion
+        if (sourceUnits['latandlong'] !== this.units['latandlong']) {
+          if (newItem.lat !== null && newItem.lat !== undefined) {
+            const converted = this.convertValues(
+              +item.lat,
+              sourceUnits['latandlong'],
+              this.units['latandlong']
+            );
+            newItem.lat = converted.toString();
+            this.main_table[index].lat = converted.toString();
+          }
+        }
+
+        // long conversion
+        if (sourceUnits['latandlong'] !== this.units['latandlong']) {
+          if (newItem.lon !== null && newItem.lon !== undefined) {
+            const converted = this.convertValues(
+              +item.lon,
+              sourceUnits['latandlong'],
+              this.units['latandlong']
+            );
+            newItem.lon = converted.toString();
+            this.main_table[index].lon = converted.toString();
           }
         }
 

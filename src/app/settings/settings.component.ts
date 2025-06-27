@@ -254,44 +254,59 @@ export class SettingsComponent {
     {
       key: 'waterLevel',
       label: 'Water Level',
-      iconClass: 'fas fa-water', // or use another icon library
+      iconClass: 'fas fa-droplet', // or use another icon library
       units: ['m', 'ft', 'cm'],
+      unitslabels: ['m', 'ft', 'cm'],
     },
     {
       key: 'currentSpeed',
       label: 'Current Speed',
-      iconClass: 'fas fa-tachometer-alt',
+      iconClass: 'fas fa-gauge',
       units: ['m/s', 'knots'],
+      unitslabels: ['m/s', 'knots'],
     },
     {
       key: 'currentDirection',
       label: 'Current Direction',
-      iconClass: 'fas fa-compass',
+      iconClass: 'fas fa-location-arrow',
       units: ['°', 'radians'],
+      unitslabels: ['degree (°)', 'radians'],
     },
     {
       key: 'battery',
       label: 'Battery',
-      iconClass: 'fas fa-battery-full',
+      iconClass: 'fas fa-battery-half',
       units: ['%', 'volts'],
+      unitslabels: ['percentage (%)', 'volts'],
     },
     {
       key: 'depth',
       label: 'Depth',
       iconClass: 'fas fa-arrows-down-to-line',
       units: ['m', 'ft'],
+      unitslabels: ['m', 'ft'],
     },
     {
       key: 'latandlong',
       label: 'Latitude and Longitude',
       iconClass: 'fas fa-map-marker-alt',
       units: ['dd', 'dms'],
+      unitslabels: ['DD', 'DMS'],
     },
     {
       key: 'datetime',
       label: 'DateTime',
       iconClass: 'fas fa-clock',
-      units: ['01-Jan-2025 12:00:00', '30-03-2025 12:00:00', '03-30-2025 12:00:00'],
+      units: [
+        '01-Jan-2025 12:00:00',
+        '30-03-2025 12:00:00',
+        '03-30-2025 12:00:00',
+      ],
+      unitslabels: [
+        '01-Jan-2025 12:00:00',
+        '30-03-2025 12:00:00',
+        '03-30-2025 12:00:00',
+      ],
     },
   ];
 
@@ -410,22 +425,20 @@ export class SettingsComponent {
   init() {
     this.files_list = [];
     setTimeout(() => {
-      this.http
-        .get(`${this.baseUrl}files`)
-        .subscribe((response: any) => {
-          this.files_list = response['data'];
-          console.log('files:', response, this.files_list);
-          const non_procces = this.files_list.filter((item) =>
-            item.files.every((ite) => ite.is_processed === true)
-          );
-          console.log('non_proccessed', non_procces);
-          this.non_processed = non_procces;
-          const procces = this.files_list.filter((item) =>
-            item.files.every((ite) => ite.is_processed === false)
-          );
-          this.processedFiles = procces;
-          this.expandedFolders = this.files_list.map(() => false);
-        });
+      this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+        this.files_list = response['data'];
+        console.log('files:', response, this.files_list);
+        const non_procces = this.files_list.filter((item) =>
+          item.files.every((ite) => ite.is_processed === true)
+        );
+        console.log('non_proccessed', non_procces);
+        this.non_processed = non_procces;
+        const procces = this.files_list.filter((item) =>
+          item.files.every((ite) => ite.is_processed === false)
+        );
+        this.processedFiles = procces;
+        this.expandedFolders = this.files_list.map(() => false);
+      });
     }, 100);
   }
 }
