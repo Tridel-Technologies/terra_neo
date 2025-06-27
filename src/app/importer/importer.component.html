@@ -246,7 +246,7 @@
             />
             <div
               *ngIf="lat.invalid && unitssTo.latandlong === 'dd'"
-              class="error1"
+              class="error2"
             >
               Latitude must be between -90° and +90°.
             </div>
@@ -263,30 +263,37 @@
             />
             <div
               *ngIf="long.invalid && unitssTo.latandlong === 'dd'"
-              class="error"
+              class="error3"
             >
               Longitude must be between -180° and +180°.
             </div>
           </div>
-
-          <h4 *ngIf="!isMulti">Select High Water Time</h4>
-          <input
-            type="text"
-            [(ngModel)]="high_water_level"
-            *ngIf="!isMulti"
-            readonly
-          />
-          <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
+          <div style="margin-top: 15px">
+            <h4 *ngIf="!isMulti">Select High Water Time</h4>
+            <input
+              type="text"
+              [(ngModel)]="high_water_level"
+              *ngIf="!isMulti"
+              readonly
+            />
+            <!-- <select name="waterlevel" id="" *ngIf="!isMulti">
                         <option value="1">-- Please Select High Water Level from Table - -></option>
                         <option value="2">one</option>
                         <option value="3">two</option>
                     </select> -->
-          <!-- <div class="spacer"></div> -->
-          <button class="update" (click)="update_Values()">Update</button>
+            <!-- <div class="spacer"></div> -->
+            <button
+              class="update"
+              style="margin-left: 8%"
+              (click)="update_Values()"
+            >
+              Update
+            </button>
+          </div>
         </div>
 
-        <div class="styled-table">
-          <table>
+        <div class="table-view">
+          <table class="styled-table">
             <thead>
               <tr>
                 <th *ngFor="let column of main_table_headers">{{ column }}</th>

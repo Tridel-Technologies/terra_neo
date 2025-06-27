@@ -171,7 +171,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   tideChartColor: string = localStorage.getItem('tideChartColor') ?? '#4900ff';
   currentSpeedColor: string =
-    localStorage.getItem('currentSpeedColor') ?? '#ff00c1';
+    localStorage.getItem('currentSpeedColor') ?? '#de002c';
   currentDirectionColor: string =
     localStorage.getItem('currentDirectionColor') ?? '#02f557';
 
@@ -326,11 +326,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.isFilesLoading = false;
     console.log('units', this.units);
     if (this.units['datetime'] === '30-03-2025 12:00:00') {
-      this.dateFormat = 'dd-MM-Y hh:mm:ss';
+      this.dateFormat = 'dd-MM-Y HH:mm:ss';
     } else if (this.units['datetime'] === '03-30-2025 12:00:00') {
-      this.dateFormat = 'MM-dd-Y hh:mm:ss';
+      this.dateFormat = 'MM-dd-Y HH:mm:ss';
     } else {
-      this.dateFormat = 'dd MMM yyyy hh:mm:ss';
+      this.dateFormat = 'dd MMM yyyy HH:mm:ss';
     }
   }
 
@@ -1150,11 +1150,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               const date = params[0].data[0];
               let formattedDate = date;
               try {
-                formattedDate = formatDate(
-                  new Date(date),
-                  this.dateFormat,
-                  'en-US'
-                );
+                formattedDate = formatDate(date, this.dateFormat, 'en-US');
               } catch (e) {
                 // fallback to original date string
               }
@@ -2577,15 +2573,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   midpolar(): void {
-    // if (
-    //   !this.selectedPolarDateRange ||
-    //   this.selectedPolarDateRange.length !== 2
-    // ) {
-    //   this.toast.warning('Please select a date range');
-    //   return;
-    // }
-    const startDate = this.formatDateToYMD(this.selectedPolarDateRange[0]);
-    const endDate = this.formatDateToYMD(this.selectedPolarDateRange[1]);
+    const startDate =
+      this.formatDateToYMD(this.selectedPolarDateRange[0]) + 'T00:00:00';
+    const endDate =
+      this.formatDateToYMD(this.selectedPolarDateRange[1]) + 'T23:59:59';
+
+    console.log('dates:', startDate, endDate);
 
     if (this.PolarSelectedInterVal === 'all') {
       const intervals = [30, 60, 360, 1440];
@@ -2909,8 +2902,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   ): Record<string, { speed: number; direction: number }[]> {
     const grouped: Record<string, { speed: number; direction: number }[]> = {};
 
-    const dateStart = new Date(`${startDate}T00:00:00`);
-    const dateEnd = new Date(`${endDate}T23:59:59`);
+    const dateStart = new Date(startDate);
+    const dateEnd = new Date(endDate);
 
     data.forEach((entry) => {
       const localTime = this.toIST(entry.date);

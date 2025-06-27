@@ -167,7 +167,7 @@
 .chartsContainer {
     /* flex: 8.2; */
     width: 80%;
-    height: 100%;
+    height: 98%;
     /* overflow-y: auto; */
     display: flex;
     flex-direction: column;

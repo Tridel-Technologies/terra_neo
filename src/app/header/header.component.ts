@@ -56,6 +56,8 @@ export class HeaderComponent implements OnInit {
     this.base.index = index;
   }
   logout() {
+    localStorage.removeItem('loginTime');
+    localStorage.removeItem('user');
     this.router.navigate(['/login']);
   }
 }

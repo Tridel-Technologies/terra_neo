@@ -7,12 +7,20 @@ import { CommonModule } from '@angular/common';
 import { ToastrModule, ToastrService } from 'ngx-toastr';
 import { number } from 'echarts';
 import { LoginService } from './login.service';
+import { UnitService, UnitSettings } from '../settings/unit.service';
+import { DialogModule } from 'primeng/dialog';
 
 // import { CommonModule} from '@angular/forms';
 @Component({
   selector: 'app-products',
   standalone: true,
-  imports: [FormsModule, HttpClientModule, RouterModule, CommonModule],
+  imports: [
+    FormsModule,
+    HttpClientModule,
+    RouterModule,
+    CommonModule,
+    DialogModule,
+  ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
   providers: [LoginService],
@@ -22,8 +30,11 @@ export class LoginComponent {
     private http: HttpClient,
     private router: Router,
     private toastr: ToastrService,
-    private loginservice: LoginService
-  ) {}
+    private loginservice: LoginService,
+    private unitService: UnitService
+  ) {
+    this.licenseExpired = this.loginservice.check();
+  }
 
   signup_form: boolean = false;
   login_form: boolean = true;
@@ -51,6 +62,7 @@ export class LoginComponent {
   confirm_password_forget = '';
   confirm_password_signup = '';
   password_forget_invalid: boolean | null = null;
+  licenseExpired: boolean = false;
 
   //For remember me functionality
 
@@ -146,7 +158,7 @@ export class LoginComponent {
       next: (res: any) => {
         console.log('response', res);
         this.counts = parseInt(res[0]?.count || '0', 10);
-        if (this.counts > 3) {
+        if (this.counts == 1) {
           this.toastr.error('Adding user limit exists', 'Validation Error');
           this.signup_form = false;
           this.login_form = true;
@@ -234,6 +246,7 @@ export class LoginComponent {
           }
           const loginTime = new Date().getTime();
           localStorage.setItem('loginTime', loginTime.toString());
+          this.unitService.setDefaultUnits();
           this.router.navigate(['/base']);
         },
         error: (error) => {

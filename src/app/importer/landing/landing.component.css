@@ -2,12 +2,16 @@
   width: 100%;
   height: 100%;
   margin-top: 16px;
+  /* margin: 0; */
   filter: brightness(1.2);
   /* z-index: 20; */
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
-.chip-image svg {
+/* .chip-image svg {
   width: 800px;
   height: 700px;
   pointer-events: none;
@@ -54,7 +58,7 @@
     width: 500px;
     height: 400px;
   }
-}
+} */
 
 .chip-text {
   position: absolute;
@@ -67,7 +71,7 @@
   line-height: 1.4;
   pointer-events: none;
 }
- 
+
 .white-square {
   position: absolute;
   width: 110px;
@@ -78,7 +82,7 @@
   top: 120px;
   left: 120px;
 }
- 
+
 .landing-container {
   position: relative;
   /* width: 208vh;
@@ -89,8 +93,8 @@
   /* left: -5%; */
   /* background-color: var(--background-secondary); */
 }
- 
-.sensor-core {
+
+/* .sensor-core {
 position: absolute;
 display: flex;
 flex-direction: column;
@@ -101,32 +105,32 @@ flex-direction: column;
   height: 320px;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: center; */
   /* background-color: white; */
   /* z-index: 10; */
-}
- 
-.sensor-core .sensor-icon {
-  font-size: 60px;
-  color: var(--circuit-color);
+/* } */
+
+/* .sensor-core .sensor-icon { */
+  /* font-size: 60px; */
+  /* color: var(--circuit-color); */
   /* z-index: 2; */
-  position: relative;
+  /* position: relative; */
   /* background-color: var(--background-color); */
-}
- 
+/* } */
+
 .sensor-core .pulse-ring {
   position: absolute;
-  width: 120px;
-  height: 120px;
+  width: 180px;
+  height: 180px;
   border: 2px solid var(--circuit-color-pulse);
   border-radius: 50%;
   animation: pulse 2s infinite;
   opacity: 0.6;
-  top: 45.5%;
-  left: 45.5%;
+  top: 48.5%;
+  left: 48.5%;
   transform: translate(-50%, -50%);
 }
- 
+
 @keyframes pulse {
   0% {
     transform: translate(-50%, -50%) scale(1);
@@ -137,7 +141,7 @@ flex-direction: column;
     opacity: 0;
   }
 }
- 
+
 .circuit-lines {
   position: absolute;
   width: 100%;
@@ -145,29 +149,29 @@ flex-direction: column;
   pointer-events: none;
   /* z-index: 0; */
 }
- 
+
 .circuit-lines .circuit-path {
   stroke: var(--circuit-color);
   stroke-width: 2;
   stroke-dasharray: 8;
   animation: dash 3s linear infinite;
 }
- 
+
 @keyframes dash {
   to {
     stroke-dashoffset: -100;
   }
 }
- 
+
 .circuit-path {
   stroke: var(--circuit-color);;
   stroke-width: 2;
 }
- 
+
 .dot {
   fill: var(--circuit-color);;
 }
- 
+
 .pulse-circle {
   fill: none;
   stroke: var(--circuit-color-pulse);
@@ -176,7 +180,7 @@ flex-direction: column;
   animation: pulse-svg 2s infinite;
   transform-origin: center;
 }
- 
+
 @keyframes pulse-svg {
   0% {
     r: 6;
@@ -187,7 +191,7 @@ flex-direction: column;
     opacity: 0;
   }
 }
- 
+
 .feature-card {
   position: absolute;
   display: flex;
@@ -205,7 +209,7 @@ flex-direction: column;
   transition: all 0.5s ease;
   transform: translate(-50%, -50%) scale(1);
 }
- 
+
 .feature-card:hover {
   box-shadow: 0 0px 10px var(--circuit-hover), 0 0 20px var(--circuit-hover2);
   transform: translate(-50%, -50%) scale(1.01);
@@ -222,20 +226,20 @@ flex-direction: column;
     /* margin-left: 40%; */
     /* align-self: center; */
 }
- 
+
 .card-title {
   font-size: 15px;
   margin: 0 0 6px;
   color: var(--circuit-color);
 }
- 
+
 .card-text {
   font-size: 10px;
   margin: 0;
   color: var(--text-color);
 }
- 
- 
+
+
 .features-wrapper {
   position: absolute;
   width: 100%;
@@ -243,38 +247,38 @@ flex-direction: column;
   top: 0;
   left: 0;
 }
- 
+
 /* Positioning feature cards responsively using data attribute selectors */
 .feature-card[data-pos="1"] {
   top: 7.6%;
   left: 50%;
 }
- 
+
 .feature-card[data-pos="2"] {
   top: 22%;
   right: 8%;
 }
- 
+
 .feature-card[data-pos="3"] {
   bottom: 10.5%;
   right: 10%;
 }
- 
+
 .feature-card[data-pos="4"] {
   bottom: -6.2%;
   left: 50%;
 }
- 
+
 .feature-card[data-pos="5"] {
   bottom: 11.5%;
   left: 27%;
 }
- 
+
 .feature-card[data-pos="6"] {
   top: 25.5%;
   left: 25%;
 }
- 
+
 
 @media (min-width: 2560px) {
   .feature-card{
@@ -298,7 +302,7 @@ flex-direction: column;
     font-size: 12px;
     padding: 10px;
   }
- 
+
   .feature-card[data-pos="1"] {
     top: 7.5%;
     left: 53%;
@@ -323,50 +327,50 @@ flex-direction: column;
     top: 20%;
     left: 14.5%;
   }
- 
+
   .card-title {
     font-size: 18px;
   }
- 
+
   .card-text {
     font-size: 12px;
   }
- 
+
   .chip-text{
     font-size: 15px;
   }
 }
- 
+
 @media (max-width: 600px) {
   .feature-card {
     width: 120px;
     padding: 8px;
   }
- 
+
   .landing-container{
     width: 120%;
     height: 120%;
   }
- 
+
   .card-title {
     font-size: 16px;
   }
- 
+
   .card-text {
     font-size: 11px;
   }
- 
+
   .sensor-core {
     width: 200px;
     height: 200px;
     margin-top: 10%;
   }
- 
+
   .sensor-core .pulse-ring {
     width: 80px;
     height: 80px;
   }
- 
+
   .chip-text {
     font-size: 16px;
     bottom: 20px;

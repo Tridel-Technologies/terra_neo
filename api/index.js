@@ -4,7 +4,7 @@ const { connectDB } = require('./db');
 const userRouter = require('./router');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3500;
 
 // Fix CORS for Angular
 app.use(cors());
@@ -20,5 +20,5 @@ connectDB();
 app.use('/api', userRouter);
 
 app.listen(PORT, () => {
-  console.log(`Server is running on http://localhost:${PORT}`);
+  console.log(`Server is running on http://192.168.163:${PORT}`);
 });

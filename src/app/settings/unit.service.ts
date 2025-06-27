@@ -24,7 +24,7 @@ export class UnitService {
     currentDirection: '°',
     battery: '%',
     depth: 'm',
-    latandlong: 'DD',
+    latandlong: 'dd',
     datetime: '01-Jan-2025 12:00:00',
   };
 
@@ -46,5 +46,13 @@ export class UnitService {
 
   getCurrentUnits(): UnitSettings {
     return this.unitsSubject.value;
+  }
+
+  setDefaultUnits(): void {
+    this.unitsSubject.next(this.defaultUnits);
+    localStorage.setItem(
+      this.localStorageKey,
+      JSON.stringify(this.defaultUnits)
+    );
   }
 }

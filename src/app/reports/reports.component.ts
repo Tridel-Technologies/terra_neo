@@ -200,6 +200,8 @@ export class ReportsComponent implements OnInit {
           selectedFile = selectedFolder.files[0];
         }
       }
+      this.nameOffile = selectedFolder?.files[0].file_name ?? '';
+      console.log('nameof file', this.nameOffile);
 
       // Expand the matched folder
       this.expandedFolders = this.files_list.map(
@@ -233,11 +235,11 @@ export class ReportsComponent implements OnInit {
     this.unitssTo = JSON.parse(unitss);
 
     if (this.unitssTo.datetime === '30-03-2025 12:00:00') {
-      this.dateFormat = 'dd-MM-Y hh:mm:ss';
+      this.dateFormat = 'dd-MM-Y HH:mm:ss';
     } else if (this.unitssTo.datetime === '03-30-2025 12:00:00') {
-      this.dateFormat = 'MM-dd-Y hh:mm:ss';
+      this.dateFormat = 'MM-dd-Y HH:mm:ss';
     } else {
-      this.dateFormat = 'dd MMM yyyy hh:mm:ss';
+      this.dateFormat = 'dd MMM yyyy HH:mm:ss';
     }
   }
 

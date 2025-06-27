@@ -3,7 +3,7 @@ const { Pool } = require('pg');
 const pool = new Pool({
     user: 'sa',
     password: 'Tridel@2025',
-    host: '192.168.0.111',
+    host: '192.168.231.190',
     port: 5432,
     database: 'db_terra_inho2',
 });

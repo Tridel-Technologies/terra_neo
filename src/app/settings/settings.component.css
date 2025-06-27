@@ -42,7 +42,7 @@
   justify-content: start;
   gap: 10px;
   background-color: var(--background-color);
-  padding: 10px;
+  padding: 40px;
   margin-bottom: 10px;
   border-radius: 10px;
   box-shadow: 0 0 0 2px transparent;
@@ -63,7 +63,7 @@
 .parameter-grid {
 display: grid;
 grid-template-columns: repeat(2, 1fr);
-gap: 24px;
+gap: 30px;
 width: 100%;
 justify-items: center;
 }
