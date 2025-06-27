@@ -35,8 +35,4 @@ export class LoginService {
     const newdata = { user_name, newPassword };
     return this.http.post<any[]>(`${this.baseUrl}resetPassword`, newdata);
   }
-  check() {
-    const res = this.http.get<any[]>(`${this.baseUrl}check`);
-    return res;
-  }
 }

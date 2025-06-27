@@ -386,6 +386,8 @@
     /* background-color: #f4f4f4; */
     /* font-weight: bold; */
     text-align: center;
+    color: var(--button-text-color);
+    background-color: var(--circuit-color-pulse);
   }
 
   .styled-table tbody tr:nth-child(even) {

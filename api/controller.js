@@ -1,6 +1,10 @@
+const fs = require('fs').promises;
+const path = require('path');
 const { poo, file } = require('fontawesome');
 const { pool } = require('./db');
 const bcrypt = require('bcrypt');
+// import { promises as fs } from 'fs';
+// import * as path from 'path';
 
 const importAll = async (req, res) => {
   const { data, files, folder_name } = req.body;
@@ -368,7 +372,7 @@ const loginUser = async (req, res) => {
   }
 };
 
-//check the username and email exists  
+//check the username and email exists
 
 const forget_password = async (req, res) => {
   const { user_name, email_id } = req.body;
@@ -421,7 +425,7 @@ const addNewRow = async (req, res) => {
   if (!file_id || !speed || !direction || !tide || !timestamp) {
     return res.status(400).json({ message: "All fields are required" });
   }
-  
+
   try {
     const data = await pool.query(
       `SELECT * FROM tb_${file_id}_processed ORDER BY RANDOM() LIMIT 1`
@@ -520,13 +524,13 @@ const getDataByFolderIdAndFileName = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT
-         tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit, 
+         tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
          tf.battery_unit, tf.depth_unit, tf.coord_unit
        FROM
          tb_${file_id} tp
-       JOIN 
-         tb_file tf ON tf.id = tp.file_id 
-       ORDER BY 
+       JOIN
+         tb_file tf ON tf.id = tp.file_id
+       ORDER BY
          tp.date ASC`,
     );
     res.status(200).json(result.rows);
@@ -543,13 +547,13 @@ const getProcessedDataByFileId = async (req, res) => {
   try {
     const result = await pool.query(
       `SELECT
-         tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit, 
-         tf.battery_unit, tf.depth_unit 
+         tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
+         tf.battery_unit, tf.depth_unit
        FROM
          tb_${file_id}_processed tp
-       JOIN 
-         tb_file tf ON tf.id = tp.file_id 
-       ORDER BY 
+       JOIN
+         tb_file tf ON tf.id = tp.file_id
+       ORDER BY
          tp.date ASC`,
     );
     res.status(200).json(result.rows);
@@ -572,7 +576,7 @@ const getFoldersWithFiles = async (req, res) => {
         fi.current_speed_unit,
         fi.current_direction_unit,
         fi.battery_unit,
-        fi.depth_unit 
+        fi.depth_unit
       FROM
         tb_folders f
       LEFT JOIN
@@ -659,6 +663,45 @@ const createFolder = async (req, res) => {
   }
 }
 
+const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') => {
+  try {
+    // Check if file exists
+    try {
+      await fs.access(filePath);
+    } catch {
+      console.warn('License file not found');
+      return false;
+    }
+
+    // Read and parse file
+    const fileContent = await fs.readFile(filePath, 'utf-8');
+    const licenseData = JSON.parse(fileContent);
+
+    const validTill = new Date(licenseData.validTill);
+    const currentTime = new Date();
+
+    if (isNaN(validTill.getTime())) {
+      console.warn('Invalid date in license file');
+      return false;
+    }
+
+    return currentTime <= validTill;
+  } catch (error) {
+    console.error('Error reading or parsing license file:', error);
+    return false;
+  }
+}
+
+const checkLicenseValidityHandler = async (req, res) => {
+  console.log('lll');
+  try {
+    const isValid = await checkLicenseValidity();
+    res.status(200).json({ message: 'Success', result: isValid });
+  } catch (error) {
+    console.error('Error checking license validity:', error);
+    res.status(500).json({ message: error.message, result: false });
+  }
+}
 
 module.exports = {
   importAll,
@@ -679,7 +722,7 @@ module.exports = {
   getProcessedDataByFileId,
 
   changeFolder,
-  createFolder
-
+  createFolder,
+  checkLicenseValidityHandler
 };
 

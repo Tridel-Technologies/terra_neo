@@ -1,6 +1,7 @@
 const express = require('express')
 
-const { importAll, getFiles, getDataByFolderIdAndFileName,getProcessedDataByFileId, updateValues, addNewRow, updateData, createFolderAndFile, getFoldersWithFiles, getUser, loginUser, signup, checkusername, forget_password, change_password, changeFolder, createFolder } = require('./controller')
+const { importAll, getFiles, getDataByFolderIdAndFileName,getProcessedDataByFileId, updateValues, addNewRow, updateData, createFolderAndFile, getFoldersWithFiles, getUser, loginUser, signup, checkusername, forget_password,
+  change_password, changeFolder, createFolder, checkLicenseValidityHandler } = require('./controller')
 
 const router = express.Router();
 
@@ -24,5 +25,6 @@ router.post('/signup',signup);
 router.post('/check',checkusername);
 router.post('/verifyUser',forget_password);
 router.post('/resetPassword',change_password);
+router.get('/check', checkLicenseValidityHandler);
 
 module.exports = router;

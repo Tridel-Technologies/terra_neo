@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { Router, RouterModule } from '@angular/router';
 import { NgModel } from '@angular/forms';
@@ -25,15 +25,23 @@ import { DialogModule } from 'primeng/dialog';
   styleUrl: './login.component.css',
   providers: [LoginService],
 })
-export class LoginComponent {
+export class LoginComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private router: Router,
     private toastr: ToastrService,
     private loginservice: LoginService,
     private unitService: UnitService
-  ) {
-    this.licenseExpired = this.loginservice.check();
+  ) {}
+
+  ngOnInit(): void {
+    this.http
+      .get('http://localhost:3500/api/check')
+      .subscribe((response: any) => {
+        console.log('response', response);
+        this.licenseExpired = response.result;
+        console.log(this.licenseExpired);
+      });
   }
 
   signup_form: boolean = false;

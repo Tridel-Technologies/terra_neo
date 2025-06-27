@@ -3,7 +3,10 @@ import { BrowserModule } from '@angular/platform-browser';
 import { FormsModule } from '@angular/forms';
 import { AppComponent } from './app.component';
 import { NgxEchartsModule } from 'ngx-echarts';
-import { BrowserAnimationsModule, NoopAnimationsModule } from '@angular/platform-browser/animations';
+import {
+  BrowserAnimationsModule,
+  NoopAnimationsModule,
+} from '@angular/platform-browser/animations';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { ToastrModule } from 'ngx-toastr';
 
@@ -13,14 +16,13 @@ import { ToastrModule } from 'ngx-toastr';
     BrowserModule,
     BrowserAnimationsModule,
     FormsModule,
+
     NgxEchartsModule.forRoot({ echarts: () => import('echarts') }),
     ToastrModule.forRoot(),
     HttpClientModule,
   ],
-  providers: [
-
-  ],
+  providers: [],
   bootstrap: [],
-  exports:[] 
+  exports: [],
 })
 export class AppModule {}
