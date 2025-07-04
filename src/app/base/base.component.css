@@ -9,3 +9,14 @@
     width: 100%;
     /* background-color: ; */
 }
+
+.license-card-container {
+  display: flex;
+  justify-content: center;
+  margin-top: 2px;
+  margin-bottom: 2px;
+}
+
+::ng-deep .p-message-warn {
+  color: var(--font-color);
+}

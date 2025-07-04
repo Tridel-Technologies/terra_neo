@@ -16,7 +16,15 @@ interface fileData {
   file_id: number;
   file_name: string;
   is_processed: boolean;
+  water_level_unit: string;
+  current_speed_unit: string;
+  current_direction_unit: string;
+  battery_unit: string;
+  depth_unit: string;
+  coord_unit: string;
+  datetime_unit: string;
 }
+
 @Component({
   selector: 'app-settings',
   imports: [CommonModule, HttpClientModule, FormsModule],
@@ -42,6 +50,7 @@ export class SettingsComponent {
   movingFile!: fileData;
   tappedFolder!: Folders;
   tappedFolder2!: Folders;
+
   Foldertaped(file: fileData[], folder: Folders) {
     this.openedFile = [];
     setTimeout(() => {
@@ -61,7 +70,9 @@ export class SettingsComponent {
   }
 
   getFileClass(fine_name: string): string {
-    return fine_name.endsWith('.csv') ? '../../assets/csv.png' : 'xl.png';
+    return fine_name.endsWith('.csv')
+      ? '../../assets/csv.png'
+      : '../../assets/xl.png';
   }
 
   showCreate: boolean = false;
@@ -248,6 +259,18 @@ export class SettingsComponent {
         });
       }
     }
+  }
+
+  setUnits(file: fileData) {
+    this.selectedUnits = {
+      waterLevel: file.water_level_unit,
+      currentSpeed: file.current_speed_unit,
+      currentDirection: file.current_direction_unit,
+      battery: file.battery_unit,
+      depth: file.depth_unit,
+      latandlong: file.coord_unit,
+      datetime: '01-Jan-2025 12:00:00',
+    };
   }
 
   unitSettings = [

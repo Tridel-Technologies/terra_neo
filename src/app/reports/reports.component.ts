@@ -19,7 +19,7 @@ import autoTable from 'jspdf-autotable';
 import { GlobalConfig } from '../global/app.global';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { formatDate } from '@angular/common';
-import * as ExcelJS from 'exceljs';
+import { BaseComponent } from '../base/base.component';
 
 interface Column {
   field: string;
@@ -155,7 +155,8 @@ export class ReportsComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
-    private unitSerive: UnitService
+    private unitSerive: UnitService,
+    private base: BaseComponent
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
     this.convertValues = new GlobalConfig().convertValue;
@@ -173,6 +174,9 @@ export class ReportsComponent implements OnInit {
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
       console.log('files:', response, this.files_list);
+      this.expandedFolders = this.files_list.map(() => false);
+      this.fileID = this.base.fileId!;
+      console.log('file IFD', this.fileID);
 
       let folderIndex = -1;
       let selectedFile = null;
@@ -394,6 +398,7 @@ export class ReportsComponent implements OnInit {
     folder_name: string
   ) {
     // this.dir = false;
+    this.base.fileId = file_id;
     console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
     this.nameOffile = fileName;

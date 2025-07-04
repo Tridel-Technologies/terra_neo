@@ -494,6 +494,7 @@ export class DashboardComponent implements OnInit {
     file_id: number,
     folder_name: string
   ) {
+    this.globe.fileId = file_id;
     // this.dir = false;
     console.log(fileName, file_id);
     this.selected_folder_name = folder_name;

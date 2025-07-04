@@ -58,6 +58,7 @@
       class="Folder"
       *ngFor="let file of openedFile2"
       (contextmenu)="onFileRightClick($event, file)"
+      (click)="setUnits(file)"
     >
       <img [src]="getFileClass(file.file_name)" alt="" />
       <p>{{ file.file_name }}</p>
@@ -73,7 +74,18 @@
   >
     <ng-container *ngIf="contextMenu.type === 'file'">
       <div
-        (click)="moveFile({ file_name: '', file_id: 2, is_processed: true })"
+        (click)="moveFile({
+          file_name: '',
+          file_id: 2,
+          is_processed: true,
+          water_level_unit: '',
+          current_speed_unit: '',
+          current_direction_unit: '',
+          battery_unit: '',
+          depth_unit: '',
+          coord_unit: '',
+          datetime_unit: '',
+        })"
       >
         Move
       </div>
@@ -140,6 +152,7 @@
       class="Folder"
       *ngFor="let file of openedFile"
       (contextmenu)="onFileRightClick($event, file)"
+      (click)="setUnits(file)"
     >
       <img [src]="getFileClass(file.file_name)" alt="" />
       <p>{{ file.file_name }}</p>
@@ -155,7 +168,18 @@
   >
     <ng-container *ngIf="contextMenu.type === 'file'">
       <div
-        (click)="moveFile({ file_name: '', file_id: 2, is_processed: true })"
+        (click)="moveFile({
+          file_name: '',
+          file_id: 2,
+          is_processed: true,
+          water_level_unit: '',
+          current_speed_unit: '',
+          current_direction_unit: '',
+          battery_unit: '',
+          depth_unit: '',
+          coord_unit: '',
+          datetime_unit: '',
+        })"
       >
         Move
       </div>

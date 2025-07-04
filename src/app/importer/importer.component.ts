@@ -137,11 +137,27 @@ export class ImporterComponent {
     return tooltips[paramKey]?.[unit] || '';
   }
 
-  selectedUnits: any = {};
+  // Tab logic for unit selection
+  activeUnitTab: 'from' | 'to' = 'from';
+  selectedUnitsFrom: any = {};
+  selectedUnitsTo: any = {};
 
-  selectUnit(paramKey: string, unit: string) {
-    this.selectedUnits[paramKey] = unit;
-    console.log('units', this.selectedUnits);
+  // Update selectUnit to work with tabs
+  selectUnit(paramKey: string, unit: string, type: 'from' | 'to') {
+    if (type === 'from') {
+      this.selectedUnitsFrom[paramKey] = unit;
+    } else {
+      this.selectedUnitsTo[paramKey] = unit;
+    }
+  }
+
+  // Helper for template to get selected unit for current tab
+  getSelectedUnit(paramKey: string): string {
+    if (this.activeUnitTab === 'from') {
+      return this.selectedUnitsFrom[paramKey];
+    } else {
+      return this.selectedUnitsTo[paramKey];
+    }
   }
 
   onRowClick(row: any, index: number) {
@@ -242,6 +258,7 @@ export class ImporterComponent {
   }
 
   private baseUrl: string;
+  private convertValues;
 
   constructor(
     private http: HttpClient,
@@ -251,7 +268,9 @@ export class ImporterComponent {
     private unitService: UnitService
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
-    this.selectedUnits = this.unitService.getCurrentUnits();
+    this.convertValues = new GlobalConfig().convertValue;
+    this.selectedUnitsFrom = { ...this.unitService.getCurrentUnits() };
+    this.selectedUnitsTo = { ...this.unitService.getCurrentUnits() };
   }
 
   main_table_headers = [
@@ -486,6 +505,12 @@ export class ImporterComponent {
       console.log('files:', response, this.files_list);
       this.isFilesLoading = false;
       this.expandedFolders = [false, false, false, false, false, false, true];
+    });
+
+    // Initialize both unit selections with defaults if needed
+    this.unitSettings.forEach((param) => {
+      this.selectedUnitsFrom[param.key] = param.units[0];
+      this.selectedUnitsTo[param.key] = param.units[0];
     });
   }
 
@@ -778,10 +803,47 @@ export class ImporterComponent {
       folder_name: this.FileName,
       file_name: Object.keys(this.fileWiseUploadData),
       data: this.fileWiseUploadData,
-      units: this.selectedUnits,
+      unitsFrom: this.selectedUnitsFrom,
+      unitsTo: this.selectedUnitsTo,
     };
 
     console.log(file);
+
+    // Conversion logic before API call
+    const unitFieldMap = {
+      pressure: 'waterLevel',
+      speed: 'currentSpeed',
+      direction: 'currentDirection',
+      battery: 'battery',
+      depth: 'depth',
+    };
+    Object.keys(this.fileWiseUploadData).forEach((fileName) => {
+      const rows = this.fileWiseUploadData[fileName];
+      rows.forEach((row: any) => {
+        Object.entries(unitFieldMap).forEach(([field, unitKey]) => {
+          // Skip if either unit is missing
+          if (
+            this.selectedUnitsFrom[unitKey] !== undefined &&
+            this.selectedUnitsTo[unitKey] !== undefined &&
+            this.selectedUnitsFrom[unitKey] !== this.selectedUnitsTo[unitKey]
+          ) {
+            // Only convert if value is not null/undefined/empty
+            if (
+              row[field] !== null &&
+              row[field] !== undefined &&
+              row[field] !== ''
+            ) {
+              row[field] = this.convertValues(
+                Number(row[field]),
+                this.selectedUnitsFrom[unitKey],
+                this.selectedUnitsTo[unitKey]
+              );
+            }
+          }
+        });
+      });
+    });
+
     this.http.post(`${this.baseUrl}createFile`, file).subscribe(
       (response: any) => {
         this.toast.success(response.message, 'Success');

@@ -356,6 +356,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     file_id: number,
     folder_name: string
   ) {
+    console.log('a', file_id);
+    this.base.fileId = file_id;
     // this.dir = false;
     console.log(fileName, file_id);
     this.selected_folder_name = folder_name;

@@ -167,8 +167,8 @@ const updateValues = async (req, res) => {
 };
 
 const createFolderAndFile = async (req, res) => {
-  const { folder_name, file_name, data, units } = req.body;
-  console.log("units", units);
+  const { folder_name, file_name, data, unitsTo } = req.body;
+
   if (!folder_name || !Array.isArray(file_name) || typeof data !== "object") {
     return res.status(400).json({ message: "Invalid input format" });
   }
@@ -194,8 +194,8 @@ const createFolderAndFile = async (req, res) => {
       }
 
       // Insert file
-      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING id`;
-      const fileResult = await pool.query(fileInsertQuery, [fname, folderId, units.waterLevel, units.currentSpeed, units.currentDirection, units.battery, units.depth]);
+      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`;
+      const fileResult = await pool.query(fileInsertQuery, [fname, folderId, unitsTo.waterLevel, unitsTo.currentSpeed, unitsTo.currentDirection, unitsTo.battery, unitsTo.depth, unitsTo.latandlong]);
       const fileId = fileResult.rows[0]?.id;
 
       if (!fileId) {
@@ -576,13 +576,20 @@ const getFoldersWithFiles = async (req, res) => {
         fi.current_speed_unit,
         fi.current_direction_unit,
         fi.battery_unit,
-        fi.depth_unit
+        fi.depth_unit,
+        fi.coord_unit,
+        fi.water_level_unit_to,
+        fi.current_speed_unit_to,
+        fi.current_direction_unit_to,
+        fi.battery_unit_to,
+        fi.depth_unit_to,
+        fi.coord_unit_to
       FROM
         tb_folders f
       LEFT JOIN
         tb_file fi ON fi.folder_id = f.id
       ORDER BY
-        f.id, fi.id;
+        f.id DESC
     `;
     const result = await pool.query(query);
     const foldersMap = {};
@@ -603,18 +610,23 @@ const getFoldersWithFiles = async (req, res) => {
           current_speed_unit: row.current_speed_unit,
           current_direction_unit: row.current_direction_unit,
           battery_unit: row.battery_unit,
-          depth_unit: row.depth_unit
+          depth_unit: row.depth_unit,
+          coord_unit: row.coord_unit,
+          water_level_unit_to: row.water_level_unit_to,
+          current_speed_unit_to: row.current_speed_unit_to,
+          current_direction_unit_to: row.current_direction_unit_to,
+          battery_unit_to: row.battery_unit_to,
+          depth_unit_to: row.depth_unit_to,
+          coord_unit_to: row.coord_unit_to
         });
       }
     });
-    const foldersWithFiles = Object.values(foldersMap);
+    const foldersWithFiles = Object.values(foldersMap).sort((a, b) => b.folder_id - a.folder_id);
     res.status(200).json({ data: foldersWithFiles });
   } catch (error) {
     res.status(500).json({ message: `Error: ${error.message}` });
   }
 };
-
-
 
 const changeFolder = async (req, res) => {
   const { file_id, folder_id } = req.body;
@@ -670,7 +682,7 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
       await fs.access(filePath);
     } catch {
       console.warn('License file not found');
-      return false;
+      return { valid: false, pendingDays: 0 };
     }
 
     // Read and parse file
@@ -682,26 +694,32 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
 
     if (isNaN(validTill.getTime())) {
       console.warn('Invalid date in license file');
-      return false;
+      return { valid: false, pendingDays: 0 };
     }
 
-    return currentTime <= validTill;
+    const pendingTime = validTill.getTime() - currentTime.getTime();
+    const pendingDays = Math.max(0, Math.ceil(pendingTime / (1000 * 60 * 60 * 24)));
+
+    return {
+      valid: currentTime <= validTill,
+      pendingDays
+    };
+
   } catch (error) {
     console.error('Error reading or parsing license file:', error);
-    return false;
+    return { valid: false, pendingDays: 0 };
   }
-}
+};
 
 const checkLicenseValidityHandler = async (req, res) => {
-  console.log('lll');
   try {
-    const isValid = await checkLicenseValidity();
-    res.status(200).json({ message: 'Success', result: isValid });
+    const result = await checkLicenseValidity();
+    res.status(200).json({ message: 'Success', result });
   } catch (error) {
     console.error('Error checking license validity:', error);
-    res.status(500).json({ message: error.message, result: false });
+    res.status(500).json({ message: error.message, result: { valid: false, pendingDays: 0 } });
   }
-}
+};
 
 module.exports = {
   importAll,

@@ -61,17 +61,17 @@
 }
 
 .parameter-grid {
-display: grid;
-grid-template-columns: repeat(2, 1fr);
-gap: 30px;
-width: 100%;
-justify-items: center;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 30px;
+  width: 100%;
+  justify-items: center;
 }
 
 @media (max-width: 768px) {
-.parameter-grid {
-  grid-template-columns: 1fr;
-}
+  .parameter-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .parameter-row {
@@ -168,7 +168,7 @@ justify-items: center;
 }
 
 .tooltip-text::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 100%;
   left: 50%;
@@ -207,36 +207,33 @@ justify-items: center;
 }
 
 .path-input-group {
-display: flex;
-width: 100%;
-gap: 20px;
+  display: flex;
+  width: 100%;
+  gap: 20px;
 }
 
 .path-input {
-flex: 1;
-padding: 8px 12px;
-border: 2px solid #ccc;
-border-radius: 50px;
-background-color: var(--background-color);
-color: var(--font-color);
+  flex: 1;
+  padding: 8px 12px;
+  border: 2px solid #ccc;
+  border-radius: 50px;
+  background-color: var(--background-color);
+  color: var(--font-color);
 }
 
 .browse-button {
-padding: 8px 16px;
-background-color: var(--button-bg);
-color: var(--tooltip-text);
-border: none;
-border-radius: 10px;
-cursor: pointer;
-transition: background 0.3s ease;
+  padding: 8px 16px;
+  background-color: var(--button-bg);
+  color: var(--tooltip-text);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.3s ease;
 }
 
 .browse-button:hover {
-background-color: var(--button-bg-hover);
+  background-color: var(--button-bg-hover);
 }
-
-
-
 
 /* Files */
 .fileCContainer {
@@ -292,7 +289,6 @@ background-color: var(--button-bg-hover);
   align-self: flex-end;
   border-radius: 5px;
   margin-right: 25px;
-
 }
 
 .files_cont {
@@ -308,7 +304,6 @@ background-color: var(--button-bg-hover);
   color: var(--font-color);
   align-items: start;
 }
-
 
 .Folder {
   background-color: var(--background-secondary);
@@ -341,7 +336,6 @@ background-color: var(--button-bg-hover);
   text-align: center;
 }
 
-
 .files_list {
   align-self: self-start;
   height: auto;
@@ -365,7 +359,6 @@ background-color: var(--button-bg-hover);
   border-radius: 10px;
   color: black;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-
 }
 
 .context-menu div {

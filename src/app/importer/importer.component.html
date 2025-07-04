@@ -406,7 +406,8 @@
           *ngFor="let file of uploaded_files"
           [ngStyle]="{
             cursor: 'pointer',
-            color: selected_filelist === file ? 'blue' : ''
+            color:
+              selected_filelist === file ? 'var(--circuit-color-pulse)' : ''
           }"
           (click)="onFileClick(file)"
         >
@@ -419,17 +420,49 @@
         placeholder="File Name"
         [(ngModel)]="FileName"
       />
-      <div style="width: 90%" *ngIf="historyData.length !== 0">
-        <p
-          style="
-            font-weight: 400;
-            font-size: larger;
-            text-align: center;
-            color: var(--font-color);
-          "
+      <div
+        style="width: 90%; margin-top: 10px"
+        *ngIf="historyData.length !== 0"
+      >
+        <!-- Tabs for From Unit / To Unit -->
+        <div
+          style="display: flex; justify-content: center; margin-bottom: 10px"
         >
-          Select Units
-        </p>
+          <button
+            [class.selected]="activeUnitTab === 'from'"
+            (click)="activeUnitTab = 'from'"
+            [style.opacity]="activeUnitTab === 'from' ? '1' : '0.7'"
+            style="
+              margin-right: 10px;
+              padding: 6px 18px;
+              border-radius: 16px;
+              border: none;
+              background: var(--button-bg);
+              color: var(--button-text-color);
+              font-weight: bold;
+              cursor: pointer;
+            "
+          >
+            From Unit
+          </button>
+          <button
+            [class.selected]="activeUnitTab === 'to'"
+            (click)="activeUnitTab = 'to'"
+            [style.opacity]="activeUnitTab === 'to' ? '1' : '0.7'"
+            style="
+              padding: 6px 18px;
+              border-radius: 16px;
+              border: none;
+              background: var(--button-bg);
+              color: var(--button-text-color);
+              font-weight: bold;
+              cursor: pointer;
+            "
+          >
+            To Unit
+          </button>
+        </div>
+        <!-- Render unit selection for the active tab only -->
         <div *ngFor="let param of unitSettings" class="parameter-row">
           <div class="parameter-content">
             <span class="parameter-label" style="color: var(--font-color)">{{
@@ -443,8 +476,8 @@
             >
               <button
                 class="unit-button"
-                [class.selected]="selectedUnits[param.key] === unit"
-                (click)="selectUnit(param.key, unit)"
+                [class.selected]="getSelectedUnit(param.key) === unit"
+                (click)="selectUnit(param.key, unit, activeUnitTab)"
               >
                 {{ param.unitslabels[j] }}
               </button>

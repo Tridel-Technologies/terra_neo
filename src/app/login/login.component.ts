@@ -9,6 +9,7 @@ import { number } from 'echarts';
 import { LoginService } from './login.service';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { DialogModule } from 'primeng/dialog';
+import { GlobalConfig } from '../global/app.global';
 
 // import { CommonModule} from '@angular/forms';
 @Component({
@@ -32,16 +33,16 @@ export class LoginComponent implements OnInit {
     private toastr: ToastrService,
     private loginservice: LoginService,
     private unitService: UnitService
-  ) {}
+  ) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
 
   ngOnInit(): void {
-    this.http
-      .get('http://localhost:3500/api/check')
-      .subscribe((response: any) => {
-        console.log('response', response);
-        this.licenseExpired = response.result;
-        console.log(this.licenseExpired);
-      });
+    this.http.get(`${this.baseUrl}check`).subscribe((response: any) => {
+      console.log('response', response);
+      this.licenseExpired = response.result.valid;
+      console.log(this.licenseExpired);
+    });
   }
 
   signup_form: boolean = false;
@@ -71,6 +72,7 @@ export class LoginComponent implements OnInit {
   confirm_password_signup = '';
   password_forget_invalid: boolean | null = null;
   licenseExpired: boolean = false;
+  baseUrl: string;
 
   //For remember me functionality
 
