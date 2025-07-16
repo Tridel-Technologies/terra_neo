@@ -156,11 +156,26 @@
       </div>
       <div class="bod" *ngIf="main_table.length > 0">
         <div class="coordinates">
-          <h4 *ngIf="unitssTo.latandlong === 'dms'">Latitude (DMS)</h4>
-          <div
-            style="display: flex; gap: 15px"
-            *ngIf="unitssTo.latandlong === 'dms'"
-          >
+          <div class="latlong-tabs">
+            <button
+              class="latlong-tab"
+              [class.active]="latlongType === 'dd'"
+              (click)="latlongType = 'dd'"
+              type="button"
+            >
+              DD
+            </button>
+            <button
+              class="latlong-tab"
+              [class.active]="latlongType === 'dms'"
+              (click)="latlongType = 'dms'"
+              type="button"
+            >
+              DMS
+            </button>
+          </div>
+          <h4 *ngIf="latlongType === 'dms'">Lat (DMS)</h4>
+          <div style="display: flex; gap: 15px" *ngIf="latlongType === 'dms'">
             <input
               type="number"
               placeholder="Deg"
@@ -186,16 +201,13 @@
           </div>
 
           <div
-            *ngIf="latDeg > 90 || latMin >= 60 || latSec >= 60"
+            *ngIf="latDeg! > 90 || latMin! >= 60 || latSec! >= 60"
             class="error1"
           >
             Invalid Latitude DMS values.
           </div>
-          <h4 *ngIf="unitssTo.latandlong == 'dms'">Longitude (DMS)</h4>
-          <div
-            style="display: flex; gap: 15px"
-            *ngIf="unitssTo.latandlong === 'dms'"
-          >
+          <h4 *ngIf="latlongType === 'dms'">Long (DMS)</h4>
+          <div style="display: flex; gap: 15px" *ngIf="latlongType === 'dms'">
             <input
               type="number"
               placeholder="Deg"
@@ -221,18 +233,17 @@
           </div>
 
           <div
-            *ngIf="lonDeg > 180 || lonMin >= 60 || lonSec >= 60"
+            *ngIf="lonDeg! > 180 || lonMin! >= 60 || lonSec! >= 60"
             class="error"
           >
             Invalid Longitude DMS values.
           </div>
-
           <div
             class="inputssss"
-            *ngIf="unitssTo.latandlong === 'dd'"
+            *ngIf="latlongType === 'dd'"
             style="width: 100%"
           >
-            <h4 *ngIf="unitssTo.latandlong === 'dd'">Latitude (DD)</h4>
+            <h4 *ngIf="latlongType === 'dd'">Lat (DD)</h4>
             <input
               type="number"
               step="any"
@@ -244,13 +255,10 @@
               #lat="ngModel"
               (change)="changinglat()"
             />
-            <div
-              *ngIf="lat.invalid && unitssTo.latandlong === 'dd'"
-              class="error2"
-            >
+            <div *ngIf="lat.invalid && latlongType === 'dd'" class="error2">
               Latitude must be between -90° and +90°.
             </div>
-            <h4 *ngIf="unitssTo.latandlong === 'dd'">Longitude (DD)</h4>
+            <h4 *ngIf="latlongType === 'dd'">Long (DD)</h4>
             <input
               type="number"
               step="any"
@@ -261,10 +269,7 @@
               name="longitude"
               #long="ngModel"
             />
-            <div
-              *ngIf="long.invalid && unitssTo.latandlong === 'dd'"
-              class="error3"
-            >
+            <div *ngIf="long.invalid && latlongType === 'dd'" class="error3">
               Longitude must be between -180° and +180°.
             </div>
           </div>
@@ -296,7 +301,10 @@
           <table class="styled-table">
             <thead>
               <tr>
-                <th *ngFor="let column of main_table_headers">{{ column }}</th>
+                <th *ngFor="let column of main_table_headers">
+                  {{ column.name }}
+                  <span *ngIf="column.unit"> ({{ column.unit }})</span>
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -307,7 +315,7 @@
                 [attr.id]="'row-' + i"
               >
                 <td>{{ row.station_id }}</td>
-                <td>{{ row.date | date : "yyyy-MMM-dd HH:mm:ss" }}</td>
+                <td>{{ row.date | date : this.dateFormat }}</td>
                 <td>{{ row.speed }}</td>
                 <td>{{ row.direction }}</td>
                 <td>{{ row.depth }}</td>
@@ -335,7 +343,11 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let row of filterhistorydata; let i = index">
+            <tr
+              *ngFor="let row of filterhistorydata; let i = index"
+              [class.selected]="selectedRowIndex === i"
+              [attr.id]="'row-' + i"
+            >
               <td>{{ row.station_id }}</td>
               <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" }}</td>
               <!-- <td>{{ row.Time }}</td> -->

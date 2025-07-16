@@ -652,3 +652,40 @@
   margin-bottom: 20px;
   font-size: small;
 }
+
+.latlong-tabs {
+  display: flex;
+  margin-bottom: 16px;
+  width: fit-content;
+  background: var(--background-color);
+  border-radius: 8px 8px 0 0;
+  overflow: hidden;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.03);
+}
+
+.latlong-tab {
+  flex: 1 1 0;
+  background: none;
+  border: none;
+  outline: none;
+  padding: 10px 32px;
+  color: var(--font-color);
+  cursor: pointer;
+  font-size: 16px;
+  border-bottom: 2px solid transparent;
+  transition: color 0.2s, border-bottom 0.2s, background 0.2s;
+  font-weight: 500;
+}
+
+.latlong-tab.active {
+  color: var(--button-bg);
+  border-bottom: 2px solid var(--button-bg);
+  font-weight: bold;
+  background: var(--background-color);
+  z-index: 1;
+}
+
+.latlong-tab:not(.active):hover {
+  background: var(--background-color);
+  color: var(--button-bg);
+}

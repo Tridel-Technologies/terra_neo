@@ -29,7 +29,7 @@ import { BehaviorSubject, skip } from 'rxjs';
 import { BaseComponent } from '../base/base.component';
 import { CascadeSelectModule } from 'primeng/cascadeselect';
 import { ThemeService } from '../theme_service/theme.service';
-import { UnitService, UnitSettings } from '../settings/unit.service';
+import { UnitSettings } from '../settings/unit.service';
 import { GlobalConfig } from '../global/app.global';
 
 interface Files {
@@ -61,6 +61,12 @@ interface ApiData {
   battery_unit: string;
   depth_unit: string;
   coord_unit: string;
+  water_level_unit_to: string;
+  current_speed_unit_to: string;
+  current_direction_unit_to: string;
+  battery_unit_to: string;
+  depth_unit_to: string;
+  coord_unit_to: string;
   [key: string]: any;
 }
 
@@ -217,12 +223,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     private base: BaseComponent,
-    private themeService: ThemeService,
-    private unitSerive: UnitService
+    private themeService: ThemeService
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
     this.convertValues = new GlobalConfig().convertValue;
   }
+
   fileID!: number;
   ngOnInit(): void {
     this.isFilesLoading = true;
@@ -320,14 +326,14 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
     this.subscribeToThemeChanges();
 
-    this.unitSerive.units$.subscribe((u) => {
-      this.units = u;
-    });
     this.isFilesLoading = false;
-    console.log('units', this.units);
-    if (this.units['datetime'] === '30-03-2025 12:00:00') {
+
+    const datetimeValue = JSON.parse(
+      localStorage.getItem('unitSettings') ?? '{}'
+    ).datetime;
+    if (datetimeValue == '30-03-2025 12:00:00') {
       this.dateFormat = 'dd-MM-Y HH:mm:ss';
-    } else if (this.units['datetime'] === '03-30-2025 12:00:00') {
+    } else if (datetimeValue == '03-30-2025 12:00:00') {
       this.dateFormat = 'MM-dd-Y HH:mm:ss';
     } else {
       this.dateFormat = 'dd MMM yyyy HH:mm:ss';
@@ -448,6 +454,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                   this.loadChart();
                 });
               }
+              this.units.battery = this.fullData[0].battery_unit_to;
+              this.units.currentDirection =
+                this.fullData[0].current_direction_unit_to;
+              this.units.currentSpeed = this.fullData[0].current_speed_unit_to;
+              this.units.depth = this.fullData[0].depth_unit_to;
+              this.units.waterLevel = this.fullData[0].water_level_unit_to;
+              this.units.latandlong = this.fullData[0].coord_unit_to;
             }, 100);
           } else {
             this.fullData = [];
@@ -471,6 +484,13 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                   this.loadChart();
                 });
               }
+              this.units.battery = this.fullData[0].battery_unit_to;
+              this.units.currentDirection =
+                this.fullData[0].current_direction_unit_to;
+              this.units.currentSpeed = this.fullData[0].current_speed_unit_to;
+              this.units.depth = this.fullData[0].depth_unit_to;
+              this.units.waterLevel = this.fullData[0].water_level_unit_to;
+              this.units.latandlong = this.fullData[0].coord_unit_to;
             }, 100);
           }
         },
@@ -852,6 +872,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         battery_unit: item.battery_unit,
         depth_unit: item.depth_unit,
         coord_unit: '',
+        water_level_unit_to: '',
+        current_speed_unit_to: '',
+        current_direction_unit_to: '',
+        battery_unit_to: '',
+        depth_unit_to: '',
+        coord_unit_to: '',
       };
       this.main_table.splice(currentIndex + 1, 0, newRow);
       this.fullData = [...this.main_table];

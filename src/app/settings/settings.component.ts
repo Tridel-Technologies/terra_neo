@@ -5,6 +5,7 @@ import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ToastrService } from 'ngx-toastr';
 import { GlobalConfig } from '../global/app.global';
+import { BaseComponent } from '../base/base.component';
 
 interface Folders {
   folder_id: number;
@@ -12,16 +13,28 @@ interface Folders {
   files: fileData[];
   timestamp: string;
 }
+// interface fileData {
+//   file_id: number;
+//   file_name: string;
+//   is_processed: boolean;
+//   water_level_unit: string;
+//   current_speed_unit: string;
+//   current_direction_unit: string;
+//   battery_unit: string;
+//   depth_unit: string;
+//   coord_unit: string;
+//   datetime_unit: string;
+// }
 interface fileData {
   file_id: number;
   file_name: string;
   is_processed: boolean;
-  water_level_unit: string;
-  current_speed_unit: string;
-  current_direction_unit: string;
-  battery_unit: string;
-  depth_unit: string;
-  coord_unit: string;
+  water_level_unit_to: string;
+  current_speed_unit_to: string;
+  current_direction_unit_to: string;
+  battery_unit_to: string;
+  depth_unit_to: string;
+  coord_unit_to: string;
   datetime_unit: string;
 }
 
@@ -61,6 +74,7 @@ export class SettingsComponent {
   }
 
   Foldertaped2(file: fileData[], folder: Folders) {
+    console.log('its1');
     this.openedFile2 = [];
     setTimeout(() => {
       this.openedFile2 = file;
@@ -263,13 +277,15 @@ export class SettingsComponent {
 
   setUnits(file: fileData) {
     this.selectedUnits = {
-      waterLevel: file.water_level_unit,
-      currentSpeed: file.current_speed_unit,
-      currentDirection: file.current_direction_unit,
-      battery: file.battery_unit,
-      depth: file.depth_unit,
-      latandlong: file.coord_unit,
-      datetime: '01-Jan-2025 12:00:00',
+      waterLevel: file.water_level_unit_to,
+      currentSpeed: file.current_speed_unit_to,
+      currentDirection: file.current_direction_unit_to,
+      battery: file.battery_unit_to,
+      depth: file.depth_unit_to,
+      latandlong: file.coord_unit_to,
+      datetime:
+        JSON.parse(localStorage.getItem('unitSettings') ?? '{}').datetime ||
+        '01-Jan-2025 12:00:00',
     };
   }
 
@@ -389,15 +405,66 @@ export class SettingsComponent {
   constructor(
     private unitService: UnitService,
     private http: HttpClient,
-    private toastr: ToastrService
+    private toastr: ToastrService,
+    private basee: BaseComponent
   ) {
     this.selectedUnits = this.unitService.getCurrentUnits();
     this.baseUrl = new GlobalConfig().baseUrl;
+    // Set datetime from localStorage only
+    const datetimeValue = JSON.parse(
+      localStorage.getItem('unitSettings') ?? '{}'
+    ).datetime;
+    if (datetimeValue) {
+      console.log(datetimeValue);
+      this.selectedUnits['datetime'] = datetimeValue;
+    }
   }
 
   selectUnit(paramKey: string, unit: string) {
+    if (paramKey === 'datetime') {
+      // Only update localStorage for datetime
+      this.selectedUnits[paramKey] = unit;
+      const unitSettings = JSON.parse(
+        localStorage.getItem('unitSettings') ?? '{}'
+      );
+      unitSettings['datetime'] = unit;
+      localStorage.setItem('unitSettings', JSON.stringify(unitSettings));
+      this.toastr.success('Datetime unit updated', 'Success', {
+        timeOut: 1500,
+      });
+      return;
+    }
     this.selectedUnits[paramKey] = unit;
     this.unitService.updateUnit(paramKey as any, unit);
+
+    // Find the currently opened file (raw or processed)
+    let currentFile = null;
+    if (this.openedFile && this.openedFile.length > 0) {
+      currentFile = this.openedFile[0];
+    } else if (this.openedFile2 && this.openedFile2.length > 0) {
+      currentFile = this.openedFile2[0];
+    }
+
+    if (currentFile && paramKey !== 'datetime') {
+      const payload = {
+        file_id: currentFile.file_id,
+        unitKey: paramKey,
+        unitValue: unit,
+      };
+      console.log(payload);
+      this.http.post(`${this.baseUrl}update_unit`, payload).subscribe({
+        next: (res) => {
+          this.toastr.success('Unit updated successfully', 'Success', {
+            timeOut: 1500,
+          });
+        },
+        error: (err) => {
+          this.toastr.error('Failed to update unit', 'Error', {
+            timeOut: 2000,
+          });
+        },
+      });
+    }
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -448,7 +515,7 @@ export class SettingsComponent {
   init() {
     this.files_list = [];
     setTimeout(() => {
-      this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+      this.http.get(`${this.baseUrl}allFiles`).subscribe((response: any) => {
         this.files_list = response['data'];
         console.log('files:', response, this.files_list);
         const non_procces = this.files_list.filter((item) =>
@@ -461,7 +528,48 @@ export class SettingsComponent {
         );
         this.processedFiles = procces;
         this.expandedFolders = this.files_list.map(() => false);
+        console.log('files and folders: === ', procces[0].files[0].file_id);
+        // this.Foldertaped(this.processedFiles[1].files, this.processedFiles[1]);
+        this.openSelectedFile();
       });
     }, 100);
+  }
+  selectedFolder2!: Folders;
+  selectedFile: fileData[] = [];
+  openSelectedFile() {
+    let selectedFileID = 0;
+    if (this.basee.fileId) {
+      selectedFileID = this.basee.fileId; // or globee.fileID if dynamic
+    } else {
+      selectedFileID = this.processedFiles[0].files[0].file_id;
+    }
+
+    // Find the folder containing the file
+    const folderContainingFile = this.files_list.find((folder) =>
+      folder.files.some((file) => file.file_id === selectedFileID)
+    );
+
+    if (folderContainingFile) {
+      console.log('Folder containing selected file:', folderContainingFile);
+
+      // Set the folder to variable
+      this.selectedFolder2 = folderContainingFile;
+
+      // Find the file details
+      const selectedFile = folderContainingFile.files.find(
+        (file) => file.file_id === selectedFileID
+      );
+
+      if (selectedFile) {
+        // Set the file to variable as an array (since your variable is fileData[])
+        this.selectedFile = [selectedFile];
+
+        console.log('Selected File details:', selectedFile);
+        this.Foldertaped(this.selectedFile, this.selectedFolder2);
+        this.setUnits(selectedFile);
+      }
+    } else {
+      console.log('No folder contains the selected file.');
+    }
   }
 }

@@ -1,5 +1,5 @@
 export class GlobalConfig {
-  baseUrl: string = 'http://localhost:3000/api/';
+  baseUrl: string = 'http://192.168.0.120:3000/api/';
 
   convertValue(value: number, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
@@ -27,7 +27,7 @@ export class GlobalConfig {
         return `${deg}°${min}'${sec.toFixed(2)}"`;
       },
       'dms-dd': (v) => {
-        const regex = /(\d+)°(\d+)'([\d.]+)"/;
+        const regex = /(\d+)°(\d+)'([\d.]+)(?:'|")/;
         const match = v.match(regex);
         if (!match) return 0;
         const deg = parseInt(match[1]);

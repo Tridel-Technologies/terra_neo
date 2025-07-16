@@ -48,18 +48,21 @@ export class ImporterComponent {
   main_table: any[] = [];
   fileWiseUploadData: { [fileName: string]: any[] } = {};
   isFilesLoading: boolean = false;
-  latitude: number | null = null;
-  lon: number | null = null;
+  latitude: number | string | null = null;
+  lon: number | string | null = null;
   high_water_level!: string;
   selectedRowIndex: number | null = null;
   selectedRowData: any = null;
-  lonDeg!: number;
-  lonMin!: number;
-  lonSec!: number;
-  latDeg!: number;
-  latMin!: number;
-  latSec!: number;
+  lonDeg!: number | null;
+  lonMin!: number | null;
+  lonSec!: number | null;
+  latDeg!: number | null;
+  latMin!: number | null;
+  latSec!: number | null;
   row_isempty: boolean = false;
+  dateFormat!: string;
+
+  latlongType: 'dd' | 'dms' = 'dd';
 
   unitSettings = [
     {
@@ -177,7 +180,7 @@ export class ImporterComponent {
   }
 
   update_Values() {
-    if (this.unitssTo.latandlong === 'dd') {
+    if (this.latlongType === 'dd') {
       if (this.latitude === null && this.lon === null) {
         this.toast.warning('Please enter coordinates', 'Error', {
           timeOut: 1000,
@@ -205,30 +208,25 @@ export class ImporterComponent {
       files.push(this.selectedFiles[index]);
     }
     // file_name, lat, lon, high_water_level
+
     let data = {};
-    if (this.unitssTo.latandlong === 'dd') {
+    if (this.latlongType === 'dd') {
       data = {
         file_name: files,
         lat: this.latitude,
         lon: this.lon,
         high_water_level: this.high_water_level,
+        unit: this.latlongType,
       };
     } else {
-      const lat = `${this.latDeg}° ${this.latMin}' ${this.latSec}''`;
-      const lon = `${this.lonDeg}° ${this.lonMin}' ${this.lonSec}''`;
+      const lat = `${this.latDeg},${this.latMin},${this.latSec}`;
+      const lon = `${this.lonDeg},${this.lonMin},${this.lonSec}`;
       data = {
         file_name: files,
-        lat: this.convertcoored(
-          parseFloat(lat),
-          'dms',
-          this.unitssTo.latandlong
-        ),
-        lon: this.convertcoored(
-          parseFloat(lon),
-          'dms',
-          this.unitssTo.latandlong
-        ),
+        lat: lat,
+        lon: lon,
         high_water_level: this.high_water_level,
+        unit: this.latlongType,
       };
     }
     console.log('sendingData', data);
@@ -274,14 +272,15 @@ export class ImporterComponent {
   }
 
   main_table_headers = [
-    'String',
-    'Date',
-    'Speed',
-    'Direction',
-    'Depth',
-    'Battery',
-    'Pressure',
+    { name: 'Station', unit: '' },
+    { name: 'Date', unit: '' },
+    { name: 'Speed', unit: '' },
+    { name: 'Direction', unit: '' },
+    { name: 'Depth', unit: '' },
+    { name: 'Battery', unit: '' },
+    { name: 'Pressure', unit: '' },
   ];
+
   open_file(file_name: string, file_id: number) {
     this.opened_file = file_name;
     const data = {
@@ -304,28 +303,83 @@ export class ImporterComponent {
             });
 
             console.log('Row with Max Pressure:', maxPressureRow);
-            if (this.unitssTo.latandlong === 'dd') {
-              this.latitude = this.main_table[0].lat;
-              this.lon = this.main_table[0].lon;
-            } else {
-              const latDms = this.ddtoDms(
-                parseFloat(this.main_table[0].lat),
-                'dd',
-                'dms'
-              );
-              this.latDeg = latDms.deg;
-              this.latMin = latDms.min;
-              this.latSec = latDms.sec;
 
-              // Convert Longitude DD to DMS
-              const lonDms = this.ddtoDms(
-                parseFloat(this.main_table[0].lon),
-                'dd',
-                'dms'
-              );
-              this.lonDeg = lonDms.deg;
-              this.lonMin = lonDms.min;
-              this.lonSec = lonDms.sec;
+            // Set units to header
+            this.main_table_headers.forEach((header) => {
+              switch (header.name.toLowerCase()) {
+                case 'speed':
+                  header.unit = this.main_table[0].current_speed_unit || '';
+                  break;
+                case 'direction':
+                  header.unit = this.main_table[0].current_direction_unit || '';
+                  break;
+                case 'depth':
+                  header.unit = this.main_table[0].depth_unit || '';
+                  break;
+                case 'battery':
+                  header.unit = this.main_table[0].battery_unit || '';
+                  break;
+                case 'pressure':
+                  header.unit = this.main_table[0].water_level_unit || '';
+                  break;
+                default:
+                  break;
+              }
+            });
+
+            const { coord_unit, coord_unit_to, lat, lon } = this.main_table[0];
+            // Set default latlongType
+            this.latlongType = coord_unit_to?.length ? coord_unit_to : 'dd';
+
+            // Handle coordinate conversion if units differ
+            if (coord_unit != null && coord_unit_to != null) {
+              if (coord_unit !== coord_unit_to) {
+                const convert = (value: any) =>
+                  this.ddtoDms(parseFloat(value), coord_unit, coord_unit_to);
+
+                if (coord_unit_to === 'dd') {
+                  const latDms = lat.split(',').map(Number);
+                  const lonDms = lon.split(',').map(Number);
+
+                  const latDms1 = `${latDms[0]}°${latDms[1]}'${latDms[2]}''`;
+                  const lonDms1 = `${lonDms[0]}°${lonDms[1]}'${lonDms[2]}''`;
+                  this.latitude = this.ddtoDms(
+                    latDms1,
+                    coord_unit,
+                    coord_unit_to
+                  );
+                  this.lon = this.ddtoDms(lonDms1, coord_unit, coord_unit_to);
+                } else {
+                  const latDms = convert(lat);
+                  const lonDms = convert(lon);
+
+                  Object.assign(this, {
+                    latDeg: latDms.deg,
+                    latMin: latDms.min,
+                    latSec: latDms.sec,
+                    lonDeg: lonDms.deg,
+                    lonMin: lonDms.min,
+                    lonSec: lonDms.sec,
+                  });
+                }
+              } else {
+                if (coord_unit_to === 'dd') {
+                  this.latitude = lat;
+                  this.lon = lon;
+                } else {
+                  const latDms = lat.split(',').map(Number);
+                  const lonDms = lon.split(',').map(Number);
+
+                  Object.assign(this, {
+                    latDeg: latDms[0],
+                    latMin: latDms[1],
+                    latSec: latDms[2],
+                    lonDeg: lonDms[0],
+                    lonMin: lonDms[1],
+                    lonSec: lonDms[2],
+                  });
+                }
+              }
             }
           }, 100);
         } else {
@@ -368,40 +422,95 @@ export class ImporterComponent {
             console.log('Row with Max Pressure:', maxPressureRow);
             console.log('Index of Max Pressure Row:', maxPressureIndex);
 
-            if (this.unitssTo.latandlong === 'dd') {
-              this.latitude = this.main_table[0].lat;
-              this.lon = this.main_table[0].lon;
-            } else {
-              const latDms = this.ddtoDms(
-                parseFloat(this.main_table[0].lat),
-                'dd',
-                'dms'
-              );
-              this.latDeg = latDms.deg;
-              this.latMin = latDms.min;
-              this.latSec = latDms.sec;
-
-              // Convert Longitude DD to DMS
-              const lonDms = this.ddtoDms(
-                parseFloat(this.main_table[0].lon),
-                'dd',
-                'dms'
-              );
-              this.lonDeg = lonDms.deg;
-              this.lonMin = lonDms.min;
-              this.lonSec = lonDms.sec;
-            }
-
             const high = this.main_table.filter(
               (item) => item.high_water_level === 1
             );
             console.log(high);
-            console.log();
             this.high_water_level = high[0].date;
+
+            // Set units to header
+            this.main_table_headers.forEach((header) => {
+              switch (header.name.toLowerCase()) {
+                case 'speed':
+                  header.unit = this.main_table[0].current_speed_unit || '';
+                  break;
+                case 'direction':
+                  header.unit = this.main_table[0].current_direction_unit || '';
+                  break;
+                case 'depth':
+                  header.unit = this.main_table[0].depth_unit || '';
+                  break;
+                case 'battery':
+                  header.unit = this.main_table[0].battery_unit || '';
+                  break;
+                case 'pressure':
+                  header.unit = this.main_table[0].water_level_unit || '';
+                  break;
+                default:
+                  break;
+              }
+            });
+
+            const { coord_unit, coord_unit_to, lat, lon } = this.main_table[0];
+            // Set default latlongType
+            this.latlongType = coord_unit_to?.length ? coord_unit_to : 'dd';
+
+            // Handle coordinate conversion if units differ
+            if (coord_unit != null && coord_unit_to != null) {
+              if (coord_unit !== coord_unit_to) {
+                const convert = (value: any) =>
+                  this.ddtoDms(parseFloat(value), coord_unit, coord_unit_to);
+
+                if (coord_unit_to === 'dd') {
+                  const latDms = lat.split(',').map(Number);
+                  const lonDms = lon.split(',').map(Number);
+
+                  const latDms1 = `${latDms[0]}°${latDms[1]}'${latDms[2]}''`;
+                  const lonDms1 = `${lonDms[0]}°${lonDms[1]}'${lonDms[2]}''`;
+
+                  this.latitude = this.ddtoDms(
+                    latDms1,
+                    coord_unit,
+                    coord_unit_to
+                  );
+                  this.lon = this.ddtoDms(lonDms1, coord_unit, coord_unit_to);
+                } else {
+                  const latDms = convert(lat);
+                  const lonDms = convert(lon);
+
+                  Object.assign(this, {
+                    latDeg: latDms.deg,
+                    latMin: latDms.min,
+                    latSec: latDms.sec,
+                    lonDeg: lonDms.deg,
+                    lonMin: lonDms.min,
+                    lonSec: lonDms.sec,
+                  });
+                }
+              } else {
+                if (coord_unit_to === 'dd') {
+                  this.latitude = lat;
+                  this.lon = lon;
+                } else {
+                  const latDms = lat.split(',').map(Number);
+                  const lonDms = lon.split(',').map(Number);
+
+                  Object.assign(this, {
+                    latDeg: latDms[0],
+                    latMin: latDms[1],
+                    latSec: latDms[2],
+                    lonDeg: lonDms[0],
+                    lonMin: lonDms[1],
+                    lonSec: lonDms[2],
+                  });
+                }
+              }
+            }
           }, 100);
         }
       });
   }
+
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
@@ -418,9 +527,8 @@ export class ImporterComponent {
         const sec = parseFloat(((minFloat - min) * 60).toFixed(3));
         return { deg, min, sec };
       },
-
       'dms-dd': (v: string) => {
-        const regex = /(\d+)°(\d+)'([\d.]+)"/;
+        const regex = /(\d+)°(\d+)'([\d.]+)(?:'|")/;
         const match = v.match(regex);
         if (!match) return 0;
         const deg = parseInt(match[1]);
@@ -443,8 +551,19 @@ export class ImporterComponent {
   }
 
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
+    // Clear DD and DMS fields
+    this.latitude = null;
+    this.lon = null;
+    this.latDeg = null;
+    this.latMin = null;
+    this.latSec = null;
+    this.lonDeg = null;
+    this.lonMin = null;
+    this.lonSec = null;
     this.FileID = file_id;
     this.FileID = file_id;
+
+    this.globe.fileId = file_id;
     console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
@@ -485,16 +604,13 @@ export class ImporterComponent {
     return isSelected ? 'file-item_active' : 'file-item';
     // }
   }
-  unitssTo!: UnitSettings;
+
   ngOnInit(): void {
     const lastFolder = localStorage.getItem('lastUploadFolder');
     if (lastFolder) {
       this.FileName = lastFolder;
     }
 
-    const unitss: any = localStorage.getItem('unitSettings');
-    this.unitssTo = JSON.parse(unitss);
-    console.log('Unitsss', this.unitssTo);
     this.isFilesLoading = true;
     window.addEventListener('storage', (e) => {
       console.log('Storage event fired!', e);
@@ -512,6 +628,17 @@ export class ImporterComponent {
       this.selectedUnitsFrom[param.key] = param.units[0];
       this.selectedUnitsTo[param.key] = param.units[0];
     });
+
+    const datetimeValue = JSON.parse(
+      localStorage.getItem('unitSettings') ?? '{}'
+    ).datetime;
+    if (datetimeValue == '30-03-2025 12:00:00') {
+      this.dateFormat = 'dd-MM-Y HH:mm:ss';
+    } else if (datetimeValue == '03-30-2025 12:00:00') {
+      this.dateFormat = 'MM-dd-Y HH:mm:ss';
+    } else {
+      this.dateFormat = 'dd MMM yyyy HH:mm:ss';
+    }
   }
 
   getFileImage(fileName: string): string {
@@ -595,6 +722,9 @@ export class ImporterComponent {
         this.tableData = [...allRows];
         this.displayedColumns = this.expectedHeaders;
         this.fileWiseUploadData = fileWiseData; // <- store for import step
+        this.uploaded_files.forEach((fileName) => {
+          this.getHighWaterLevel(fileName);
+        });
         this.onFileClick(this.uploaded_files[0]);
         console.log('All rows', allRows);
       }
@@ -612,6 +742,47 @@ export class ImporterComponent {
         (item: any) => item.fileName === file_Name
       );
       console.log('All rows', this.filterhistorydata);
+      let maxPressureIndex = 0;
+      let maxPressureValue = parseFloat(this.filterhistorydata[0].pressure);
+
+      for (let i = 1; i < this.filterhistorydata.length; i++) {
+        let currentPressure = parseFloat(this.filterhistorydata[i].pressure);
+        if (currentPressure > maxPressureValue) {
+          maxPressureValue = currentPressure;
+          maxPressureIndex = i;
+        }
+      }
+
+      let maxPressureRow = this.filterhistorydata[maxPressureIndex];
+      this.selectedRowIndex = maxPressureIndex;
+
+      // Scroll to that row
+      setTimeout(() => {
+        const rowElement = document.getElementById(
+          `row-${this.selectedRowIndex}`
+        );
+        if (rowElement) {
+          rowElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      }, 100);
+      const date = new Date(maxPressureRow.date);
+      const formattedDate = this.datePipe.transform(
+        date,
+        'yyyy-MM-dd HH:mm:ss'
+      );
+      console.log(formattedDate);
+      this.high_water_level = `${formattedDate}`;
+      console.log('Row with Max Pressure:', maxPressureRow);
+      console.log('Index of Max Pressure Row:', maxPressureIndex);
+
+      const high = this.main_table.filter(
+        (item) => item.high_water_level === 1
+      );
+      console.log(high);
+      this.high_water_level = high[0].date;
     }, 50);
   }
 
@@ -672,8 +843,9 @@ export class ImporterComponent {
               depth: cleanedRow['bin_depth'],
               battery: cleanedRow['battery'],
               pressure: cleanedRow['pressure_in_bar'],
-              lat: '18.3', // Replace with dynamic value if available
-              lon: '52.3', // Replace with dynamic value if available
+              lat: '',
+              lon: '',
+              high_water_level: 0,
             };
           });
 
@@ -683,6 +855,20 @@ export class ImporterComponent {
               'Warning'
             );
           }
+          // Find max pressure row
+          let maxPressureIndex = 0;
+          let maxPressureValue = parseFloat(formattedData[0].pressure);
+
+          for (let i = 1; i < formattedData.length; i++) {
+            const currentPressure = parseFloat(formattedData[i].pressure);
+            if (currentPressure > maxPressureValue) {
+              maxPressureValue = currentPressure;
+              maxPressureIndex = i;
+            }
+          }
+
+          // Set high_water_level flag
+          formattedData[maxPressureIndex].high_water_level = 1;
 
           resolve({ fileName: file.name, data: formattedData });
         } catch (err: any) {
@@ -693,6 +879,48 @@ export class ImporterComponent {
       reader.readAsArrayBuffer(file);
     });
   }
+
+  fileHighWaterLevels: { [key: string]: any } = {};
+
+  getHighWaterLevel(fileName: string): void {
+    const filteredData = this.historyData.filter(
+      (item: any) => item.fileName === fileName
+    );
+
+    if (filteredData.length === 0) {
+      console.warn(`No data found for file: ${fileName}`);
+      return;
+    }
+
+    let maxPressureIndex = 0;
+    let maxPressureValue = parseFloat(filteredData[0].pressure);
+
+    for (let i = 1; i < filteredData.length; i++) {
+      let currentPressure = parseFloat(filteredData[i].pressure);
+      if (currentPressure > maxPressureValue) {
+        maxPressureValue = currentPressure;
+        maxPressureIndex = i;
+      }
+    }
+
+    let maxPressureRow = filteredData[maxPressureIndex];
+    const date = new Date(maxPressureRow.date);
+    const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
+
+    // Store per file's high water level
+    this.fileHighWaterLevels[fileName] = {
+      index: maxPressureIndex,
+      date: formattedDate,
+      row: maxPressureRow,
+    };
+
+    console.log(
+      `High water level for ${fileName}:`,
+      formattedDate,
+      maxPressureRow
+    );
+  }
+
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
 

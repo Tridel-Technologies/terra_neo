@@ -17,6 +17,10 @@
   margin-bottom: 2px;
 }
 
+.card {
+  z-index: 9999;
+}
+
 ::ng-deep .p-message-warn {
   color: var(--font-color);
 }

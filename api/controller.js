@@ -86,9 +86,9 @@ const getFiles = async (req, res) => {
 }
 
 const updateValues = async (req, res) => {
-  const { file_name, lat, lon, high_water_level } = req.body;
+  const { file_name, lat, lon, high_water_level, unit } = req.body;
 
-  if (!file_name || !Array.isArray(file_name) || file_name.length === 0) {
+  if (!file_name || !Array.isArray(file_name) || file_name.length === 0 || unit.length === 0) {
     return res.status(400).json({ error: 'file_name (array) is required' });
   }
 
@@ -125,15 +125,18 @@ const updateValues = async (req, res) => {
         await client.query(updateQuery, values);
         await client.query(updateQuery2, values);
       }
+      if(unit !== undefined || unit.length > 0){
+        await client.query(
+          `UPDATE tb_file
+           SET coord_unit = $1, coord_unit_to = $2
+           WHERE id = $3`,
+          [unit, unit, file_name[0].file_id]
+        );
+      }
     }
 
     // ✅ Step 2: Update high_water_level if timestamp provided (only in one table)
     if (high_water_level) {
-      const isValidFormat = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/.test(high_water_level);
-      if (!isValidFormat) {
-        throw new Error('Invalid high_water_level format. Expected YYYY-MM-DD HH:MM:SS');
-      }
-
       const targetTable = `tb_${file_name[0].file_id}`;
 
       // Reset all rows
@@ -167,8 +170,7 @@ const updateValues = async (req, res) => {
 };
 
 const createFolderAndFile = async (req, res) => {
-  const { folder_name, file_name, data, unitsTo } = req.body;
-
+  const { folder_name, file_name, data, unitsFrom, unitsTo } = req.body;
   if (!folder_name || !Array.isArray(file_name) || typeof data !== "object") {
     return res.status(400).json({ message: "Invalid input format" });
   }
@@ -188,18 +190,17 @@ const createFolderAndFile = async (req, res) => {
     // 2. Loop through each file and handle insertions
     for (const fname of file_name) {
       const fileData = data[fname];
-
       if (!Array.isArray(fileData)) {
         continue; // Skip invalid data for this file
       }
 
       // Insert file
-      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING id`;
-      const fileResult = await pool.query(fileInsertQuery, [fname, folderId, unitsTo.waterLevel, unitsTo.currentSpeed, unitsTo.currentDirection, unitsTo.battery, unitsTo.depth, unitsTo.latandlong]);
+      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit, water_level_unit_to, current_speed_unit_to, current_direction_unit_to, battery_unit_to, depth_unit_to, coord_unit_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
+      const fileResult = await pool.query(fileInsertQuery, [fname, folderId, unitsTo.waterLevel, unitsTo.currentSpeed, unitsTo.currentDirection, unitsTo.battery, unitsTo.depth, null, unitsTo.waterLevel, unitsTo.currentSpeed, unitsTo.currentDirection, unitsTo.battery, unitsTo.depth, null]);
       const fileId = fileResult.rows[0]?.id;
 
       if (!fileId) {
-        continue; // Skip this file if insert failed
+        continue;
       }
 
       // Create dynamic table for the file
@@ -263,7 +264,7 @@ const createFolderAndFile = async (req, res) => {
           row.depth,
           row.pressure,
           row.battery,
-          0,
+          row.high_water_level,
           fileId
         ];
         await pool.query(insertQuery, values);
@@ -525,7 +526,8 @@ const getDataByFolderIdAndFileName = async (req, res) => {
     const result = await pool.query(
       `SELECT
          tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
-         tf.battery_unit, tf.depth_unit, tf.coord_unit
+         tf.battery_unit, tf.depth_unit, tf.coord_unit, tf.water_level_unit_to, tf.current_speed_unit_to,
+         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to
        FROM
          tb_${file_id} tp
        JOIN
@@ -548,7 +550,8 @@ const getProcessedDataByFileId = async (req, res) => {
     const result = await pool.query(
       `SELECT
          tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
-         tf.battery_unit, tf.depth_unit
+         tf.battery_unit, tf.depth_unit, tf.coord_unit, tf.water_level_unit_to, tf.current_speed_unit_to,
+         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to
        FROM
          tb_${file_id}_processed tp
        JOIN
@@ -564,6 +567,71 @@ const getProcessedDataByFileId = async (req, res) => {
 };
 
 const getFoldersWithFiles = async (req, res) => {
+  try {
+    const query = `
+      SELECT
+        f.id AS folder_id,
+        f.folder_name,
+        fi.id AS file_id,
+        fi.file_name,
+        fi.is_processed,
+        fi.water_level_unit,
+        fi.current_speed_unit,
+        fi.current_direction_unit,
+        fi.battery_unit,
+        fi.depth_unit,
+        fi.coord_unit,
+        fi.water_level_unit_to,
+        fi.current_speed_unit_to,
+        fi.current_direction_unit_to,
+        fi.battery_unit_to,
+        fi.depth_unit_to,
+        fi.coord_unit_to
+      FROM
+        tb_folders f
+      JOIN
+        tb_file fi ON fi.folder_id = f.id
+      ORDER BY
+        f.id DESC
+    `;
+    const result = await pool.query(query);
+    const foldersMap = {};
+    result.rows.forEach(row => {
+      if (!foldersMap[row.folder_id]) {
+        foldersMap[row.folder_id] = {
+          folder_id: row.folder_id,
+          folder_name: row.folder_name,
+          files: []
+        };
+      }
+      if (row.file_id) {
+        foldersMap[row.folder_id].files.push({
+          file_id: row.file_id,
+          file_name: row.file_name,
+          is_processed: row.is_processed,
+          water_level_unit: row.water_level_unit,
+          current_speed_unit: row.current_speed_unit,
+          current_direction_unit: row.current_direction_unit,
+          battery_unit: row.battery_unit,
+          depth_unit: row.depth_unit,
+          coord_unit: row.coord_unit,
+          water_level_unit_to: row.water_level_unit_to,
+          current_speed_unit_to: row.current_speed_unit_to,
+          current_direction_unit_to: row.current_direction_unit_to,
+          battery_unit_to: row.battery_unit_to,
+          depth_unit_to: row.depth_unit_to,
+          coord_unit_to: row.coord_unit_to
+        });
+      }
+    });
+    const foldersWithFiles = Object.values(foldersMap).sort((a, b) => b.folder_id - a.folder_id);
+    res.status(200).json({ data: foldersWithFiles });
+  } catch (error) {
+    res.status(500).json({ message: `Error: ${error.message}` });
+  }
+};
+
+const getAllFoldersWithFiles = async (req, res) => {
   try {
     const query = `
       SELECT
@@ -721,6 +789,60 @@ const checkLicenseValidityHandler = async (req, res) => {
   }
 };
 
+const updateToUnits = async (req, res) => {
+  const { file_id, unitKey, unitValue } = req.body;
+
+  if (!file_id || !unitKey || !unitValue) {
+    return res.status(400).json({ message: 'file_id, unitKey, and unitValue are required.' });
+  }
+
+  const UNIT_KEY_TO_COLUMN = {
+    waterLevel: 'water_level_unit_to',
+    currentSpeed: 'current_speed_unit_to',
+    currentDirection: 'current_direction_unit_to',
+    battery: 'battery_unit_to',
+    depth: 'depth_unit_to',
+    latandlong: 'coord_unit_to'
+  };
+
+  const dbColumn = UNIT_KEY_TO_COLUMN[unitKey];
+
+  if (!dbColumn) {
+    return res.status(400).json({
+      message: 'Invalid unitKey.',
+      validUnitKeys: Object.keys(UNIT_KEY_TO_COLUMN)
+    });
+  }
+
+  try {
+    const fileCheck = await pool.query(
+      'SELECT 1 FROM tb_file WHERE id = $1',
+      [file_id]
+    );
+
+    if (fileCheck.rows.length === 0) {
+      return res.status(404).json({ message: 'File not found.' });
+    }
+
+    await pool.query(
+      `UPDATE tb_file SET ${dbColumn} = $1 WHERE id = $2`,
+      [unitValue, file_id]
+    );
+
+    return res.status(200).json({
+      success: true,
+      message: 'Unit updated successfully',
+      data: { file_id, unitKey, unitValue }
+    });
+  } catch (err) {
+    console.error('Database error:', err);
+    return res.status(500).json({
+      message: 'Internal server error',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
+  }
+};
+
 module.exports = {
   importAll,
   getFiles,
@@ -741,6 +863,8 @@ module.exports = {
 
   changeFolder,
   createFolder,
-  checkLicenseValidityHandler
+  checkLicenseValidityHandler,
+  updateToUnits,
+  getAllFoldersWithFiles
 };
 

@@ -21,6 +21,12 @@ interface fileData {
   file_id: number;
   file_name: string;
   is_processed: boolean;
+  battery_unit_to: string;
+  coord_unit_to: string;
+  current_direction_unit_to: string;
+  current_speed_unit_to: string;
+  depth_unit_to: string;
+  water_level_unit_to: string;
 }
 interface dashdata {
   id: string;
@@ -80,6 +86,7 @@ export class DashboardComponent implements OnInit {
   latutude!: string;
   longitude!: string;
   private baseUrl: string;
+  dateFormat!: string;
 
   constructor(
     private http: HttpClient,
@@ -349,16 +356,9 @@ export class DashboardComponent implements OnInit {
       current_dir_after_6: '',
     };
     this.selected_data = data;
-    this.latutude = this.convertcoored(
-      this.selected_data.lat,
-      this.coor_unit,
-      this.units.latandlong
-    );
-    this.longitude = this.convertcoored(
-      this.selected_data.lon,
-      this.coor_unit,
-      this.units.latandlong
-    );
+    this.latutude = this.selected_data.lat;
+
+    this.longitude = this.selected_data.lon;
     console.log('latitude====', this.latutude);
     this.dir = false;
     console.log('selected', this.selected_data);
@@ -412,17 +412,34 @@ export class DashboardComponent implements OnInit {
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
   unitssTo!: UnitSettings;
   ngOnInit(): void {
-    this.unitSerive.units$.subscribe((u) => {
-      this.units = u;
-    });
+    // this.unitSerive.units$.subscribe((u) => {
+    //   this.units = u;
+    // });
     this.files_list = [];
-    const unitss: any = localStorage.getItem('unitSettings');
-    this.unitssTo = JSON.parse(unitss);
-    console.log('Unitsss', this.unitssTo);
+    // const unitss: any = localStorage.getItem('unitSettings');
+    // this.unitssTo = JSON.parse(unitss);
+    // console.log('Unitsss', this.unitssTo);
+    const datetimeValue = JSON.parse(
+      localStorage.getItem('unitSettings') ?? '{}'
+    ).datetime;
+    if (datetimeValue == '30-03-2025 12:00:00') {
+      this.dateFormat = 'dd-MM-Y HH:mm:ss';
+    } else if (datetimeValue == '03-30-2025 12:00:00') {
+      this.dateFormat = 'MM-dd-Y HH:mm:ss';
+    } else {
+      this.dateFormat = 'dd MMM yyyy HH:mm:ss';
+    }
+
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       console.log('resposnse==', response);
       this.files_list = response['data'];
       console.log('files:', response, this.files_list);
+
+      // Set ToUnits - Find the first folder with files
+      const folderWithFiles = this.files_list.find(
+        (folder) => folder.files && folder.files.length > 0
+      );
+
       this.fileID = this.globe.fileId;
       console.log('file IFD', this.fileID);
 
@@ -480,8 +497,6 @@ export class DashboardComponent implements OnInit {
       }, 100);
       // this.isFilesLoading = false;
     });
-
-    // Units
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -570,10 +585,29 @@ export class DashboardComponent implements OnInit {
     // no conversion available
     return parseFloat(value.toFixed(2));
   }
+
+  // In your component.ts
+  formatDms(coordinate: string | number): string {
+    // If it's already in DMS format (comma-separated)
+    if (typeof coordinate === 'string' && coordinate.includes(',')) {
+      const parts = coordinate.split(',').map(Number);
+      return `${parts[0]}°${parts[1]}'${parts[2]}''`;
+    }
+
+    // If it's in decimal degrees (DD)
+    const value =
+      typeof coordinate === 'string' ? parseFloat(coordinate) : coordinate;
+    const deg = Math.floor(value);
+    const minFloat = (value - deg) * 60;
+    const min = Math.floor(minFloat);
+    const sec = (minFloat - min) * 60;
+
+    return `${deg}°${min}'${sec.toFixed(2)}''`;
+  }
+
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
-
-    const maxVolt = 4.2; // for battery conversion
+    const maxVolt = 4.2;
 
     const conversions: { [key: string]: (v: any) => any } = {
       'm-ft': (v) => v * 3.28084,
@@ -600,7 +634,7 @@ export class DashboardComponent implements OnInit {
 
       // DMS to DD
       'dms-dd': (v) => {
-        const regex = /(\d+)°(\d+)'([\d.]+)"/;
+        const regex = /(\d+)°(\d+)'([\d.]+)(?:'|")/;
         const match = v.match(regex);
         if (!match) return 0;
         const deg = parseInt(match[1]);
@@ -626,17 +660,21 @@ export class DashboardComponent implements OnInit {
   speed_unit!: string;
   directtion_unit!: string;
   open_file(file_name: string, file_id: number) {
-    console.log('h');
     this.opened_file = file_name;
     const data = {
       folder_id: file_id,
       file_name: file_name,
     };
+    let unitstts: UnitSettings;
     console.log(data);
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
+
+        this.latutude = response[0].lat;
+        this.longitude = response[0].lon;
+
         this.bet_unit = response[0].battery_unit;
         this.wat_unit = response[0].water_level_unit;
         this.coor_unit = response[0].coord_unit;
@@ -653,51 +691,21 @@ export class DashboardComponent implements OnInit {
           this.speed_unit,
           this.depth_unit
         );
-        console.log(this.unitssTo.waterLevel);
-        let dd = [];
+        unitstts = {
+          battery: response[0].battery_unit_to || '',
+          currentDirection: response[0].current_direction_unit_to || '',
+          currentSpeed: response[0].current_speed_unit_to || '',
+          depth: response[0].depth_unit_to || '',
+          latandlong: response[0].coord_unit_to || '',
+          waterLevel: response[0].water_level_unit_to || '',
+          datetime: this.dateFormat,
+        };
+        this.unitssTo = unitstts;
+        console.log(this.unitssTo);
+
+        // let dd = [];
         // Unitsss {"waterLevel":"m","currentSpeed":"m/s","currentDirection":"°","battery":"volts","depth":"m","latandlong":"DMS"}
-        for (let index = 0; index < response.length; index++) {
-          dd.push({
-            battery: this.globall.convertValue(
-              response[index].battery,
-              response[index].battery_unit,
-              this.unitssTo.battery
-            ),
-            battery_unit: 'volts',
-            current_direction_unit: '°',
-            current_speed_unit: 'm/s',
-            date: '2025-04-01T00:00:54.000Z',
-            depth: this.globall.convertValue(
-              response[index].depth,
-              response[index].depth_unit,
-              this.unitssTo.depth
-            ),
-            depth_unit: 'm',
-            direction: this.globall.convertValue(
-              response[index].direction,
-              response[index].current_direction_unit,
-              this.unitssTo.currentDirection
-            ),
-            file_id: 17,
-            high_water_level: 0,
-            id: 1,
-            lat: '18.3',
-            lon: '52.3',
-            pressure: this.globall.convertValue(
-              response[index].pressure,
-              response[index].water_level_unit,
-              this.unitssTo.waterLevel
-            ),
-            speed: this.globall.convertValue(
-              response[index].speed,
-              response[index].current_speed_unit,
-              this.unitssTo.currentSpeed
-            ),
-            station_id: '$PRTI20',
-            water_level_unit: 'm',
-          });
-        }
-        console.log('dd', dd);
+
         const ddddd = this.globall.convertValue(
           response[0].pressure,
           response[0].water_level_unit,

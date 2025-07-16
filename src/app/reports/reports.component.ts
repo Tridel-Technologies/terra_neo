@@ -17,7 +17,7 @@ import * as FileSaver from 'file-saver';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { GlobalConfig } from '../global/app.global';
-import { UnitService, UnitSettings } from '../settings/unit.service';
+import { UnitSettings } from '../settings/unit.service';
 import { formatDate } from '@angular/common';
 import { BaseComponent } from '../base/base.component';
 
@@ -56,6 +56,12 @@ interface ApiData {
   battery_unit: string;
   depth_unit: string;
   coord_unit: string;
+  water_level_unit_to: string;
+  current_speed_unit_to: string;
+  current_direction_unit_to: string;
+  battery_unit_to: string;
+  depth_unit_to: string;
+  coord_unit_to: string;
   [key: string]: any;
 }
 
@@ -155,7 +161,6 @@ export class ReportsComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
-    private unitSerive: UnitService,
     private base: BaseComponent
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
@@ -165,11 +170,6 @@ export class ReportsComponent implements OnInit {
   unitssTo!: UnitSettings;
 
   ngOnInit(): void {
-    this.unitSerive.units$.subscribe((u) => {
-      this.units = u;
-      this.setupColumns();
-    });
-
     this.files_list = [];
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
@@ -448,7 +448,7 @@ export class ReportsComponent implements OnInit {
     const data = {
       folder_id: file_id,
     };
-    console.log('dd', this.selectedData);
+
     this.http
       .get(
         `${this.baseUrl}${
@@ -493,7 +493,15 @@ export class ReportsComponent implements OnInit {
   }
 
   checkForConversion() {
-    console.log('here', this.main_table[0]);
+    this.units.battery = this.main_table[0].battery_unit_to;
+    this.units.currentDirection = this.main_table[0].current_direction_unit_to;
+    this.units.currentSpeed = this.main_table[0].current_speed_unit_to;
+    this.units.depth = this.main_table[0].depth_unit_to;
+    this.units.waterLevel = this.main_table[0].water_level_unit_to;
+    this.units.latandlong = this.main_table[0].coord_unit_to;
+
+    this.setupColumns();
+
     const sourceUnits: { [key: string]: string } = {
       waterLevel: this.main_table[0].water_level_unit,
       currentSpeed: this.main_table[0].current_speed_unit,
