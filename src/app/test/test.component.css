@@ -1,0 +1,34 @@
+/* test.component.css */
+.explorer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding: 10px;
+}
+.box {
+  width: 100px;
+  text-align: center;
+  cursor: pointer;
+}
+.box img {
+  width: 64px;
+  height: 64px;
+}
+.context-menu {
+  position: absolute;
+  background: white;
+  border: 1px solid #ccc;
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+}
+.context-menu button{
+    height: 30px;
+    width: 100px;
+    background-color: white;
+    border: none;
+    color: black;
+}

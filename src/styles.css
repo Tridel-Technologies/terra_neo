@@ -1,0 +1,168 @@
+@import "primeicons/primeicons.css";
+
+body,
+html {
+  margin: 0;
+  height: 99vh;
+  width: 100vw;
+  /* transform: scale(1); */
+}
+
+/* Define default light theme */
+:root {
+  /* Colors */
+  --primary-color: #007bff;
+  --secondary-color: #6c757d;
+  --success-color: #28a745;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+
+  /* Font Colors */
+  --font-color: #212529;
+  --font-secondary-color: #6c757d;
+
+  /* Backgrounds */
+  --background-color: #ffffff;
+  --background-secondary: #f8f9fad7;
+  --card-background: #ffffff;
+
+  /* Icons */
+  --icon-color: #343a40;
+
+  /* Highlight */
+  --highlight-color: #e2e6ea;
+
+  /* Buttons */
+  --button-bg: var(--primary-color);
+  --button-bg-hover: #006ee3;
+  --button-color: #ffffff;
+
+  /* Bars */
+  --bar-bg: #e9ecef;
+  --bar-foreground: var(--primary-color);
+
+  /* Tooltip */
+  --tooltip-bg: #333;
+  --tooltip-text: #fff;
+
+  /* Circuit */
+  --circuit-color: #000000;
+  --circuit-color-pulse: #007bff;
+  --circuit-border-color: #00000075;
+  --circuit-hover: #00000021;
+  --circuit-hover2: #00000121;
+  --text-color: #000;
+  --button-text-color: white;
+
+  /* Toggle */
+  --toggle-color: #007bff;
+
+  /* folder */
+  --folder-color1: #4194FF;
+  --folder-color2: #376CFB;
+
+    /* reporttable */
+    --tablebgcolor: #f5faff;
+    --row-stripe-color: #e6f0ff;
+
+    --highlight-row-color: #ffeb3b;
+    --highlight-font-color: #212529;
+
+    --peak-row-color: #c5e1ff;
+    --peak-font-color: #212529;
+
+    --before-row-color: #e0f7fa;
+    --before-font-color: #212529;
+
+    --after-row-color: #fff3e0;
+    --after-font-color: #212529;
+}
+
+/* Dark theme override */
+[data-theme="dark"] {
+  --primary-color: #0d6efd;
+  --secondary-color: #adb5bd;
+  --success-color: #198754;
+  --danger-color: #dc3545;
+  --warning-color: #ffc107;
+  --info-color: #0dcaf0;
+
+  --font-color: #ffffff;
+  --font-secondary-color: #ced4da;
+
+  --background-color: #121212;
+  --background-secondary: #1e1e1e;
+  --card-background: #1c1c1c;
+
+  --icon-color: #dee2e6;
+
+  --highlight-color: #2c2c2c;
+
+  --button-bg: aqua;
+  --button-bg-hover: #00e3e3;
+  --button-color: #ffffff;
+
+  --bar-bg: #343a40;
+  --bar-foreground: var(--primary-color);
+
+  /* Tooltip */
+  --tooltip-bg: #eee;
+  --tooltip-text: #000;
+
+  /* Circuit */
+  --circuit-color: aqua;
+  --circuit-color-pulse: #00ffff;
+  --circuit-border-color: #00f7ff7c;
+  --circuit-hover: #00f7ff21;
+  --circuit-hover2: #09f6fe21;
+  --text-color: #ffffff;
+  --button-text-color: black;
+
+  /* Toggle */
+  --toggle-color: aqua;
+
+  /* folder */
+  --folder-color1: #00ffff;
+  --folder-color2: #00b3b3;
+
+  /* reporttable */
+  --tablebgcolor: #000000;
+  --row-stripe-color: #1a1a1a;
+
+  --highlight-row-color: #ffeb3b;
+  --highlight-font-color: #212529;
+
+  --peak-row-color: #c5e1ff;
+  --peak-font-color: #212529;
+
+  --before-row-color: #e0f7fa;
+  --before-font-color: #212529;
+
+  --after-row-color: #fff3e0;
+  --after-font-color: #212529;
+}
+
+
+* {
+  font-family: "Jost", sans-serif;
+}
+
+.loader-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.6); /* Light semi-transparent overlay */
+  z-index: 9999; /* Ensure it's on top of everything */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loader-overlay img {
+  /* width: 80px; */
+  height: 80px;
+  object-fit: contain;
+}
