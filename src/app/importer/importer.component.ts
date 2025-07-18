@@ -90,8 +90,8 @@ export class ImporterComponent {
       key: 'battery',
       label: 'Battery',
       iconClass: 'fas fa-battery-full',
-      units: ['%', 'volts'],
-      unitslabels: ['percent (%)', 'volts'],
+      units: ['volts', '%'],
+      unitslabels: ['volts', 'percent (%)'],
     },
     {
       key: 'depth',
@@ -111,29 +111,29 @@ export class ImporterComponent {
   getTooltip(paramKey: string, unit: string): string {
     const tooltips: any = {
       waterLevel: {
-        m: 'Meters',
+        m: 'Meter',
         ft: 'Feet',
-        cm: 'Centimeters',
+        cm: 'Centimeter',
       },
       currentSpeed: {
         'm/s': 'Meters per second',
         knots: 'Knots',
       },
       currentDirection: {
-        '°': 'Degrees',
-        radians: 'Radians',
+        '°': 'Degree',
+        radians: 'Radian',
       },
       battery: {
+        volts: 'Volt',
         '%': 'Percentage',
-        volts: 'Volts',
       },
       depth: {
         m: 'Meters',
         ft: 'Feet',
       },
       latandlong: {
-        DD: 'Decimal Degrees',
-        DMS: 'Degrees, Minutes, Seconds',
+        DD: 'Decimal Degree',
+        DMS: 'Degree, Minute, Second',
       },
     };
 
@@ -620,7 +620,7 @@ export class ImporterComponent {
       this.files_list = response['data'];
       console.log('files:', response, this.files_list);
       this.isFilesLoading = false;
-      this.expandedFolders = [false, false, false, false, false, false, true];
+      this.expandedFolders = [false, false, false, false, false, false, false];
     });
 
     // Initialize both unit selections with defaults if needed
@@ -971,8 +971,8 @@ export class ImporterComponent {
   }
 
   deleteRow(index: number) {
-    this.historyData.splice(index, 1); // Remove row from the array
-    this.historyData = [...this.historyData]; // Update reference to trigger change detection
+    this.filterhistorydata.splice(index, 1); // Remove row from the array
+    this.filterhistorydata = [...this.filterhistorydata]; // Update reference to trigger change detection
   }
 
   convertToTimeFormat(value: number): string {

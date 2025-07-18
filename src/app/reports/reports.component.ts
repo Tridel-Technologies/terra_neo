@@ -399,7 +399,7 @@ export class ReportsComponent implements OnInit {
   ) {
     // this.dir = false;
     this.base.fileId = file_id;
-    console.log(fileName, file_id);
+    console.log('qwqw', fileName, file_id);
     this.selected_folder_name = folder_name;
     this.nameOffile = fileName;
     this.isLive = true;
@@ -463,32 +463,28 @@ export class ReportsComponent implements OnInit {
         this.last_row =
           response.length > 0 ? response[response.length - 1] : null;
         console.log('Last row:', this.last_row);
-        if (this.isMulti) {
-          let data = this.main_table;
-          this.main_table = [];
-          setTimeout(() => {
-            this.main_table = data;
-            for (let index = 0; index < response.length; index++) {
-              const row = { ...response[index] };
+        this.main_table = [];
+        setTimeout(() => {
+          for (let index = 0; index < response.length; index++) {
+            const row = { ...response[index] };
 
-              if (row.date) {
-                const date = new Date(row.date);
-                row.date = formatDate(date, this.dateFormat, 'en-US');
-              }
-
-              // Decimal conversion
-              ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
-                if (row[key] != null) {
-                  row[key] = this.formatValue(row[key]);
-                }
-              });
-
-              this.main_table.push(row);
+            if (row.date) {
+              const date = new Date(row.date);
+              row.date = formatDate(date, this.dateFormat, 'en-US');
             }
-            this.checkForConversion();
-            console.log('Main table data ', this.main_table);
-          }, 100);
-        }
+
+            // Decimal conversion
+            ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
+              if (row[key] != null) {
+                row[key] = this.formatValue(row[key]);
+              }
+            });
+
+            this.main_table.push(row);
+          }
+          this.checkForConversion();
+          console.log('Main table data ', this.main_table);
+        }, 100);
       });
   }
 

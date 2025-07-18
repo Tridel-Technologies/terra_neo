@@ -196,6 +196,10 @@ export class DashboardComponent implements OnInit {
       this.selected_data = data;
 
       this.isLive = !this.isLive;
+      if (this.isLive) {
+        this.tap_date(this.main_table[0].date, this.main_table[0].time);
+      }
+
       const bfMatches = this.filterByHour(bf[0]);
       const afMatches = this.filterByHour(af[0]);
       // const avgSpeed = this.getAverageSpeed(bfMatches, 'speed');
@@ -540,7 +544,6 @@ export class DashboardComponent implements OnInit {
       },
     ]; // Only keep the clicked file selected
     this.open_file(fileName, file_id);
-
     // }
   }
 
@@ -682,15 +685,6 @@ export class DashboardComponent implements OnInit {
         this.speed_unit = response[0].current_speed_unit;
         this.directtion_unit = response[0].current_direction_unit;
 
-        console.log(
-          'unitss====',
-          this.bet_unit,
-          this.wat_unit,
-          this.coor_unit,
-          this.directtion_unit,
-          this.speed_unit,
-          this.depth_unit
-        );
         unitstts = {
           battery: response[0].battery_unit_to || '',
           currentDirection: response[0].current_direction_unit_to || '',
@@ -701,17 +695,7 @@ export class DashboardComponent implements OnInit {
           datetime: this.dateFormat,
         };
         this.unitssTo = unitstts;
-        console.log(this.unitssTo);
 
-        // let dd = [];
-        // Unitsss {"waterLevel":"m","currentSpeed":"m/s","currentDirection":"°","battery":"volts","depth":"m","latandlong":"DMS"}
-
-        const ddddd = this.globall.convertValue(
-          response[0].pressure,
-          response[0].water_level_unit,
-          'ft'
-        );
-        console.log('converted', ddddd);
         if (this.isMulti) {
           let data = this.main_table;
           this.main_table = [];
@@ -727,6 +711,7 @@ export class DashboardComponent implements OnInit {
           this.main_table = [];
           setTimeout(() => {
             this.main_table = response;
+            this.tap_date(this.main_table[0].date, this.main_table[0].time);
           }, 100);
         }
       });

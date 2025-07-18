@@ -428,71 +428,37 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       )
       .subscribe({
         next: (response: any) => {
-          if (this.isMulti) {
-            let data = this.fullData;
-            this.fullData = [];
-            setTimeout(() => {
-              this.fullData = data;
-              for (let index = 0; index < response.length; index++) {
-                this.fullData.push(response[index]);
-              }
-              // Sort the data by date in ascending order
-              this.fullData.sort(
-                (a, b) =>
-                  new Date(a.date).getTime() - new Date(b.date).getTime()
-              );
-              this.totalRecords = this.fullData.length;
-              // Load initial page of data
-              this.loadData({ first: 0, rows: 20 });
-              if (this.fullData.length > 0) {
-                // Set default date range to 1 day from the first data point
-                const firstDate = new Date(this.fullData[0].date);
-                const endDate = new Date(firstDate);
-                endDate.setDate(endDate.getDate() + 1);
-                this.selectedPolarDateRange = [firstDate, endDate];
-                this.ngZone.runOutsideAngular(() => {
-                  this.loadChart();
-                });
-              }
-              this.units.battery = this.fullData[0].battery_unit_to;
-              this.units.currentDirection =
-                this.fullData[0].current_direction_unit_to;
-              this.units.currentSpeed = this.fullData[0].current_speed_unit_to;
-              this.units.depth = this.fullData[0].depth_unit_to;
-              this.units.waterLevel = this.fullData[0].water_level_unit_to;
-              this.units.latandlong = this.fullData[0].coord_unit_to;
-            }, 100);
-          } else {
-            this.fullData = [];
-            setTimeout(() => {
-              this.fullData = response;
-              // Sort the data by date in ascending order
-              this.fullData.sort(
-                (a, b) =>
-                  new Date(a.date).getTime() - new Date(b.date).getTime()
-              );
-              this.totalRecords = this.fullData.length;
-              // Load initial page of data
-              this.loadData({ first: 0, rows: 20 });
-              if (this.fullData.length > 0) {
-                // Set default date range to 1 day from the first data point
-                const firstDate = new Date(this.fullData[0].date);
-                const endDate = new Date(firstDate);
-                endDate.setDate(endDate.getDate() + 1);
-                this.selectedPolarDateRange = [firstDate, endDate];
-                this.ngZone.runOutsideAngular(() => {
-                  this.loadChart();
-                });
-              }
-              this.units.battery = this.fullData[0].battery_unit_to;
-              this.units.currentDirection =
-                this.fullData[0].current_direction_unit_to;
-              this.units.currentSpeed = this.fullData[0].current_speed_unit_to;
-              this.units.depth = this.fullData[0].depth_unit_to;
-              this.units.waterLevel = this.fullData[0].water_level_unit_to;
-              this.units.latandlong = this.fullData[0].coord_unit_to;
-            }, 100);
-          }
+          this.fullData = [];
+          setTimeout(() => {
+            this.fullData = response;
+            // Sort the data by date in ascending order
+            this.fullData.sort(
+              (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+            );
+            this.totalRecords = this.fullData.length;
+
+            // Set Units
+            this.units.battery = this.fullData[0].battery_unit_to;
+            this.units.currentDirection =
+              this.fullData[0].current_direction_unit_to;
+            this.units.currentSpeed = this.fullData[0].current_speed_unit_to;
+            this.units.depth = this.fullData[0].depth_unit_to;
+            this.units.waterLevel = this.fullData[0].water_level_unit_to;
+            this.units.latandlong = this.fullData[0].coord_unit_to;
+
+            // Load initial page of data
+            this.loadData({ first: 0, rows: 20 });
+            if (this.fullData.length > 0) {
+              // Set default date range to 1 day from the first data point
+              const firstDate = new Date(this.fullData[0].date);
+              const endDate = new Date(firstDate);
+              endDate.setDate(endDate.getDate() + 1);
+              this.selectedPolarDateRange = [firstDate, endDate];
+              this.ngZone.runOutsideAngular(() => {
+                this.loadChart();
+              });
+            }
+          }, 100);
         },
         error: (error) => {
           console.error('Error fetching data:', error);
@@ -671,8 +637,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             if (newRow.speed !== null && newRow.speed !== undefined) {
               newRowPayload.speed = this.convertValues(
                 parseFloat(newRow.speed),
-                this.units['currentSpeed'],
-                sourceUnits['currentSpeed']
+                sourceUnits['currentSpeed'],
+                this.units['currentSpeed']
               );
             }
           } else {
@@ -686,8 +652,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             if (newRow.direction !== null && newRow.direction !== undefined) {
               newRowPayload.direction = this.convertValues(
                 parseFloat(newRow.direction),
-                this.units['currentDirection'],
-                sourceUnits['currentDirection']
+                sourceUnits['currentDirection'],
+                this.units['currentDirection']
               );
             }
           } else {
@@ -699,8 +665,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             if (newRow.pressure !== null && newRow.pressure !== undefined) {
               newRowPayload.tide = this.convertValues(
                 parseFloat(newRow.pressure),
-                this.units['waterLevel'],
-                sourceUnits['waterLevel']
+                sourceUnits['waterLevel'],
+                this.units['waterLevel']
               );
             }
           } else {
@@ -749,8 +715,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             if (row.speed !== null && row.speed !== undefined) {
               rowPayload.speed = this.convertValues(
                 parseFloat(row.speed),
-                this.units['currentSpeed'],
-                sourceUnits['currentSpeed']
+                sourceUnits['currentSpeed'],
+                this.units['currentSpeed']
               );
             }
           } else {
@@ -764,8 +730,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             if (row.direction !== null && row.direction !== undefined) {
               rowPayload.direction = this.convertValues(
                 parseFloat(row.direction),
-                this.units['currentDirection'],
-                sourceUnits['currentDirection']
+                sourceUnits['currentDirection'],
+                this.units['currentDirection']
               );
             }
           } else {
@@ -777,8 +743,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             if (row.pressure !== null && row.pressure !== undefined) {
               rowPayload.pressure = this.convertValues(
                 parseFloat(row.pressure),
-                this.units['waterLevel'],
-                sourceUnits['waterLevel']
+                sourceUnits['waterLevel'],
+                this.units['waterLevel']
               );
             }
           } else {
@@ -1869,7 +1835,11 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             symbolSize: 14,
             symbolOffset: [0, -7],
             symbolRotate: (value: any, params: any) =>
-              parseFloat(this.fullData[params.dataIndex].direction),
+              this.convertValues(
+                parseFloat(this.fullData[params.dataIndex].direction),
+                this.fullData[params.dataIndex].current_direction_unit,
+                '°'
+              ),
             label: { show: false },
             yAxisIndex: 0,
             // name: '',
@@ -1949,6 +1919,15 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           trigger: 'axis',
           axisPointer: {
             type: 'cross',
+            label: {
+              textStyle: {
+                color: bgColor,
+              },
+              color: mainText,
+              padding: [5, 10],
+              borderColor: subText,
+              borderWidth: 1,
+            },
           },
           formatter: (params: any) => {
             // params[0] is the main series point

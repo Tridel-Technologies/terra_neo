@@ -173,8 +173,14 @@
               </ng-template>
             </ng-container>
             <ng-template #defaultCoords>
-              Lat: {{ latutude }} <br />
-              Long: {{ longitude }}
+              <ng-container *ngIf="coor_unit === 'dms'; else rawCoords">
+                Lat: {{ formatDms(latutude) }} <br />
+                Long: {{ formatDms(longitude) }}
+              </ng-container>
+              <ng-template #rawCoords>
+                Lat: {{ latutude }} <br />
+                Long: {{ longitude }}
+              </ng-template>
             </ng-template>
           </p>
         </div>
@@ -300,7 +306,7 @@
               tide.name === 'Current' ? 'rgba(182, 229, 243, 0.374)' : ''
           }"
         >
-          <span>{{ tide.date | date : "yyyy-MMM-dd HH:mm:ss" }}</span>
+          <span>{{ tide.date | date : this.dateFormat }}</span>
           <!-- <img src="../../assets/tide.png" alt=""> -->
           <svg
             width="120"
@@ -407,13 +413,15 @@
           <div class="bat-live">
             <app-battery
               [isLive]="isLive"
-              [voltage]="truncate(selected_data.battery)"
+              [voltage]="
+                convertValue(truncate(selected_data.battery), bet_unit, 'volts')
+              "
             ></app-battery>
           </div>
           <p style="align-self: center">
             {{
               convertValue(
-                truncate(selected_data.battery),
+                parseFloat(selected_data.battery),
                 bet_unit,
                 unitssTo!.battery
               ).toString()
@@ -506,7 +514,7 @@
           <p style="align-self: center">
             {{
               convertValue(
-                truncate(selected_data.current_speed),
+                parseFloat(selected_data.current_speed),
                 speed_unit,
                 unitssTo!.currentSpeed
               ).toString()
@@ -519,16 +527,25 @@
           <!-- <img src="../../assets/dire.png" alt=""> -->
           <app-direction1
             *ngIf="dir"
-            [direction]="selected_data.current_direction"
+            [direction]="
+              convertValue(
+                parseFloat(selected_data.current_direction),
+                directtion_unit,
+                '°'
+              ).toString()
+            "
             id="Dir1"
             style="align-self: center"
           ></app-direction1>
-          <p style="align-self: center; text-align: center; margin-top: -1%">
+          <p
+            style="align-self: center; text-align: center; margin-top: -1%"
+            *ngIf="selected_data.current_direction"
+          >
             {{
               convertValue(
-                truncate(selected_data.current_direction),
+                parseFloat(selected_data.current_direction),
                 directtion_unit,
-                unitssTo!!.currentDirection
+                unitssTo!.currentDirection
               ).toString()
             }}
             {{ unitssTo!!.currentDirection }}
@@ -625,7 +642,15 @@
               <!-- <img class="cbox-img" src="../../assets/dire.png" alt=""> -->
               <div class="compass">
                 <img
-                  [style.transform]="'rotate(' + current.direction + 'deg)'"
+                  [style.transform]="
+                    'rotate(' +
+                    convertValue(
+                      parseFloat(current.direction),
+                      directtion_unit,
+                      '°'
+                    ) +
+                    'deg)'
+                  "
                   src="../../assets/Task_7518573_35103318.png"
                   alt=""
                   [ngStyle]="{
@@ -639,13 +664,21 @@
                 <p>
                   {{
                     convertValue(
-                      truncate(current.direction),
+                      parseFloat(current.direction),
                       directtion_unit,
                       unitssTo!.currentDirection
                     )
                   }}
                   {{ unitssTo!.currentDirection }}
-                  {{ directionValue(current.direction) }}
+                  {{
+                    directionValue(
+                      convertValue(
+                        parseFloat(current.direction),
+                        directtion_unit,
+                        "°"
+                      )
+                    )
+                  }}
                 </p>
               </h5>
               <p></p>

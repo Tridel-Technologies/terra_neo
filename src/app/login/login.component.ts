@@ -168,8 +168,8 @@ export class LoginComponent implements OnInit {
       next: (res: any) => {
         console.log('response', res);
         this.counts = parseInt(res[0]?.count || '0', 10);
-        if (this.counts == 1) {
-          this.toastr.error('Adding user limit exists', 'Validation Error');
+        if (this.counts > 1) {
+          this.toastr.warning('Adding user limit exists', 'Limit Reached');
           this.signup_form = false;
           this.login_form = true;
         } else {
