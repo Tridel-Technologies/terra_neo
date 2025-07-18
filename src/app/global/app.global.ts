@@ -1,7 +1,7 @@
 export class GlobalConfig {
   baseUrl: string = 'http://192.168.0.120:3001/api/';
 
-  convertValue(value: number, fromUnit: string, toUnit: string): any {
+  convertValue(value: number | string, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
 
     const maxVolt = 4.2; // for battery conversion

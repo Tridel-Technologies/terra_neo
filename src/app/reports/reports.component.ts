@@ -576,8 +576,16 @@ export class ReportsComponent implements OnInit {
         // lat conversion
         if (sourceUnits['latandlong'] !== this.units['latandlong']) {
           if (newItem.lat !== null && newItem.lat !== undefined) {
+            let lat: number | string;
+            if (this.units['latandlong'] == 'dd') {
+              const latDms = item.lat.split(',').map(Number);
+              lat = `${latDms[0]}°${latDms[1]}'${latDms[2]}''`;
+            } else {
+              lat = +item.lat;
+            }
+
             const converted = this.convertValues(
-              +item.lat,
+              lat,
               sourceUnits['latandlong'],
               this.units['latandlong']
             );
@@ -589,13 +597,39 @@ export class ReportsComponent implements OnInit {
         // long conversion
         if (sourceUnits['latandlong'] !== this.units['latandlong']) {
           if (newItem.lon !== null && newItem.lon !== undefined) {
+            let lon: number | string;
+            if (this.units['latandlong'] == 'dd') {
+              const lonDms = item.lon.split(',').map(Number);
+              lon = `${lonDms[0]}°${lonDms[1]}'${lonDms[2]}''`;
+            } else {
+              lon = +item.lon;
+            }
             const converted = this.convertValues(
-              +item.lon,
+              lon,
               sourceUnits['latandlong'],
               this.units['latandlong']
             );
             newItem.lon = converted.toString();
             this.main_table[index].lon = converted.toString();
+          }
+        }
+
+        return newItem;
+      });
+    } else {
+      this.main_table = this.main_table.map((item, index) => {
+        const newItem = { ...item } as ApiData;
+
+        // lat conversion
+        if (sourceUnits['latandlong'] == this.units['latandlong']) {
+          if (newItem.lat !== null && newItem.lat !== undefined) {
+            if (sourceUnits['latandlong'] == 'dms') {
+              const latDms = item.lat.split(',').map(Number);
+              const lonDms = item.lon.split(',').map(Number);
+
+              newItem.lat = `${latDms[0]}°${latDms[1]}'${latDms[2]}''`;
+              newItem.lon = `${lonDms[0]}°${lonDms[1]}'${lonDms[2]}''`;
+            }
           }
         }
 
