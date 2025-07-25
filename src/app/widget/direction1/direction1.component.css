@@ -1,0 +1,16 @@
+#chartdiv {
+  width: 200px;
+  height: 200px;
+  /* padding-left: 10px; */
+  /* margin-bottom: 25px; */
+}
+.direction1_main{
+  height: 100%;
+
+  width: 100%;}
+
+  .direction1_main div {
+    margin-top: -10%;
+    width: 220px;
+    height: 220px;
+  }

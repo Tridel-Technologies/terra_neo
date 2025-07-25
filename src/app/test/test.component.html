@@ -1,0 +1,14 @@
+<!-- test.component.html -->
+<div class="explorer">
+    <div class="box" *ngFor="let item of files" (contextmenu)="onRightClick($event, item)"
+        (dblclick)="openFolder(item)">
+        <img [src]="item.type === 'folder' ? 'assets/folder-icon.png' : 'assets/file-icon.png'" />
+        <p>{{ item.name }}</p>
+    </div>
+</div>
+
+<!-- Context Menu -->
+<div class="context-menu" *ngIf="contextMenuVisible" [style.left.px]="contextMenuX" [style.top.px]="contextMenuY">
+    <button (click)="copyItem()">Copy</button>
+    <button (click)="pasteItem()">Paste</button>
+</div>
