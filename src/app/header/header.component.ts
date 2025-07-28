@@ -18,11 +18,12 @@ import { TooltipModule } from 'primeng/tooltip';
 export class HeaderComponent implements OnInit {
   @Input() index!: number;
   theme: string = 'light';
+
   private themeSource = new BehaviorSubject<string>('dark');
   currentTheme$ = this.themeSource.asObservable();
   ngOnInit() {
     let storedTheme = localStorage.getItem('theme');
-
+    this.base.setDirEnable(true);
     if (!storedTheme || (storedTheme !== 'light' && storedTheme !== 'dark')) {
       storedTheme = 'light'; // fallback default
       localStorage.setItem('theme', storedTheme);
@@ -34,12 +35,18 @@ export class HeaderComponent implements OnInit {
   }
 
   onChangeTheme(theme: string) {
+    this.base.dir_enable = false;
+
     this.applyTheme(theme);
     this.theme = theme;
     this.themeSource.next(theme);
     this.base.chartFont = theme;
     localStorage.setItem('theme', theme);
     this.themeService.changeTheme(this.theme);
+
+    setTimeout(() => {
+      this.base.dir_enable = true; // Update base component's value
+    }, 100);
   }
 
   applyTheme(theme: string) {

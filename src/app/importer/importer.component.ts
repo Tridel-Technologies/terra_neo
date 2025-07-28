@@ -74,21 +74,21 @@ export class ImporterComponent {
       label: 'Current Speed',
       iconClass: 'fas fa-tachometer-alt',
       units: ['m/s', 'knots'],
-      unitslabels: ['m/s', 'knots'],
+      unitslabels: ['m/s', 'kn'],
     },
     {
       key: 'currentDirection',
       label: 'Current Direction',
       iconClass: 'fas fa-compass',
       units: ['°', 'radians'],
-      unitslabels: ['deg (°)', 'radians'],
+      unitslabels: ['deg', 'rad'],
     },
     {
       key: 'battery',
       label: 'Battery',
       iconClass: 'fas fa-battery-full',
-      units: ['%', 'volts'],
-      unitslabels: ['percent (%)', 'volts'],
+      units: ['volts'],
+      unitslabels: ['volt'],
     },
     {
       key: 'depth',
@@ -121,7 +121,6 @@ export class ImporterComponent {
         radians: 'Radian',
       },
       battery: {
-        '%': 'Percentage',
         volts: 'Volt',
       },
       depth: {

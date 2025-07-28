@@ -36,7 +36,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.http
-      .get('http://192.168.0.8:3000/api/check')
+      .get('http://192.168.0.10:3000/api/check')
       .subscribe((response: any) => {
         console.log('response', response);
         this.licenseExpired = response.result;

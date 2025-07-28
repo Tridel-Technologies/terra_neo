@@ -22,7 +22,7 @@ export class UnitService {
     waterLevel: 'm',
     currentSpeed: 'm/s',
     currentDirection: '°',
-    battery: '%',
+    battery: 'volts',
     depth: 'm',
     latandlong: 'dd',
     datetime: '01-Jan-2025 12:00:00',

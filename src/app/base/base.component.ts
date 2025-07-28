@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, EventEmitter } from '@angular/core';
 import { HeaderComponent } from '../header/header.component';
 import { ImporterComponent } from '../importer/importer.component';
 import { ProcessingComponent } from '../processing/processing.component';
@@ -31,4 +31,12 @@ export class BaseComponent {
   index: number = 0;
   chartFont: string = 'light';
   fileId: number | undefined;
+
+  dir_enable: boolean = false;
+  dirEnableChange = new EventEmitter<boolean>();
+
+  setDirEnable(value: boolean) {
+    this.dir_enable = value;
+    this.dirEnableChange.emit(value);
+  }
 }

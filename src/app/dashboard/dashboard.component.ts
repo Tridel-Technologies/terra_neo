@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { BatteryComponent } from './battery/battery.component';
 import { tap } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
@@ -54,6 +54,7 @@ interface dashdata {
   providers: [GlobalConfig],
 })
 export class DashboardComponent implements OnInit {
+  @Input() dir: boolean = false;
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
@@ -76,7 +77,7 @@ export class DashboardComponent implements OnInit {
   high_watel_level: any[] = [];
   isbefore: boolean = true;
   currentData!: any;
-  dir: boolean = false;
+  @Input() enableDir: boolean = false;
   latutude!: string;
   longitude!: string;
   dateFormat!: string;
@@ -102,8 +103,6 @@ export class DashboardComponent implements OnInit {
     latandlong: '',
     datetime: '',
   };
-
-  
 
   truncate(value: string | number): number {
     return Math.floor(parseFloat(value as string));
@@ -192,7 +191,7 @@ export class DashboardComponent implements OnInit {
       this.selected_data = data;
 
       this.isLive = !this.isLive;
-      if(this.isLive){
+      if (this.isLive) {
         this.tap_date(this.main_table[0].date, this.main_table[0].time);
       }
       const bfMatches = this.filterByHour(bf[0]);
@@ -488,7 +487,7 @@ export class DashboardComponent implements OnInit {
     });
 
     // Units
-        const unitsss: any =
+    const unitsss: any =
       localStorage.getItem('unitSettings') ??
       '{"datetime": "01-Jan-2025 12:00:00"}';
     this.unitssTo = JSON.parse(unitss);
