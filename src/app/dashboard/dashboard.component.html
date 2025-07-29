@@ -474,7 +474,14 @@
           </svg>
 
           <p style="align-self: center">
-            {{ selected_data.current_speed }} {{ units.currentSpeed }}
+            {{
+              convertValue(
+                truncate(selected_data.current_speed),
+                speed_unit,
+                unitssTo.currentSpeed
+              ).toString()
+            }}
+            {{ units.currentSpeed }}
           </p>
         </div>
         <div class="current_direction" *ngIf="isLive">

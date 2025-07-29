@@ -140,16 +140,13 @@ export class ImporterComponent {
 
   selectUnit(paramKey: string, unit: string) {
     this.selectedUnits[paramKey] = unit;
-    console.log('units', this.selectedUnits);
   }
 
   onRowClick(row: any, index: number) {
     this.selectedRowIndex = index;
     this.selectedRowData = row;
-    console.log('Selected Row:', row);
     const date = new Date(row.date);
     const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
-    console.log(formattedDate);
     this.high_water_level = `${formattedDate}`;
   }
 
@@ -182,7 +179,6 @@ export class ImporterComponent {
         return;
       }
     }
-    console.log(this.selectedFiles);
     const files = [];
     for (let index = 0; index < this.selectedFiles.length; index++) {
       files.push(this.selectedFiles[index]);
@@ -214,7 +210,6 @@ export class ImporterComponent {
         high_water_level: this.high_water_level,
       };
     }
-    console.log('sendingData', data);
     this.update(data);
   }
   showoption: boolean = false;
@@ -222,7 +217,6 @@ export class ImporterComponent {
     this.http
       .post(`${this.baseUrl}update_values`, data)
       .subscribe((response: any) => {
-        console.log(response);
         this.toast.success('Update successful', 'Success');
         this.showoption = true;
         this.showoption = true;
@@ -271,7 +265,6 @@ export class ImporterComponent {
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
-        console.log('response', response);
         if (this.isMulti) {
           let data = this.main_table;
           this.main_table = [];
@@ -283,7 +276,6 @@ export class ImporterComponent {
                 : max;
             });
 
-            console.log('Row with Max Pressure:', maxPressureRow);
             if (this.unitssTo.latandlong === 'dd') {
               this.latitude = this.main_table[0].lat;
               this.lon = this.main_table[0].lon;
@@ -343,10 +335,7 @@ export class ImporterComponent {
               date,
               'yyyy-MM-dd HH:mm:ss'
             );
-            console.log(formattedDate);
             this.high_water_level = `${formattedDate}`;
-            console.log('Row with Max Pressure:', maxPressureRow);
-            console.log('Index of Max Pressure Row:', maxPressureIndex);
 
             if (this.unitssTo.latandlong === 'dd') {
               this.latitude = this.main_table[0].lat;
@@ -375,8 +364,6 @@ export class ImporterComponent {
             const high = this.main_table.filter(
               (item) => item.high_water_level === 1
             );
-            console.log(high);
-            console.log();
             this.high_water_level = high[0].date;
           }, 100);
         }
@@ -385,7 +372,6 @@ export class ImporterComponent {
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
-    console.log(this.expandedFolders);
   }
   ddtoDms(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
@@ -418,14 +404,9 @@ export class ImporterComponent {
     return value;
   }
 
-  changinglat() {
-    console.log(this.latitude);
-  }
-
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
     this.FileID = file_id;
     this.FileID = file_id;
-    console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
     if (isCtrlPressed) {
@@ -566,9 +547,11 @@ export class ImporterComponent {
         this.errorMessage = 'No valid files processed.';
       } else {
         this.historyData = allRows;
+        console.log('table1', this.historyData);
         this.tableData = [...allRows];
         this.displayedColumns = this.expectedHeaders;
         this.fileWiseUploadData = fileWiseData; // <- store for import step
+        console.log('table2', this.fileWiseUploadData);
         this.onFileClick(this.uploaded_files[0]);
         console.log('All rows', allRows);
       }
@@ -585,7 +568,6 @@ export class ImporterComponent {
       this.filterhistorydata = this.historyData.filter(
         (item: any) => item.fileName === file_Name
       );
-      console.log('All rows', this.filterhistorydata);
     }, 50);
   }
 
@@ -717,13 +699,51 @@ export class ImporterComponent {
   }
 
   deleteRow(index: number) {
-    this.filterhistorydata.splice(index, 1); // Remove row from the array
-    this.filterhistorydata = [...this.filterhistorydata]; // Update reference to trigger change detection
+    // Get all items related to selected file
+    const filtered = this.historyData.filter(
+      (item: any) => item.fileName === this.selected_filelist
+    );
+
+    // Get the actual item to delete using the index from filtered list
+    const itemToDelete = filtered[index];
+
+    if (itemToDelete) {
+      // Find index of this item in original historyData
+      const originalIndex = this.historyData.findIndex(
+        (item: any) =>
+          item.fileName === itemToDelete.fileName &&
+          JSON.stringify(item) === JSON.stringify(itemToDelete)
+      );
+
+      if (originalIndex > -1) {
+        this.historyData.splice(originalIndex, 1);
+      }
+
+      // Remove from fileWiseUploadData as well
+      const fileKey = this.selected_filelist.toString();
+      if (
+        this.fileWiseUploadData[fileKey] &&
+        Array.isArray(this.fileWiseUploadData[fileKey])
+      ) {
+        const fileArray = this.fileWiseUploadData[fileKey];
+        const fileArrayIndex = fileArray.findIndex(
+          (item: any) => JSON.stringify(item) === JSON.stringify(itemToDelete)
+        );
+        if (fileArrayIndex > -1) {
+          fileArray.splice(fileArrayIndex, 1);
+        }
+      }
+
+      // Now update the filtered list
+      this.filterhistorydata = this.historyData.filter(
+        (item: any) => item.fileName === this.selected_filelist
+      );
+    }
   }
 
   convertToTimeFormat(value: number): string {
-    const intPart = Math.floor(value); // 155323
-    const decimalPart = value - intPart; // 0.99
+    const intPart = Math.floor(value);
+    const decimalPart = value - intPart;
 
     const hours = Math.floor(intPart / 10000); // 15
     const minutes = Math.floor((intPart % 10000) / 100); // 53
@@ -780,7 +800,6 @@ export class ImporterComponent {
       units: this.selectedUnits,
     };
 
-    console.log(file);
     this.http.post(`${this.baseUrl}createFile`, file).subscribe(
       (response: any) => {
         this.toast.success(response.message, 'Success');
@@ -793,7 +812,6 @@ export class ImporterComponent {
         setTimeout(() => {
           this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
             this.files_list = response['data'];
-            console.log('files', response, this.files_list);
             this.expandedFolders = this.files_list.map(() => false);
             setTimeout(() => {
               this.isFilesLoading = false;

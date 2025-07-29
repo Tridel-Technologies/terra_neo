@@ -168,7 +168,7 @@ const updateValues = async (req, res) => {
 
 const createFolderAndFile = async (req, res) => {
   const { folder_name, file_name, data, units } = req.body;
-  console.log("units", units);
+  console.log("units", req.body);
   if (!folder_name || !Array.isArray(file_name) || typeof data !== "object") {
     return res.status(400).json({ message: "Invalid input format" });
   }

@@ -15,7 +15,6 @@ router.get('/files', getFoldersWithFiles);
 router.get('/get_processed_data/:file_id', getProcessedDataByFileId);
 
 router.post('/createFile', createFolderAndFile);
-router.get('/files', getFoldersWithFiles);
 router.post('/change_folder', changeFolder);
 router.post('/create_folder', createFolder)
 
