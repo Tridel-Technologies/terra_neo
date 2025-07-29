@@ -9,8 +9,9 @@ import { number } from 'echarts';
 import { LoginService } from './login.service';
 import { UnitService, UnitSettings } from '../settings/unit.service';
 import { DialogModule } from 'primeng/dialog';
-
+import { GlobalConfig } from '../global/app.global';
 // import { CommonModule} from '@angular/forms';
+
 @Component({
   selector: 'app-products',
   standalone: true,
@@ -23,25 +24,27 @@ import { DialogModule } from 'primeng/dialog';
   ],
   templateUrl: './login.component.html',
   styleUrl: './login.component.css',
-  providers: [LoginService],
+  providers: [LoginService, GlobalConfig],
 })
 export class LoginComponent implements OnInit {
+  private baseUrl: string;
   constructor(
     private http: HttpClient,
     private router: Router,
     private toastr: ToastrService,
     private loginservice: LoginService,
-    private unitService: UnitService
-  ) {}
+    private unitService: UnitService,
+    private globall: GlobalConfig
+  ) {
+    this.baseUrl = new GlobalConfig().baseUrl;
+  }
 
   ngOnInit(): void {
-    this.http
-      .get('http://192.168.0.10:3000/api/check')
-      .subscribe((response: any) => {
-        console.log('response', response);
-        this.licenseExpired = response.result;
-        console.log(this.licenseExpired);
-      });
+    this.http.get(`${this.baseUrl}check`).subscribe((response: any) => {
+      console.log('response', response);
+      this.licenseExpired = response.result;
+      console.log(this.licenseExpired);
+    });
   }
 
   signup_form: boolean = false;

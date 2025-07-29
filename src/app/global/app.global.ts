@@ -1,5 +1,5 @@
 export class GlobalConfig {
-  baseUrl: string = 'http://192.168.0.10:3000/api/';
+  baseUrl: string = 'http://192.168.0.22:3000/api/';
 
   convertValue(value: number, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
