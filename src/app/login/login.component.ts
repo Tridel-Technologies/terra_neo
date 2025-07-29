@@ -42,7 +42,7 @@ export class LoginComponent implements OnInit {
   ngOnInit(): void {
     this.http.get(`${this.baseUrl}check`).subscribe((response: any) => {
       console.log('response', response);
-      this.licenseExpired = response.result;
+      this.licenseExpired = response.result.valid;
       console.log(this.licenseExpired);
     });
   }

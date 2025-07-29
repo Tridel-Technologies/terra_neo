@@ -1,5 +1,15 @@
 <div class="base-main">
   <app-header [index]="index"></app-header>
+
+  <!-- license expired message -->
+  <div class="license-card-container" *ngIf="licenseExpired">
+    <div class="card">
+      <p-message closable severity="error">
+        Your license will expire in {{ remainingDays }} days
+      </p-message>
+    </div>
+  </div>
+
   <div class="bodyy">
     <app-importer *ngIf="index === 0"></app-importer>
     <!-- <app-processing *ngIf="index ===1"> -->

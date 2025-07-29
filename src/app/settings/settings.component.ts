@@ -210,6 +210,7 @@ export class SettingsComponent {
         this.toastr.success('File moved', 'Success', {
           timeOut: 2000,
         });
+        this.init();
       });
   }
 
@@ -422,6 +423,7 @@ export class SettingsComponent {
     window.addEventListener('click', this.cancelContext.bind(this));
     this.init();
   }
+
   init() {
     this.files_list = [];
     setTimeout(() => {

@@ -670,7 +670,7 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
       await fs.access(filePath);
     } catch {
       console.warn('License file not found');
-      return false;
+      return { valid: false, pendingDays: 0 };
     }
 
     // Read and parse file
@@ -682,26 +682,32 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
 
     if (isNaN(validTill.getTime())) {
       console.warn('Invalid date in license file');
-      return false;
+      return { valid: false, pendingDays: 0 };
     }
 
-    return currentTime <= validTill;
+    const pendingTime = validTill.getTime() - currentTime.getTime();
+    const pendingDays = Math.max(0, Math.ceil(pendingTime / (1000 * 60 * 60 * 24)));
+
+    return {
+      valid: currentTime <= validTill,
+      pendingDays
+    };
+
   } catch (error) {
     console.error('Error reading or parsing license file:', error);
-    return false;
+    return { valid: false, pendingDays: 0 };
   }
-}
+};
 
 const checkLicenseValidityHandler = async (req, res) => {
-  console.log('lll');
   try {
-    const isValid = await checkLicenseValidity();
-    res.status(200).json({ message: 'Success', result: isValid });
+    const result = await checkLicenseValidity();
+    res.status(200).json({ message: 'Success', result });
   } catch (error) {
     console.error('Error checking license validity:', error);
-    res.status(500).json({ message: error.message, result: false });
+    res.status(500).json({ message: error.message, result: { valid: false, pendingDays: 0 } });
   }
-}
+};
 
 module.exports = {
   importAll,
