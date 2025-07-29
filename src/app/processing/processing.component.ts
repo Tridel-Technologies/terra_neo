@@ -25,11 +25,8 @@ export class ProcessingComponent implements OnInit {
 
   fetch_file_data(index: number) {}
   ngOnInit(): void {
-    this.http
-      .get(`${this.baseUrl}get_files`)
-      .subscribe((response: any) => {
-        this.files_list = response['data'];
-        console.log('files:', response, this.files_list);
-      });
+    this.http.get(`${this.baseUrl}get_files`).subscribe((response: any) => {
+      this.files_list = response['data'];
+    });
   }
 }

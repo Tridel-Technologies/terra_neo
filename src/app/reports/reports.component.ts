@@ -175,7 +175,6 @@ export class ReportsComponent implements OnInit {
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
       this.fileID = this.base.fileId!;
-      console.log('files:', response, this.files_list);
 
       let folderIndex = -1;
       let selectedFile = null;
@@ -204,7 +203,6 @@ export class ReportsComponent implements OnInit {
         }
       }
       this.nameOffile = selectedFolder?.files[0].file_name ?? '';
-      console.log('nameof file', this.nameOffile);
 
       // Expand the matched folder
       this.expandedFolders = this.files_list.map(
@@ -397,7 +395,6 @@ export class ReportsComponent implements OnInit {
     folder_name: string
   ) {
     // this.dir = false;
-    console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
     this.nameOffile = fileName;
     this.isLive = true;
@@ -412,7 +409,6 @@ export class ReportsComponent implements OnInit {
     //       file_name: fileName,
     //       file_id:file_id
     //     });  // Add file to selection
-    //     console.log(this.selectedFiles)
     //     this.open_file(fileName, file_id)
     //   } else {
     //     this.selectedFiles.splice(index, 1);  // Remove file from selection
@@ -446,7 +442,6 @@ export class ReportsComponent implements OnInit {
     const data = {
       folder_id: file_id,
     };
-    console.log('dd', this.selectedData);
     this.http
       .get(
         `${this.baseUrl}${
@@ -456,42 +451,37 @@ export class ReportsComponent implements OnInit {
         }/${file_id}`
       )
       .subscribe((response: any) => {
-        console.log('response', response);
-
         this.last_row =
           response.length > 0 ? response[response.length - 1] : null;
-        console.log('Last row:', this.last_row);
         // if (this.isMulti) {
-          // let data = this.main_table;
-          this.main_table = [];
-          setTimeout(() => {
-            // this.main_table = data;
-            for (let index = 0; index < response.length; index++) {
-              const row = { ...response[index] };
+        // let data = this.main_table;
+        this.main_table = [];
+        setTimeout(() => {
+          // this.main_table = data;
+          for (let index = 0; index < response.length; index++) {
+            const row = { ...response[index] };
 
-              if (row.date) {
-                const date = new Date(row.date);
-                row.date = formatDate(date, this.dateFormat, 'en-US');
-              }
-
-              // Decimal conversion
-              ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
-                if (row[key] != null) {
-                  row[key] = this.formatValue(row[key]);
-                }
-              });
-
-              this.main_table.push(row);
+            if (row.date) {
+              const date = new Date(row.date);
+              row.date = formatDate(date, this.dateFormat, 'en-US');
             }
-            this.checkForConversion();
-            console.log('Main table data ', this.main_table);
-          }, 100);
+
+            // Decimal conversion
+            ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
+              if (row[key] != null) {
+                row[key] = this.formatValue(row[key]);
+              }
+            });
+
+            this.main_table.push(row);
+          }
+          this.checkForConversion();
+        }, 100);
         // }
       });
   }
 
   checkForConversion() {
-    console.log('here', this.main_table[0]);
     const sourceUnits: { [key: string]: string } = {
       waterLevel: this.main_table[0].water_level_unit,
       currentSpeed: this.main_table[0].current_speed_unit,
@@ -507,7 +497,6 @@ export class ReportsComponent implements OnInit {
       }
       return this.units[key] == sourceUnits[key];
     });
-    console.log('match', unitsMatch);
 
     if (!unitsMatch) {
       this.main_table = this.main_table.map((item, index) => {
@@ -656,15 +645,11 @@ export class ReportsComponent implements OnInit {
   }
 
   toggle_tap() {
-    console.log('main_table sample:', this.main_table.slice(0, 5)); // Show first 5 records
-
     const filter = this.main_table.filter(
       (item) => item.high_water_level === 1
     );
-    console.log('Filtered high_water_level === 1:', filter);
 
     if (filter.length === 0) {
-      console.error('No records where high_water_level === 1 found.');
       throw new Error('No high_water_level data');
     }
 
@@ -678,8 +663,6 @@ export class ReportsComponent implements OnInit {
 
       const targetDateTime = new Date(filter[0].date);
       const targetMinutes = targetDateTime.getMinutes();
-      console.log('targetDateTime', targetDateTime);
-      console.log('targetMinutes', targetMinutes);
 
       // We'll collect arrays of data per hour for before and after 6 hours
       const bf: any[][] = [];
@@ -882,11 +865,9 @@ export class ReportsComponent implements OnInit {
       FileSaver.saveAs(blob, `${this.nameOffile}_download.csv`);
     } else {
       // Handle case where no data is available
-      //console.warn('No data available for CSV export');
     }
   }
 
-  // Helper method to convert JSON to CSV format
   convertToCSV(data: any[]): string {
     const fixedHeaders = ['S No'];
     const fixedFields: string[] = [];
@@ -907,18 +888,21 @@ export class ReportsComponent implements OnInit {
         const values = [
           index + 1,
           ...fields.map((field) => {
-            const value = row[field] ?? '';
-            if (field == 'date') {
+            let value = row[field] ?? '';
+            if (field === 'date') {
               return `'${value}`;
             }
             return value;
           }),
         ];
-        return values.map((cell) => `"${cell}"`).join(',');
+        return values
+          .map((cell) => `"${String(cell).replace(/"/g, '""')}"`)
+          .join(',');
       }),
     ];
 
-    return csvRows.join('\r\n');
+    // Add UTF-8 BOM
+    return '\uFEFF' + csvRows.join('\r\n');
   }
 
   exportExcel(dt: any) {

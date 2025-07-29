@@ -115,12 +115,10 @@ export class DashboardComponent implements OnInit {
     const filter = this.main_table.filter(
       (item) => item.high_water_level === 1
     );
-    console.log(filter);
 
     let bf: any[] = [];
     let af: any[] = [];
     this.currentData = filter[0];
-    console.log('current', this.currentData);
     if (filter.length > 0) {
       const targetDateTime = new Date(filter[0].date);
       // this.high_watel_level = filter[0]
@@ -154,7 +152,6 @@ export class DashboardComponent implements OnInit {
             itemDate.getHours() === afterHour.getHours()
           );
         });
-        console.log('befiore hours', beforeHour, afterHour);
         bf.push([...beforeHourData]);
         af.push([...afterHourData]);
         // for (let index = 0; index < bf.length; index++) {
@@ -164,13 +161,9 @@ export class DashboardComponent implements OnInit {
         // }
       }
 
-      console.log('Before 6 hours (all intervals):', bf);
-      console.log('After 6 hours (all intervals):', af);
-
       this.current_hours_data = []; // clear before pushing again
       this.current_hours_data.push(bf);
       this.current_hours_data.push(af);
-      console.log('filter', filter);
       const data = {
         id: filter[0].station_id,
         tide: filter[0].pressure,
@@ -200,7 +193,6 @@ export class DashboardComponent implements OnInit {
       this.before_data = bf;
       this.after_data = af;
       // const numm = this.get_value_for_widget(1, 'speed','before');
-      console.log('matches', this.before_data, this.after_data);
       this.__assign();
     } else {
       this.toast.error(
@@ -217,7 +209,6 @@ export class DashboardComponent implements OnInit {
   changeTime(index: number) {
     this.hours = index;
     // this.__assign();
-    console.log('Selected time:', this.timee);
     this.__assign();
   }
   hours: number = 6;
@@ -227,7 +218,6 @@ export class DashboardComponent implements OnInit {
 
     for (let i = 6; i >= 1; i--) {
       const entries = this.before_data[6 - i] || []; // fallback to empty array
-      console.log('entry', entries);
       const avg = this.ccalculateAverage(entries);
 
       this.avgData.push({
@@ -258,8 +248,6 @@ export class DashboardComponent implements OnInit {
         date: new Date(baseDate.getTime() + i * 60 * 60 * 1000),
       });
     }
-
-    console.log('avg', this.avgData);
   }
 
   // get_value_for_widget(index:number, param:string, period:string):number{
@@ -273,13 +261,11 @@ export class DashboardComponent implements OnInit {
   }
   get filteredAvgData() {
     const total = 6 + Number(this.hours) + 1;
-    console.log('hours selected', this.hours, total);
 
     const data = this.isbefore
       ? this.avgData.slice(6 - this.hours, 7)
       : this.avgData.slice(6, total);
 
-    console.log('filteres', data);
     return data;
   }
 
@@ -297,7 +283,6 @@ export class DashboardComponent implements OnInit {
     if (!Array.isArray(entries)) {
       entries = [];
     }
-    console.log('inside entry', entries);
     let totalPressure = 0,
       totalSpeed = 0,
       totalDirection = 0;
@@ -332,11 +317,9 @@ export class DashboardComponent implements OnInit {
   }
 
   tap_date(date: string, time: string) {
-    console.log('started ', date, time);
     const filter = this.main_table.filter(
       (item) => item.date === date && item.time === time
     );
-    console.log(filter);
     const data = {
       id: filter[0].station_id,
       tide: filter[0].pressure,
@@ -364,9 +347,7 @@ export class DashboardComponent implements OnInit {
       this.coor_unit,
       this.units.latandlong
     );
-    console.log('latitude====', this.latutude);
     this.dir = false;
-    console.log('selected', this.selected_data);
     this.directionTo = this.directionValue(
       parseFloat(this.selected_data.current_direction)
     );
@@ -423,13 +404,9 @@ export class DashboardComponent implements OnInit {
     this.files_list = [];
     const unitss: any = localStorage.getItem('unitSettings');
     this.unitssTo = JSON.parse(unitss);
-    console.log('Unitsss', this.unitssTo);
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
-      console.log('resposnse==', response);
       this.files_list = response['data'];
-      console.log('files:', response, this.files_list);
       this.fileID = this.globe.fileId;
-      console.log('file IFD', this.fileID);
 
       let folderIndex = -1;
       let selectedFile = null;
@@ -512,7 +489,6 @@ export class DashboardComponent implements OnInit {
     folder_name: string
   ) {
     // this.dir = false;
-    console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
     this.isLive = true;
     // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
@@ -526,7 +502,6 @@ export class DashboardComponent implements OnInit {
     //       file_name: fileName,
     //       file_id:file_id
     //     });  // Add file to selection
-    //     console.log(this.selectedFiles)
     //     this.open_file(fileName, file_id)
     //   } else {
     //     this.selectedFiles.splice(index, 1);  // Remove file from selection
@@ -647,11 +622,9 @@ export class DashboardComponent implements OnInit {
       folder_id: file_id,
       file_name: file_name,
     };
-    console.log(data);
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
-        console.log('response', response);
         this.bet_unit = response[0].battery_unit;
         this.wat_unit = response[0].water_level_unit;
         this.coor_unit = response[0].coord_unit;
@@ -667,7 +640,6 @@ export class DashboardComponent implements OnInit {
             for (let index = 0; index < response.length; index++) {
               this.main_table.push(response[index]);
             }
-            console.log(this.main_table);
             this.tap_date(this.main_table[0].date, this.main_table[0].time);
           }, 100);
         } else {

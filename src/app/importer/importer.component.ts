@@ -418,7 +418,6 @@ export class ImporterComponent {
           file_name: fileName,
           file_id: file_id,
         }); // Add file to selection
-        console.log(this.selectedFiles);
         this.open_file(fileName, file_id);
       } else {
         this.selectedFiles.splice(index, 1); // Remove file from selection
@@ -455,15 +454,11 @@ export class ImporterComponent {
 
     const unitss: any = localStorage.getItem('unitSettings');
     this.unitssTo = JSON.parse(unitss);
-    console.log('Unitsss', this.unitssTo);
     this.isFilesLoading = true;
-    window.addEventListener('storage', (e) => {
-      console.log('Storage event fired!', e);
-    });
+    window.addEventListener('storage', (e) => {});
     this.files_list = [];
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
-      console.log('files:', response, this.files_list);
       this.isFilesLoading = false;
       this.expandedFolders = [false, false, false, false, false, false, false];
     });
@@ -547,13 +542,10 @@ export class ImporterComponent {
         this.errorMessage = 'No valid files processed.';
       } else {
         this.historyData = allRows;
-        console.log('table1', this.historyData);
         this.tableData = [...allRows];
         this.displayedColumns = this.expectedHeaders;
         this.fileWiseUploadData = fileWiseData; // <- store for import step
-        console.log('table2', this.fileWiseUploadData);
         this.onFileClick(this.uploaded_files[0]);
-        console.log('All rows', allRows);
       }
     });
   }
@@ -768,13 +760,11 @@ export class ImporterComponent {
 
   convertToDateFormat(value: number | string | undefined): string {
     if (!value) {
-      console.warn('Invalid date value:', value);
       return ''; // or return a fallback like 'Invalid Date'
     }
 
     const str = value.toString();
     if (str.length !== 8) {
-      console.warn('Date string must be 8 characters:', str);
       return '';
     }
 

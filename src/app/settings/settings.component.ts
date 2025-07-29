@@ -47,7 +47,6 @@ export class SettingsComponent {
     setTimeout(() => {
       this.openedFile = file;
       this.tappedFolder = folder;
-      console.log(this.openedFile);
     }, 100);
   }
 
@@ -56,7 +55,6 @@ export class SettingsComponent {
     setTimeout(() => {
       this.openedFile2 = file;
       this.tappedFolder2 = folder;
-      console.log(this.openedFile);
     }, 100);
   }
 
@@ -85,9 +83,7 @@ export class SettingsComponent {
         .post(`${this.baseUrl}create_folder`, {
           folder_name: this.folderName,
         })
-        .subscribe((response: any) => {
-          console.log(response);
-        });
+        .subscribe((response: any) => {});
     }
   }
   contextMenu = {
@@ -121,8 +117,6 @@ export class SettingsComponent {
       file_id: file.file_id,
       fromFolder: this.tappedFolder.folder_id,
     };
-    console.log('filde', this.fileToMove);
-    console.log('folder', this.tappedFolder);
   }
 
   onFolderRightClick(event: MouseEvent, folder: any) {
@@ -140,7 +134,6 @@ export class SettingsComponent {
   moveFile(file: fileData) {
     this.contextMenu.visible = false;
     this.movingFile = file;
-    console.log('file', this.fileToMove);
     this.removeFileFromOriginalFolder(this.fileToMove);
   }
 
@@ -162,10 +155,8 @@ export class SettingsComponent {
   // {file_name: 'file2.csv', file_id: 12, fromFolder: 14}
 
   pasteFile(targetFolder: any) {
-    console.log('paste', this.fileToMove, targetFolder);
     if (this.fileToMove && targetFolder) {
       // Step 1: Remove the file from its original folder
-      console.log('start');
       const fromFolderIndex = this.files_list.findIndex(
         (f) => f.folder_id === this.fileToMove.fromFolder
       );
@@ -201,11 +192,9 @@ export class SettingsComponent {
       folder_id: folder.folder_id,
     };
 
-    console.log(data);
     this.http
       .post(`${this.baseUrl}change_folder`, data)
       .subscribe((response: any) => {
-        console.log(response);
         this.fileToMove = null;
         this.toastr.success('File moved', 'Success', {
           timeOut: 2000,
@@ -226,7 +215,6 @@ export class SettingsComponent {
   }
 
   onContainerRightClick(event: MouseEvent) {
-    console.log('empty');
     event.preventDefault();
     // Only open folder context if clicked directly on container (not folder/file)
     if ((event.target as HTMLElement).classList.contains('fileCContainer')) {
@@ -241,7 +229,6 @@ export class SettingsComponent {
             folder_name: folderName,
           })
           .subscribe((response: any) => {
-            console.log(response);
             this.init();
           });
         this.toastr.success('Folder created', 'Success', {
@@ -264,21 +251,21 @@ export class SettingsComponent {
       label: 'Current Speed',
       iconClass: 'fas fa-gauge',
       units: ['m/s', 'knots'],
-      unitslabels: ['m/s', 'knots'],
+      unitslabels: ['m/s', 'kn'],
     },
     {
       key: 'currentDirection',
       label: 'Current Direction',
       iconClass: 'fas fa-location-arrow',
       units: ['°', 'radians'],
-      unitslabels: ['degree (°)', 'radians'],
+      unitslabels: ['deg', 'rad'],
     },
     {
       key: 'battery',
       label: 'Battery',
       iconClass: 'fas fa-battery-half',
       units: ['%', 'volts'],
-      unitslabels: ['percentage (%)', 'volts'],
+      unitslabels: ['per', 'volt'],
     },
     {
       key: 'depth',
@@ -381,11 +368,9 @@ export class SettingsComponent {
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
-    console.log(this.expandedFolders);
   }
 
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
-    console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
     if (isCtrlPressed) {
@@ -397,7 +382,6 @@ export class SettingsComponent {
           file_name: fileName,
           file_id: file_id,
         }); // Add file to selection
-        console.log(this.selectedFiles);
         // this.open_file(fileName, file_id)
       } else {
         this.selectedFiles.splice(index, 1); // Remove file from selection
@@ -429,7 +413,6 @@ export class SettingsComponent {
     setTimeout(() => {
       this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
         this.files_list = response['data'];
-        console.log('files:', response, this.files_list);
 
         this.non_processed = [];
         this.processedFiles = [];

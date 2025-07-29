@@ -39,7 +39,6 @@ const importAll = async (req, res) => {
         item.speed == null || item.direction == null ||
         item.depth == null || item.pressure == null || item.battery == null
       ) {
-        console.warn(`Skipping invalid row at index ${index}:`, item);
         continue;
       }
 
@@ -68,7 +67,6 @@ const importAll = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Import error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -139,7 +137,6 @@ const updateValues = async (req, res) => {
       // Reset all rows
       await client.query(`UPDATE ${targetTable} SET high_water_level = 0`);
       await client.query(`UPDATE ${targetTable}_processed SET high_water_level = 0`);
-      console.log("high", high_water_level)
       // Set high_water_level = 1 for matching timestamp
       await client.query(
         `UPDATE ${targetTable}
@@ -159,7 +156,6 @@ const updateValues = async (req, res) => {
     res.json({ message: 'Update successful' });
   } catch (error) {
     await client.query('ROLLBACK');
-    console.error('Error updating ADCP:', error);
     res.status(500).json({ error: `Database error: ${error.message}` });
   } finally {
     client.release();
@@ -168,7 +164,6 @@ const updateValues = async (req, res) => {
 
 const createFolderAndFile = async (req, res) => {
   const { folder_name, file_name, data, units } = req.body;
-  console.log("units", req.body);
   if (!folder_name || !Array.isArray(file_name) || typeof data !== "object") {
     return res.status(400).json({ message: "Invalid input format" });
   }
@@ -281,7 +276,6 @@ const createFolderAndFile = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error:", error);
     return res.status(500).json({
       status: "failed",
       message: error.message || "Unexpected error occurred"
@@ -319,7 +313,6 @@ const checkusername = async (req, res) => {
       emailExists: email_result.rows[0].count > 0
     });
   } catch (error) {
-    console.error('Error in checkUsername:', error);
     res.status(500).json({ message: 'Error checking username.' });
   }
 };
@@ -328,7 +321,6 @@ const checkusername = async (req, res) => {
 //Add the user
 const signup = async (req, res) => {
   const { user_name, password, email_id } = req.body;
-  console.log('Incoming user:', req.body);
   const encrypt_password = await bcrypt.hash(password, 10);
 
   try {
@@ -345,18 +337,15 @@ const signup = async (req, res) => {
 //check the username and password to access
 const loginUser = async (req, res) => {
   const { user_name, password } = req.body;
-  console.log("Attempting login for:", user_name);
 
   try {
     const result = await pool.query('SELECT * FROM user_tb WHERE user_name = $1', [user_name]);
 
     if (result.rows.length === 0) {
-      console.log("No user found");
       return res.status(401).json({ message: 'User not found' });
     }
 
     const user = result.rows[0];
-    console.log("Found user:", user.user_name);
 
     // ✅ Use bcrypt to compare hashed password
     const isMatch = await bcrypt.compare(password, user.password);
@@ -364,10 +353,8 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ message: 'Invalid password' });
 
     }
-    console.log("Login successful");
     res.status(200).json({ message: 'Login successful', user });
   } catch (error) {
-    console.error("Login error:", error);
     res.status(500).json({ error: error.message });
   }
 };
@@ -396,7 +383,6 @@ const forget_password = async (req, res) => {
 
     res.json({ valid: true });
   } catch (err) {
-    console.error('Forget password error:', err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -407,7 +393,6 @@ const change_password = async (req, res) => {
   const { user_name, newPassword } = req.body;
   const encrypt_password = await bcrypt.hash(newPassword, 10);
 
-  console.log("res", req.body)
   try {
     await pool.query(
       'UPDATE user_tb SET password = $1 WHERE user_name = $2',
@@ -492,7 +477,6 @@ const updateData = async (req, res) => {
             resolve({ id, affected: result.rowCount });
           })
           .catch(err => {
-            console.error(`Error updating row with id ${id}:`, err);
             reject(err);
           });
       });
@@ -509,7 +493,6 @@ const updateData = async (req, res) => {
       results
     });
   } catch (error) {
-    console.error("Error in updateData:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update data",
@@ -520,7 +503,6 @@ const updateData = async (req, res) => {
 
 const getDataByFolderIdAndFileName = async (req, res) => {
   const { file_id } = req.params;
-  console.log(req.params)
   try {
     const result = await pool.query(
       `SELECT
@@ -536,14 +518,12 @@ const getDataByFolderIdAndFileName = async (req, res) => {
     res.status(200).json(result.rows);
 
   } catch (err) {
-    console.error('Fetch error:', err);
     res.status(500).json({ message: 'Error fetching data', error: err.message });
   }
 };
 
 const getProcessedDataByFileId = async (req, res) => {
   const { file_id } = req.params;
-  console.log(req.params)
   try {
     const result = await pool.query(
       `SELECT
@@ -558,7 +538,6 @@ const getProcessedDataByFileId = async (req, res) => {
     );
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Fetch error:', err);
     res.status(500).json({ message: 'Error fetching data', error: err.message });
   }
 };
@@ -639,7 +618,6 @@ const changeFolder = async (req, res) => {
 
     res.status(200).json({ message: 'File moved successfully.' });
   } catch (err) {
-    console.error('Error moving file:', err);
     res.status(500).json({ message: 'Server error.' });
   }
 }
@@ -658,7 +636,6 @@ const createFolder = async (req, res) => {
 
     res.status(201).json({ message: 'Folder created successfully', folder: result.rows[0] });
   } catch (err) {
-    console.error('Error adding folder:', err);
     res.status(500).json({ message: 'Internal server error' });
   }
 }
@@ -669,7 +646,6 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
     try {
       await fs.access(filePath);
     } catch {
-      console.warn('License file not found');
       return { valid: false, pendingDays: 0 };
     }
 
@@ -681,7 +657,6 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
     const currentTime = new Date();
 
     if (isNaN(validTill.getTime())) {
-      console.warn('Invalid date in license file');
       return { valid: false, pendingDays: 0 };
     }
 
@@ -694,7 +669,6 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
     };
 
   } catch (error) {
-    console.error('Error reading or parsing license file:', error);
     return { valid: false, pendingDays: 0 };
   }
 };
@@ -704,7 +678,6 @@ const checkLicenseValidityHandler = async (req, res) => {
     const result = await checkLicenseValidity();
     res.status(200).json({ message: 'Success', result });
   } catch (error) {
-    console.error('Error checking license validity:', error);
     res.status(500).json({ message: error.message, result: { valid: false, pendingDays: 0 } });
   }
 };
