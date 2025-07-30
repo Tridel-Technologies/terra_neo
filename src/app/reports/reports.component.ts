@@ -298,7 +298,7 @@ export class ReportsComponent implements OnInit {
       ];
     }
     this.summaryColumns = [
-      { field: 'timestamp', header: 'DateTime', type: 'text' },
+      { field: 'timestamp', header: 'Time Stamp', type: 'text' },
       { field: 'name', header: 'Sequence', type: 'text' },
       {
         field: 'pressure',
@@ -980,7 +980,7 @@ export class ReportsComponent implements OnInit {
       return [(bigint >> 16) & 255, (bigint >> 8) & 255, bigint & 255];
     };
 
-    const filteredData: any[] = dt.value;
+    const filteredData = dt.filteredValue || dt.value;
 
     if (filteredData && filteredData.length > 0) {
       const activeColumns = this.showToggleTable
