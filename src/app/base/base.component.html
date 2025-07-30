@@ -4,7 +4,7 @@
   <!-- license expired message -->
   <div class="license-card-container" *ngIf="licenseExpired">
     <div class="card">
-      <p-message closable severity="warn">
+      <p-message closable severity="error">
         Your license will expire in {{ remainingDays }} days
       </p-message>
     </div>
@@ -15,7 +15,7 @@
     <!-- <app-processing *ngIf="index ===1"> -->
     <!-- <app-importer></app-importer> -->
     <!-- </app-processing> -->
-    <app-dashboard *ngIf="index === 1"></app-dashboard>
+    <app-dashboard *ngIf="index === 1" [dir]="dir_enable"></app-dashboard>
     <app-analytics *ngIf="index === 2"></app-analytics>
     <app-reports *ngIf="index === 3"></app-reports>
     <app-settings *ngIf="index === 4"></app-settings>

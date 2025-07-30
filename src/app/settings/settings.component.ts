@@ -235,6 +235,7 @@ export class SettingsComponent {
         this.toastr.success('File moved', 'Success', {
           timeOut: 2000,
         });
+        this.init();
       });
   }
 
@@ -302,21 +303,21 @@ export class SettingsComponent {
       label: 'Current Speed',
       iconClass: 'fas fa-gauge',
       units: ['m/s', 'knots'],
-      unitslabels: ['m/s', 'knots'],
+      unitslabels: ['m/s', 'kn'],
     },
     {
       key: 'currentDirection',
       label: 'Current Direction',
       iconClass: 'fas fa-location-arrow',
       units: ['°', 'radians'],
-      unitslabels: ['degree (°)', 'radians'],
+      unitslabels: ['deg', 'rad'],
     },
     {
       key: 'battery',
       label: 'Battery',
       iconClass: 'fas fa-battery-half',
       units: ['%', 'volts'],
-      unitslabels: ['percentage (%)', 'volts'],
+      unitslabels: ['per', 'volt'],
     },
     {
       key: 'depth',
@@ -512,28 +513,45 @@ export class SettingsComponent {
     window.addEventListener('click', this.cancelContext.bind(this));
     this.init();
   }
+
   init() {
     this.files_list = [];
     setTimeout(() => {
-      this.http.get(`${this.baseUrl}allFiles`).subscribe((response: any) => {
+      this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
         this.files_list = response['data'];
-        console.log('files:', response, this.files_list);
-        const non_procces = this.files_list.filter((item) =>
-          item.files.every((ite) => ite.is_processed === true)
-        );
-        console.log('non_proccessed', non_procces);
-        this.non_processed = non_procces;
-        const procces = this.files_list.filter((item) =>
-          item.files.every((ite) => ite.is_processed === false)
-        );
-        this.processedFiles = procces;
+
+        this.non_processed = [];
+        this.processedFiles = [];
+
+        this.files_list.forEach((folder) => {
+          const nonProcessedFiles = folder.files.filter(
+            (file) => !file.is_processed
+          );
+          const processedFiles = folder.files.filter(
+            (file) => file.is_processed
+          );
+
+          if (nonProcessedFiles.length > 0) {
+            this.non_processed.push({
+              ...folder,
+              files: nonProcessedFiles,
+            });
+          }
+
+          if (processedFiles.length > 0) {
+            this.processedFiles.push({
+              ...folder,
+              files: processedFiles,
+            });
+          }
+        });
+
         this.expandedFolders = this.files_list.map(() => false);
-        console.log('files and folders: === ', procces[0].files[0].file_id);
-        // this.Foldertaped(this.processedFiles[1].files, this.processedFiles[1]);
         this.openSelectedFile();
       });
     }, 100);
   }
+
   selectedFolder2!: Folders;
   selectedFile: fileData[] = [];
   openSelectedFile() {

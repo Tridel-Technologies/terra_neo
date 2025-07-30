@@ -7,8 +7,8 @@ const router = express.Router();
 
 router.post('/import', importAll);
 router.get('/get_files', getFiles);
-router.get('/fetch_data_by_file/:file_id', getDataByFolderIdAndFileName)
-router.post('/update_values', updateValues)
+router.get('/fetch_data_by_file/:file_id', getDataByFolderIdAndFileName);
+router.post('/update_values', updateValues);
 router.post('/addNewRow', addNewRow);
 router.put('/updateData', updateData);
 router.get('/files', getFoldersWithFiles);
@@ -16,7 +16,6 @@ router.get('/allFiles', getAllFoldersWithFiles);
 router.get('/get_processed_data/:file_id', getProcessedDataByFileId);
 
 router.post('/createFile', createFolderAndFile);
-router.get('/files', getFoldersWithFiles);
 router.post('/change_folder', changeFolder);
 router.post('/create_folder', createFolder);
 router.post('/update_unit', updateToUnits);

@@ -77,21 +77,21 @@ export class ImporterComponent {
       label: 'Current Speed',
       iconClass: 'fas fa-tachometer-alt',
       units: ['m/s', 'knots'],
-      unitslabels: ['m/s', 'knots'],
+      unitslabels: ['m/s', 'kn'],
     },
     {
       key: 'currentDirection',
       label: 'Current Direction',
       iconClass: 'fas fa-compass',
       units: ['°', 'radians'],
-      unitslabels: ['deg (°)', 'radians'],
+      unitslabels: ['deg', 'rad'],
     },
     {
       key: 'battery',
       label: 'Battery',
       iconClass: 'fas fa-battery-full',
       units: ['volts', '%'],
-      unitslabels: ['volts', 'percent (%)'],
+      unitslabels: ['volt', 'per'],
     },
     {
       key: 'depth',
@@ -166,10 +166,8 @@ export class ImporterComponent {
   onRowClick(row: any, index: number) {
     this.selectedRowIndex = index;
     this.selectedRowData = row;
-    console.log('Selected Row:', row);
     const date = new Date(row.date);
     const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
-    console.log(formattedDate);
     this.high_water_level = `${formattedDate}`;
   }
 
@@ -202,7 +200,6 @@ export class ImporterComponent {
         return;
       }
     }
-    console.log(this.selectedFiles);
     const files = [];
     for (let index = 0; index < this.selectedFiles.length; index++) {
       files.push(this.selectedFiles[index]);
@@ -229,7 +226,6 @@ export class ImporterComponent {
         unit: this.latlongType,
       };
     }
-    console.log('sendingData', data);
     this.update(data);
   }
   showoption: boolean = false;
@@ -237,7 +233,6 @@ export class ImporterComponent {
     this.http
       .post(`${this.baseUrl}update_values`, data)
       .subscribe((response: any) => {
-        console.log(response);
         this.toast.success('Update successful', 'Success');
         this.showoption = true;
         this.showoption = true;
@@ -546,10 +541,6 @@ export class ImporterComponent {
     return value;
   }
 
-  changinglat() {
-    console.log(this.latitude);
-  }
-
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
     // Clear DD and DMS fields
     this.latitude = null;
@@ -564,7 +555,6 @@ export class ImporterComponent {
     this.FileID = file_id;
 
     this.globe.fileId = file_id;
-    console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
     if (isCtrlPressed) {
@@ -576,7 +566,6 @@ export class ImporterComponent {
           file_name: fileName,
           file_id: file_id,
         }); // Add file to selection
-        console.log(this.selectedFiles);
         this.open_file(fileName, file_id);
       } else {
         this.selectedFiles.splice(index, 1); // Remove file from selection
@@ -773,15 +762,11 @@ export class ImporterComponent {
         date,
         'yyyy-MM-dd HH:mm:ss'
       );
-      console.log(formattedDate);
       this.high_water_level = `${formattedDate}`;
-      console.log('Row with Max Pressure:', maxPressureRow);
-      console.log('Index of Max Pressure Row:', maxPressureIndex);
 
       const high = this.main_table.filter(
         (item) => item.high_water_level === 1
       );
-      console.log(high);
       this.high_water_level = high[0].date;
     }, 50);
   }
@@ -971,8 +956,46 @@ export class ImporterComponent {
   }
 
   deleteRow(index: number) {
-    this.filterhistorydata.splice(index, 1); // Remove row from the array
-    this.filterhistorydata = [...this.filterhistorydata]; // Update reference to trigger change detection
+    // Get all items related to selected file
+    const filtered = this.historyData.filter(
+      (item: any) => item.fileName === this.selected_filelist
+    );
+
+    // Get the actual item to delete using the index from filtered list
+    const itemToDelete = filtered[index];
+
+    if (itemToDelete) {
+      // Find index of this item in original historyData
+      const originalIndex = this.historyData.findIndex(
+        (item: any) =>
+          item.fileName === itemToDelete.fileName &&
+          JSON.stringify(item) === JSON.stringify(itemToDelete)
+      );
+
+      if (originalIndex > -1) {
+        this.historyData.splice(originalIndex, 1);
+      }
+
+      // Remove from fileWiseUploadData as well
+      const fileKey = this.selected_filelist.toString();
+      if (
+        this.fileWiseUploadData[fileKey] &&
+        Array.isArray(this.fileWiseUploadData[fileKey])
+      ) {
+        const fileArray = this.fileWiseUploadData[fileKey];
+        const fileArrayIndex = fileArray.findIndex(
+          (item: any) => JSON.stringify(item) === JSON.stringify(itemToDelete)
+        );
+        if (fileArrayIndex > -1) {
+          fileArray.splice(fileArrayIndex, 1);
+        }
+      }
+
+      // Now update the filtered list
+      this.filterhistorydata = this.historyData.filter(
+        (item: any) => item.fileName === this.selected_filelist
+      );
+    }
   }
 
   convertToTimeFormat(value: number): string {

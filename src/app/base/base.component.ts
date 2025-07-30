@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, EventEmitter } from '@angular/core';
 import { HeaderComponent } from '../header/header.component';
 import { ImporterComponent } from '../importer/importer.component';
 import { ProcessingComponent } from '../processing/processing.component';
@@ -43,6 +43,14 @@ export class BaseComponent {
 
   constructor(private http: HttpClient, private router: Router) {
     this.baseUrl = new GlobalConfig().baseUrl;
+  }
+
+  dir_enable: boolean = false;
+  dirEnableChange = new EventEmitter<boolean>();
+
+  setDirEnable(value: boolean) {
+    this.dir_enable = value;
+    this.dirEnableChange.emit(value);
   }
 
   ngOnInit() {

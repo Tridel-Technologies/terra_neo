@@ -243,7 +243,7 @@
   color: var(--font-color);
   position: relative;
   overflow: hidden;
-  /* overflow-y: auto; */
+  overflow: scroll;
 }
 
 .newFolddr {

@@ -253,7 +253,6 @@
               [(ngModel)]="latitude"
               name="latitude"
               #lat="ngModel"
-              (change)="changinglat()"
             />
             <div *ngIf="lat.invalid && latlongType === 'dd'" class="error2">
               Latitude must be between -90° and +90°.
@@ -429,7 +428,7 @@
       <input
         class="nameField"
         type="text"
-        placeholder="File Name"
+        placeholder="Folder Name"
         [(ngModel)]="FileName"
       />
       <div

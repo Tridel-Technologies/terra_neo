@@ -22,6 +22,7 @@ export class HeaderComponent implements OnInit {
   currentTheme$ = this.themeSource.asObservable();
   ngOnInit() {
     let storedTheme = localStorage.getItem('theme');
+    this.base.setDirEnable(true);
 
     if (!storedTheme || (storedTheme !== 'light' && storedTheme !== 'dark')) {
       storedTheme = 'light'; // fallback default
@@ -34,12 +35,17 @@ export class HeaderComponent implements OnInit {
   }
 
   onChangeTheme(theme: string) {
+    this.base.dir_enable = false;
     this.applyTheme(theme);
     this.theme = theme;
     this.themeSource.next(theme);
     this.base.chartFont = theme;
     localStorage.setItem('theme', theme);
     this.themeService.changeTheme(this.theme);
+
+    setTimeout(() => {
+      this.base.dir_enable = true;
+    }, 100);
   }
 
   applyTheme(theme: string) {

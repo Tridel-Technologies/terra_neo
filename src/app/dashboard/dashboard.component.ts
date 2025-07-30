@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, Input } from '@angular/core';
 import { BatteryComponent } from './battery/battery.component';
 import { tap } from 'rxjs';
 import { ToastrService } from 'ngx-toastr';
@@ -60,6 +60,7 @@ interface dashdata {
   providers: [GlobalConfig],
 })
 export class DashboardComponent implements OnInit {
+  @Input() dir: boolean = false;
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
@@ -82,7 +83,7 @@ export class DashboardComponent implements OnInit {
   high_watel_level: any[] = [];
   isbefore: boolean = true;
   currentData!: any;
-  dir: boolean = false;
+  @Input() enableDir: boolean = false;
   latutude!: string;
   longitude!: string;
   private baseUrl: string;

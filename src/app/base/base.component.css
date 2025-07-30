@@ -3,6 +3,7 @@
     width: 100%;
     background-color: var(--background-color);
     overflow: hidden;
+    position: relative;
 }
 
 .bodyy{
@@ -16,6 +17,9 @@
   justify-content: center;
   margin-top: 2px;
   margin-bottom: 2px;
+  left: 45%;
+  top: 60px;
+  position: absolute;
 }
 
 .card {

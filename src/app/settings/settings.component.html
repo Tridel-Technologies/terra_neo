@@ -9,7 +9,7 @@
 
   <!-- FOLDER VIEW -->
   <div class="files_cont" *ngIf="openedFile2.length === 0">
-    <ng-container *ngFor="let folder of non_processed">
+    <ng-container *ngFor="let folder of processedFiles">
       <div
         class="Folder"
         (click)="Foldertaped2(folder.files, folder)"
@@ -104,7 +104,7 @@
   <h5>Raw Data</h5>
   <!-- FOLDER VIEW -->
   <div class="files_cont" *ngIf="openedFile.length === 0">
-    <ng-container *ngFor="let folder of processedFiles">
+    <ng-container *ngFor="let folder of non_processed">
       <div
         class="Folder"
         (click)="Foldertaped(folder.files, folder)"
