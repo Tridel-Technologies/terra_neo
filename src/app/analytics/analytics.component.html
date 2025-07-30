@@ -96,7 +96,11 @@
             </p-select> -->
     </div>
 
-    <div class="chartContainer" *ngIf="plot.cname === 'Single Axis'">
+    <div
+      class="chartContainer"
+      style="min-height: 500px"
+      *ngIf="plot.cname === 'Single Axis'"
+    >
       <div class="colorPickerContainer">
         <p-colorPicker
           [(ngModel)]="tideChartColor"
@@ -111,7 +115,11 @@
       ></div>
     </div>
 
-    <div class="chartContainer" *ngIf="plot.cname === 'Single Axis'">
+    <div
+      class="chartContainer"
+      style="min-height: 500px"
+      *ngIf="plot.cname === 'Single Axis'"
+    >
       <div class="colorPickerContainer">
         <p-colorPicker
           [(ngModel)]="currentSpeedColor"
@@ -126,7 +134,11 @@
       ></div>
     </div>
 
-    <div class="chartContainer" *ngIf="plot.cname === 'Single Axis'">
+    <div
+      class="chartContainer"
+      style="min-height: 500px"
+      *ngIf="plot.cname === 'Single Axis'"
+    >
       <div class="colorPickerContainer">
         <p-colorPicker
           [(ngModel)]="currentDirectionColor"
@@ -143,7 +155,11 @@
       ></div>
     </div>
 
-    <div class="chartContainer" *ngIf="plot.cname === 'Dual Axis'">
+    <div
+      class="chartContainer"
+      style="min-height: 500px"
+      *ngIf="plot.cname === 'Dual Axis'"
+    >
       <div
         id="currentSpeedDirection"
         class="chart-diagram"
@@ -151,7 +167,11 @@
       ></div>
     </div>
 
-    <div class="chartContainer" *ngIf="plot.cname === 'Tri Axis'">
+    <div
+      class="chartContainer"
+      style="min-height: 500px"
+      *ngIf="plot.cname === 'Tri Axis'"
+    >
       <div
         id="midSpeedDirection"
         class="chart-diagram"
