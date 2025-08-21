@@ -337,7 +337,7 @@
             <tr *ngFor="let row of filterhistorydata; let i = index">
               <td>{{ row.station_id }}</td>
               <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" }}</td>
-              <!-- <td>{{ row.Time }}</td> -->
+              <!-- <td>{{ row.Time |date: "HH:mm:ss" }}</td> -->
               <td>{{ row.speed }}</td>
               <td>{{ row.direction }}</td>
               <td>{{ row.depth }}</td>

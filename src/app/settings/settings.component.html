@@ -136,10 +136,11 @@
   </h2>
   <!-- FILE VIEW -->
   <div class="files_list" *ngIf="openedFile.length !== 0">
-    <div
-      class="Folder"
+    <div class="Folder"
+      [ngClass]="file.file_name === clicked? 'Folder_selected':'Folder'"
       *ngFor="let file of openedFile"
       (contextmenu)="onFileRightClick($event, file)"
+      (click)="fileClicked(file.file_name, file.file_id)"
     >
       <img [src]="getFileClass(file.file_name)" alt="" />
       <p>{{ file.file_name }}</p>
@@ -213,6 +214,9 @@
           <span class="tooltip-text">{{ getTooltip(param.key, unit) }}</span>
         </div>
       </div>
+    </div>
+    <div class="downloadss">
+      <button class="Donwloads" (click)="donwload()">Export Header</button>
     </div>
   </div>
   <!-- <div class="path-row">

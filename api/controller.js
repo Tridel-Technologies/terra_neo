@@ -256,7 +256,7 @@ const createFolderAndFile = async (req, res) => {
           row.speed,
           row.direction,
           row.depth,
-          row.pressure,
+          parseFloat(row.pressure) * 0.9945,
           row.battery,
           0,
           fileId

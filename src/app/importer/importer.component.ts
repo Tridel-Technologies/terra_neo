@@ -483,16 +483,6 @@ export class ImporterComponent {
     this.uploaded_files = [];
   }
 
-  expectedHeaders = [
-    'STRING',
-    'Date',
-    'Time',
-    'speedms',
-    'direction',
-    'bin_depth',
-    'battery',
-    'pressure_in_bar',
-  ];
   tableHeaders = [
     'String',
     'Date',
@@ -543,9 +533,10 @@ export class ImporterComponent {
       } else {
         this.historyData = allRows;
         this.tableData = [...allRows];
-        this.displayedColumns = this.expectedHeaders;
+        // this.displayedColumns = this.expectedHeaders;
         this.fileWiseUploadData = fileWiseData; // <- store for import step
         this.onFileClick(this.uploaded_files[0]);
+        console.log(allRows)
       }
     });
   }
@@ -562,85 +553,85 @@ export class ImporterComponent {
       );
     }, 50);
   }
+expectedHeaders = [
+  'STRING',
+  'Date',
+  'Time',
+  'speedms',
+  'direction',
+  'bin_depth',
+  'battery',
+  'pressure_in_bar',
+];
 
-  async processFile(file: File): Promise<{ fileName: string; data: any[] }> {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+async processFile(file: File): Promise<{ fileName: string; data: any[] }> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
 
-      reader.onload = (e) => {
-        try {
-          const data = new Uint8Array(reader.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(reader.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
 
-          let sheetData: any[] = XLSX.utils.sheet_to_json(
-            workbook.Sheets[sheetName]
-          );
-          if (sheetData.length === 0)
-            return reject(`File "${file.name}" is empty.`);
+        const rawData: any[][] = XLSX.utils.sheet_to_json(
+          workbook.Sheets[sheetName],
+          { header: 1 }
+        );
 
-          const fileHeaders = Object.keys(sheetData[0]).map((h) => h.trim());
-          const isHeaderValid = this.expectedHeaders.every((h) =>
-            fileHeaders.includes(h.trim())
-          );
-          if (!isHeaderValid)
-            return reject(`Invalid header format in file: ${file.name}`);
+        if (rawData.length === 0) {
+          return reject(`File "${file.name}" is empty.`);
+        }
 
-          this.uploaded_files.push(file.name);
-
-          const formattedData = sheetData.map((row, index) => {
-            const cleanedRow: any = {};
-            Object.keys(row).forEach((key) => {
-              cleanedRow[key.trim()] = row[key];
-            });
-
-            for (const key of this.expectedHeaders) {
-              const value = cleanedRow[key];
-              if (!value || (typeof value === 'number' && isNaN(value))) {
-                // this.toast.warning(
-                //   `Empty/NaN value in "${key}" at row ${index + 2} in file ${
-                //     file.name
-                //   }`,
-                //   'Warning'
-                // );
-                this.row_isempty = true;
-              }
-            }
-
-            const time = this.convertToTimeFormat(cleanedRow['Time']);
-            const date = this.convertToDateFormat(cleanedRow['Date']);
-            const dateTime = `${date}T${time}Z`;
-
-            return {
-              fileName: file.name,
-              station_id: cleanedRow['STRING'],
-              date: dateTime,
-              speed: cleanedRow['speedms'],
-              direction: cleanedRow['direction'],
-              depth: cleanedRow['bin_depth'],
-              battery: cleanedRow['battery'],
-              pressure: cleanedRow['pressure_in_bar'],
-              lat: '', // Replace with dynamic value if available
-              lon: '', // Replace with dynamic value if available
-            };
+        const formattedData = rawData.map((row, index) => {
+          const cleanedRow: any = {};
+          this.expectedHeaders.forEach((key, i) => {
+            cleanedRow[key] = row[i];
           });
 
-          if (this.row_isempty === true) {
-            this.toast.warning(
-              `Empty or NaN values in the file ${file.name} have been replaced with NULL.`,
-              'Warning'
-            );
+          for (const key of this.expectedHeaders) {
+            const value = cleanedRow[key];
+            if (!value || (typeof value === 'number' && isNaN(value))) {
+              this.row_isempty = true;
+            }
           }
 
-          resolve({ fileName: file.name, data: formattedData });
-        } catch (err: any) {
-          reject(err.message || `Error processing file: ${file.name}`);
-        }
-      };
+          const time = this.convertToTimeFormat(cleanedRow['Time']);
+          const date = this.convertToDateFormat(cleanedRow['Date']);
+          const dateTime = `${date}T${time}Z`;
 
-      reader.readAsArrayBuffer(file);
-    });
-  }
+          return {
+            fileName: file.name,
+            station_id: cleanedRow['STRING'],
+            date: dateTime,
+            speed: cleanedRow['speedms'],
+            direction: cleanedRow['direction'],
+            depth: cleanedRow['bin_depth'],
+            battery: cleanedRow['pressure_in_bar'],
+            pressure: cleanedRow['battery'],
+            lat: '',
+            lon: '',
+          };
+        });
+
+        if (this.row_isempty === true) {
+          this.toast.warning(
+            `Empty or NaN values in the file ${file.name} have been replaced with NULL.`,
+            'Warning'
+          );
+        }
+
+        this.uploaded_files.push(file.name);
+        resolve({ fileName: file.name, data: formattedData });
+      } catch (err: any) {
+        reject(err.message || `Error processing file: ${file.name}`);
+      }
+    };
+
+    reader.readAsArrayBuffer(file);
+  });
+}
+
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
 

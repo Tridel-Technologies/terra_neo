@@ -24,6 +24,7 @@ interface fileData {
   styleUrl: './settings.component.css',
 })
 export class SettingsComponent {
+  clicked:string = 'false';
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
@@ -49,7 +50,10 @@ export class SettingsComponent {
       this.tappedFolder = folder;
     }, 100);
   }
-
+fileClicked(val:string, id:number){
+  this.clicked = val;
+  this.file_id = id;
+}
   Foldertaped2(file: fileData[], folder: Folders) {
     this.openedFile2 = [];
     setTimeout(() => {
@@ -209,10 +213,37 @@ export class SettingsComponent {
   }
   back() {
     this.openedFile = [];
+    this.clicked= "false";
   }
   back2() {
     this.openedFile2 = [];
   }
+file_name!:string;
+file_id!:number;
+  donwload(){
+    this.http.get(`${this.baseUrl}fetch_data_by_file/${this.file_id}`).subscribe(
+      (response:any)=>{
+        console.log("response",response);
+
+        const first = `Deployment started date : ${response[0].date}`;
+        const last = `Deployment ended date : ${response[response.length -1].date}`;
+        const data = `Column1 = Station ID \nColumn2 = Date/Time \nColumn3 = Current Speed \nColumn4 = Current Direction \nColumn5 = Depth \nColumn6 = pressure_in_bar \nColumn7 = Battery \n\n\ \n${first} \n${last} \nFile name: ${this.clicked}`;
+        this.writeanddownload(`${this.clicked}_header.txt`, data);
+        console.log(first, last, this.clicked);
+      }
+    )
+  }
+
+writeanddownload(name:string, content:string){
+  const blob = new Blob([content] ,{type: 'text/plain'});
+  const url = window.URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = url;
+  anchor.download = name;
+  anchor.click();
+
+  window.URL.revokeObjectURL(url);
+}
 
   onContainerRightClick(event: MouseEvent) {
     event.preventDefault();

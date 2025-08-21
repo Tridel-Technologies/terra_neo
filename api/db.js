@@ -5,10 +5,9 @@ const pool = new Pool({
     password: 'Tridel@2025',
     host: 'localhost',
     port: 5432,
-    database: 'db_terra_inho2',
+    database: 'db_terra_inho_v2',
 });
 
-// Connect to the PostgreSQL database
 const connectDB = async () => {
     try {
         const client = await pool.connect();

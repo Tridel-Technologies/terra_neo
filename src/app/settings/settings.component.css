@@ -330,6 +330,27 @@ background-color: var(--button-bg-hover);
   background-color: rgba(205, 203, 203, 0.598);
 }
 
+.Folder_selected {
+  background-color: rgba(205, 203, 203, 0.598);
+}
+.downloadss{
+  height: 40px;
+  width: 100%;
+  /* background-color: #333; */
+  display: flex;
+  flex-direction: row;
+  justify-content: left;
+  align-items: start;
+}
+.Donwloads{
+  height: 40px;
+  width: 150px;
+  background-color: var(--button-bg);
+  border-radius: 10px;
+  color:var(--tooltip-text);
+  cursor: pointer;
+  border: none;
+}
 .Folder img {
   height: 50%;
   width: 50%;
