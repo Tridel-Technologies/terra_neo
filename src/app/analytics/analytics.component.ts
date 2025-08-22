@@ -415,13 +415,17 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       )
       .subscribe({
         next: (response: any) => {
+          const filteredResponse = response.filter((item: any) => {
+            const pressureValue = parseFloat(item.pressure);
+            return !isNaN(pressureValue) && pressureValue !== 0;
+          });
           if (this.isMulti) {
             let data = this.fullData;
             this.fullData = [];
             setTimeout(() => {
               this.fullData = data;
-              for (let index = 0; index < response.length; index++) {
-                this.fullData.push(response[index]);
+              for (let index = 0; index < filteredResponse.length; index++) {
+                this.fullData.push(filteredResponse[index]);
               }
               // Sort the data by date in ascending order
               this.fullData.sort(
@@ -445,7 +449,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           } else {
             this.fullData = [];
             setTimeout(() => {
-              this.fullData = response;
+              this.fullData = filteredResponse;
               // Sort the data by date in ascending order
               this.fullData.sort(
                 (a, b) =>
@@ -1118,6 +1122,22 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       const tideLevel = echarts.init(tide);
 
+      // Compute dynamic y-axis bounds from data
+      const pressureValues = (this.fullData || [])
+        .map((item) => parseFloat(item.pressure))
+        .filter((v) => !isNaN(v));
+      let yMin: number | undefined = undefined;
+      let yMax: number | undefined = undefined;
+      if (pressureValues.length > 0) {
+        const minVal = Math.min(...pressureValues);
+        const maxVal = Math.max(...pressureValues);
+        const range = maxVal - minVal;
+        const padding =
+          range === 0 ? Math.max(1e-3, Math.abs(minVal) * 0.1) : range * 0.1;
+        yMin = +(minVal - padding).toFixed(3);
+        yMax = +(maxVal + padding).toFixed(3);
+      }
+
       const option = {
         title: {
           text: 'Water Level',
@@ -1200,6 +1220,10 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
+            // Make y-axis dynamic based on data
+            min: yMin,
+            max: yMax,
+            scale: true,
             axisLabel: {
               color: mainText,
             },
@@ -1266,12 +1290,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 90,
+            start: 0,
             end: 100,
           },
           {
             type: 'inside',
-            start: 90,
+            start: 0,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1536,12 +1560,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98, // You can adjust to define how much of the chart is visible initially
+            start: 0, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 98,
+            start: 0,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1780,12 +1804,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98, // You can adjust to define how much of the chart is visible initially
+            start: 0, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 98,
+            start: 0,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -2021,12 +2045,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98,
+            start: 0,
             end: 100,
           },
           {
             type: 'inside',
-            start: 98,
+            start: 0,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -2414,12 +2438,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98,
+            start: 0,
             end: 100,
           },
           {
             type: 'inside',
-            start: 98,
+            start: 0,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,

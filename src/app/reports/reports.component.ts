@@ -453,31 +453,24 @@ export class ReportsComponent implements OnInit {
       .subscribe((response: any) => {
         this.last_row =
           response.length > 0 ? response[response.length - 1] : null;
-        // if (this.isMulti) {
-        // let data = this.main_table;
-        this.main_table = [];
-        setTimeout(() => {
-          // this.main_table = data;
-          for (let index = 0; index < response.length; index++) {
-            const row = { ...response[index] };
-
-            if (row.date) {
-              const date = new Date(row.date);
-              row.date = formatDate(date, this.dateFormat, 'en-US');
-            }
-
-            // Decimal conversion
-            ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
-              if (row[key] != null) {
-                row[key] = this.formatValue(row[key]);
-              }
-            });
-
-            this.main_table.push(row);
+        // Build a new array and assign immutably so paginator initializes correctly
+        const mapped: any[] = response.map((item: any) => {
+          const row = { ...item };
+          if (row.date) {
+            const date = new Date(row.date);
+            row.date = formatDate(date, this.dateFormat, 'en-US');
           }
-          this.checkForConversion();
-        }, 100);
-        // }
+          // Decimal conversion
+          ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
+            if (row[key] != null) {
+              row[key] = this.formatValue(row[key]);
+            }
+          });
+          return row;
+        });
+
+        this.main_table = mapped;
+        this.checkForConversion();
       });
   }
 
