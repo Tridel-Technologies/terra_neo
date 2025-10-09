@@ -781,25 +781,21 @@ export class ImporterComponent {
           const workbook = XLSX.read(data, { type: 'array' });
           const sheetName = workbook.SheetNames[0];
 
-          let sheetData: any[] = XLSX.utils.sheet_to_json(
-            workbook.Sheets[sheetName]
+          const rawData: any[][] = XLSX.utils.sheet_to_json(
+            workbook.Sheets[sheetName],
+            { header: 1 }
           );
-          if (sheetData.length === 0)
-            return reject(`File "${file.name}" is empty.`);
 
-          const fileHeaders = Object.keys(sheetData[0]).map((h) => h.trim());
-          const isHeaderValid = this.expectedHeaders.every((h) =>
-            fileHeaders.includes(h.trim())
-          );
-          if (!isHeaderValid)
-            return reject(`Invalid header format in file: ${file.name}`);
+          if (rawData.length === 0) {
+            return reject(`File "${file.name}" is empty.`);
+          }
 
           this.uploaded_files.push(file.name);
 
-          const formattedData = sheetData.map((row, index) => {
+          const formattedData = rawData.map((row, index) => {
             const cleanedRow: any = {};
-            Object.keys(row).forEach((key) => {
-              cleanedRow[key.trim()] = row[key];
+            this.expectedHeaders.forEach((key, i) => {
+              cleanedRow[key] = row[i];
             });
 
             for (const key of this.expectedHeaders) {

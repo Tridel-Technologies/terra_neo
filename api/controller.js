@@ -1,8 +1,8 @@
-const fs = require('fs').promises;
-const path = require('path');
-const { poo, file } = require('fontawesome');
-const { pool } = require('./db');
-const bcrypt = require('bcrypt');
+const fs = require("fs").promises;
+const path = require("path");
+const { poo, file } = require("fontawesome");
+const { pool } = require("./db");
+const bcrypt = require("bcrypt");
 // import { promises as fs } from 'fs';
 // import * as path from 'path';
 
@@ -10,7 +10,7 @@ const importAll = async (req, res) => {
   const { data, files, folder_name } = req.body;
 
   if (!files || !folder_name || !Array.isArray(data) || data.length === 0) {
-    return res.status(400).json({ message: 'Invalid input data' });
+    return res.status(400).json({ message: "Invalid input data" });
   }
 
   try {
@@ -26,7 +26,7 @@ const importAll = async (req, res) => {
     const file_id = result1.rows[0]?.id;
 
     if (!file_id) {
-      return res.status(500).json({ message: 'File insert failed' });
+      return res.status(500).json({ message: "File insert failed" });
     }
 
     // Loop over the data and insert into tb_adcp_master
@@ -35,9 +35,13 @@ const importAll = async (req, res) => {
 
       // Optional: Validate each item before insert
       if (
-        !item.station_id || !item.DateTime ||
-        item.speed == null || item.direction == null ||
-        item.depth == null || item.pressure == null || item.battery == null
+        !item.station_id ||
+        !item.DateTime ||
+        item.speed == null ||
+        item.direction == null ||
+        item.depth == null ||
+        item.pressure == null ||
+        item.battery == null
       ) {
         console.warn(`Skipping invalid row at index ${index}:`, item);
         continue;
@@ -56,45 +60,48 @@ const importAll = async (req, res) => {
           item.pressure,
           item.battery,
           file_id,
-          item.file_name
+          item.file_name,
         ]
       );
     }
 
     res.status(200).json({
-      message: 'File and data imported successfully',
+      message: "File and data imported successfully",
       file_id,
-      rowsInserted: data.length
+      rowsInserted: data.length,
     });
-
   } catch (error) {
-    console.error('Import error:', error);
-    res.status(500).json({ message: 'Server error', error: error.message });
+    console.error("Import error:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
   }
 };
-
 
 const getFiles = async (req, res) => {
   try {
     const result = await pool.query(`SELECT * FROM tb_folders`);
     res.status(200).json({
-      data: result.rows
-    })
+      data: result.rows,
+    });
   } catch (error) {
-    res.status(500).json({ message: `Error: ${error}` })
+    res.status(500).json({ message: `Error: ${error}` });
   }
-}
+};
 
 const updateValues = async (req, res) => {
   const { file_name, lat, lon, high_water_level, unit } = req.body;
 
-  if (!file_name || !Array.isArray(file_name) || file_name.length === 0 || unit.length === 0) {
-    return res.status(400).json({ error: 'file_name (array) is required' });
+  if (
+    !file_name ||
+    !Array.isArray(file_name) ||
+    file_name.length === 0 ||
+    unit.length === 0
+  ) {
+    return res.status(400).json({ error: "file_name (array) is required" });
   }
 
   const client = await pool.connect();
   try {
-    await client.query('BEGIN');
+    await client.query("BEGIN");
 
     // ✅ Step 1: Update lat/lon for each file_id
     if (lat !== undefined || lon !== undefined) {
@@ -115,17 +122,17 @@ const updateValues = async (req, res) => {
 
         const updateQuery = `
           UPDATE tb_${file.file_id}
-          SET ${fields.join(', ')}
+          SET ${fields.join(", ")}
         `;
         const updateQuery2 = `
           UPDATE tb_${file.file_id}_processed
-          SET ${fields.join(', ')}
+          SET ${fields.join(", ")}
         `;
 
         await client.query(updateQuery, values);
         await client.query(updateQuery2, values);
       }
-      if(unit !== undefined || unit.length > 0){
+      if (unit !== undefined || unit.length > 0) {
         await client.query(
           `UPDATE tb_file
            SET coord_unit = $1, coord_unit_to = $2
@@ -141,7 +148,9 @@ const updateValues = async (req, res) => {
 
       // Reset all rows
       await client.query(`UPDATE ${targetTable} SET high_water_level = 0`);
-      await client.query(`UPDATE ${targetTable}_processed SET high_water_level = 0`);
+      await client.query(
+        `UPDATE ${targetTable}_processed SET high_water_level = 0`
+      );
 
       // Set high_water_level = 1 for matching timestamp
       await client.query(
@@ -158,11 +167,11 @@ const updateValues = async (req, res) => {
       );
     }
 
-    await client.query('COMMIT');
-    res.json({ message: 'Update successful' });
+    await client.query("COMMIT");
+    res.json({ message: "Update successful" });
   } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Error updating ADCP:', error);
+    await client.query("ROLLBACK");
+    console.error("Error updating ADCP:", error);
     res.status(500).json({ error: `Database error: ${error.message}` });
   } finally {
     client.release();
@@ -182,7 +191,9 @@ const createFolderAndFile = async (req, res) => {
 
     const folderId = folderResult.rows[0]?.id;
     if (!folderId) {
-      return res.status(500).json({ status: "failed", message: "Folder creation failed" });
+      return res
+        .status(500)
+        .json({ status: "failed", message: "Folder creation failed" });
     }
 
     const insertedFiles = [];
@@ -196,7 +207,22 @@ const createFolderAndFile = async (req, res) => {
 
       // Insert file
       const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit, water_level_unit_to, current_speed_unit_to, current_direction_unit_to, battery_unit_to, depth_unit_to, coord_unit_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
-      const fileResult = await pool.query(fileInsertQuery, [fname, folderId, unitsTo.waterLevel, unitsTo.currentSpeed, unitsTo.currentDirection, unitsTo.battery, unitsTo.depth, null, unitsTo.waterLevel, unitsTo.currentSpeed, unitsTo.currentDirection, unitsTo.battery, unitsTo.depth, null]);
+      const fileResult = await pool.query(fileInsertQuery, [
+        fname,
+        folderId,
+        unitsTo.waterLevel,
+        unitsTo.currentSpeed,
+        unitsTo.currentDirection,
+        unitsTo.battery,
+        unitsTo.depth,
+        null,
+        unitsTo.waterLevel,
+        unitsTo.currentSpeed,
+        unitsTo.currentDirection,
+        unitsTo.battery,
+        unitsTo.depth,
+        null,
+      ]);
       const fileId = fileResult.rows[0]?.id;
 
       if (!fileId) {
@@ -236,12 +262,14 @@ const createFolderAndFile = async (req, res) => {
           file_id INTEGER REFERENCES tb_file(id)
         )`;
       const tbCreateResult = await pool.query(tblCreateQuery);
-      const tbCreateProcessed = await pool.query(tblperocessed)
+      const tbCreateProcessed = await pool.query(tblperocessed);
 
-      if (tbCreateResult.command !== 'CREATE' && tbCreateProcessed.command !== 'CREATE') {
+      if (
+        tbCreateResult.command !== "CREATE" &&
+        tbCreateProcessed.command !== "CREATE"
+      ) {
         continue; // Skip if table creation failed
       }
-
 
       // Insert all rows into the dynamic table
       const insertQuery = `
@@ -262,10 +290,10 @@ const createFolderAndFile = async (req, res) => {
           row.speed,
           row.direction,
           row.depth,
-          row.pressure,
+          parseFloat(row.pressure) * 0.9945,
           row.battery,
           row.high_water_level,
-          fileId
+          fileId,
         ];
         await pool.query(insertQuery, values);
         await pool.query(insertQuery_processed, values);
@@ -278,19 +306,16 @@ const createFolderAndFile = async (req, res) => {
       status: "Success",
       message: "Folder, files, and data inserted successfully",
       folder_id: folderId,
-      files: insertedFiles
+      files: insertedFiles,
     });
-
   } catch (error) {
     console.error("Error:", error);
     return res.status(500).json({
       status: "failed",
-      message: error.message || "Unexpected error occurred"
+      message: error.message || "Unexpected error occurred",
     });
   }
 };
-
-
 
 // login page api
 //get the count of the users
@@ -305,39 +330,38 @@ const getUser = async (req, res) => {
 
 //check for the matches
 const checkusername = async (req, res) => {
-  const { user_name, email_id } = req.body
+  const { user_name, email_id } = req.body;
   try {
     const result = await pool.query(
-      'SELECT COUNT(*) AS count FROM user_tb WHERE user_name = $1',
+      "SELECT COUNT(*) AS count FROM user_tb WHERE user_name = $1",
       [user_name]
     );
     const email_result = await pool.query(
-      'SELECT COUNT(*) AS count FROM user_tb WHERE email_id = $1',
+      "SELECT COUNT(*) AS count FROM user_tb WHERE email_id = $1",
       [email_id]
     );
     res.json({
       usernameExists: result.rows[0].count > 0,
-      emailExists: email_result.rows[0].count > 0
+      emailExists: email_result.rows[0].count > 0,
     });
   } catch (error) {
-    console.error('Error in checkUsername:', error);
-    res.status(500).json({ message: 'Error checking username.' });
+    console.error("Error in checkUsername:", error);
+    res.status(500).json({ message: "Error checking username." });
   }
 };
-
 
 //Add the user
 const signup = async (req, res) => {
   const { user_name, password, email_id } = req.body;
-  console.log('Incoming user:', req.body);
+  console.log("Incoming user:", req.body);
   const encrypt_password = await bcrypt.hash(password, 10);
 
   try {
     await pool.query(
-      'INSERT INTO user_tb (user_name,password,email_id) VALUES ($1, $2, $3)',
+      "INSERT INTO user_tb (user_name,password,email_id) VALUES ($1, $2, $3)",
       [user_name, encrypt_password, email_id]
     );
-    res.status(201).send('User added');
+    res.status(201).send("User added");
   } catch (err) {
     res.status(500).send(err.message);
   }
@@ -349,11 +373,14 @@ const loginUser = async (req, res) => {
   console.log("Attempting login for:", user_name);
 
   try {
-    const result = await pool.query('SELECT * FROM user_tb WHERE user_name = $1', [user_name]);
+    const result = await pool.query(
+      "SELECT * FROM user_tb WHERE user_name = $1",
+      [user_name]
+    );
 
     if (result.rows.length === 0) {
       console.log("No user found");
-      return res.status(401).json({ message: 'User not found' });
+      return res.status(401).json({ message: "User not found" });
     }
 
     const user = result.rows[0];
@@ -362,11 +389,10 @@ const loginUser = async (req, res) => {
     // ✅ Use bcrypt to compare hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({ message: 'Invalid password' });
-
+      return res.status(401).json({ message: "Invalid password" });
     }
     console.log("Login successful");
-    res.status(200).json({ message: 'Login successful', user });
+    res.status(200).json({ message: "Login successful", user });
   } catch (error) {
     console.error("Login error:", error);
     res.status(500).json({ error: error.message });
@@ -381,24 +407,24 @@ const forget_password = async (req, res) => {
   try {
     // Check if username exists
     const userResult = await pool.query(
-      'SELECT * FROM user_tb WHERE user_name = $1',
+      "SELECT * FROM user_tb WHERE user_name = $1",
       [user_name]
     );
 
     if (userResult.rows.length === 0) {
-      return res.json({ valid: false, reason: 'username' });
+      return res.json({ valid: false, reason: "username" });
     }
 
     // Check if email matches the found user
-    const emailMatch = userResult.rows.find(u => u.email_id === email_id);
+    const emailMatch = userResult.rows.find((u) => u.email_id === email_id);
     if (!emailMatch) {
-      return res.json({ valid: false, reason: 'email' });
+      return res.json({ valid: false, reason: "email" });
     }
 
     res.json({ valid: true });
   } catch (err) {
-    console.error('Forget password error:', err);
-    res.status(500).json({ message: 'Server error' });
+    console.error("Forget password error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -408,18 +434,17 @@ const change_password = async (req, res) => {
   const { user_name, newPassword } = req.body;
   const encrypt_password = await bcrypt.hash(newPassword, 10);
 
-  console.log("res", req.body)
+  console.log("res", req.body);
   try {
-    await pool.query(
-      'UPDATE user_tb SET password = $1 WHERE user_name = $2',
-      [encrypt_password, user_name]
-    );
+    await pool.query("UPDATE user_tb SET password = $1 WHERE user_name = $2", [
+      encrypt_password,
+      user_name,
+    ]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).send(err.message);
   }
-}
-
+};
 
 const addNewRow = async (req, res) => {
   const { speed, direction, tide, timestamp, file_id } = req.body;
@@ -437,16 +462,29 @@ const addNewRow = async (req, res) => {
 
     const result = await pool.query(
       `INSERT INTO tb_${file_id}_processed (station_id, date, speed, direction, depth, pressure, battery, file_id, lat, lon, high_water_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [data.rows[0].station_id, timestamp, speed, direction, data.rows[0].depth, tide, data.rows[0].battery, data.rows[0].file_id, data.rows[0].lat, data.rows[0].lon, 0]
+      [
+        data.rows[0].station_id,
+        timestamp,
+        speed,
+        direction,
+        data.rows[0].depth,
+        tide,
+        data.rows[0].battery,
+        data.rows[0].file_id,
+        data.rows[0].lat,
+        data.rows[0].lon,
+        0,
+      ]
     );
 
-    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [file_id]);
+    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [
+      file_id,
+    ]);
 
-    res.status(200).json({ message: "Row added successfully" })
+    res.status(200).json({ message: "Row added successfully" });
   } catch (error) {
-    res.status(500).json({ message: `Error: ${error}` })
+    res.status(500).json({ message: `Error: ${error}` });
   }
-
 };
 
 const updateData = async (req, res) => {
@@ -456,7 +494,8 @@ const updateData = async (req, res) => {
     if (!Array.isArray(updatePayload) || updatePayload.length === 0) {
       return res.status(400).json({
         success: false,
-        message: "Invalid payload. Expected an array of objects with id and updated values."
+        message:
+          "Invalid payload. Expected an array of objects with id and updated values.",
       });
     }
 
@@ -486,13 +525,16 @@ const updateData = async (req, res) => {
         // Add id as the last parameter
         values.push(id);
 
-        const query = `UPDATE tb_${file_id}_processed SET ${setClauses.join(', ')} WHERE id = $${paramIndex}`;
+        const query = `UPDATE tb_${file_id}_processed SET ${setClauses.join(
+          ", "
+        )} WHERE id = $${paramIndex}`;
 
-        pool.query(query, values)
-          .then(result => {
+        pool
+          .query(query, values)
+          .then((result) => {
             resolve({ id, affected: result.rowCount });
           })
-          .catch(err => {
+          .catch((err) => {
             console.error(`Error updating row with id ${id}:`, err);
             reject(err);
           });
@@ -502,26 +544,28 @@ const updateData = async (req, res) => {
     const results = await Promise.all(updatePromises);
     const totalUpdated = results.reduce((sum, item) => sum + item.affected, 0);
 
-    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [updatePayload[0].file_id]);
+    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [
+      updatePayload[0].file_id,
+    ]);
 
     res.status(200).json({
       success: true,
       message: `Successfully updated ${totalUpdated} records`,
-      results
+      results,
     });
   } catch (error) {
     console.error("Error in updateData:", error);
     res.status(500).json({
       success: false,
       message: "Failed to update data",
-      error: error.message
+      error: error.message,
     });
   }
 };
 
 const getDataByFolderIdAndFileName = async (req, res) => {
   const { file_id } = req.params;
-  console.log(req.params)
+  console.log(req.params);
   try {
     const result = await pool.query(
       `SELECT
@@ -533,19 +577,20 @@ const getDataByFolderIdAndFileName = async (req, res) => {
        JOIN
          tb_file tf ON tf.id = tp.file_id
        ORDER BY
-         tp.date ASC`,
+         tp.date ASC`
     );
     res.status(200).json(result.rows);
-
   } catch (err) {
-    console.error('Fetch error:', err);
-    res.status(500).json({ message: 'Error fetching data', error: err.message });
+    console.error("Fetch error:", err);
+    res
+      .status(500)
+      .json({ message: "Error fetching data", error: err.message });
   }
 };
 
 const getProcessedDataByFileId = async (req, res) => {
   const { file_id } = req.params;
-  console.log(req.params)
+  console.log(req.params);
   try {
     const result = await pool.query(
       `SELECT
@@ -557,12 +602,14 @@ const getProcessedDataByFileId = async (req, res) => {
        JOIN
          tb_file tf ON tf.id = tp.file_id
        ORDER BY
-         tp.date ASC`,
+         tp.date ASC`
     );
     res.status(200).json(result.rows);
   } catch (err) {
-    console.error('Fetch error:', err);
-    res.status(500).json({ message: 'Error fetching data', error: err.message });
+    console.error("Fetch error:", err);
+    res
+      .status(500)
+      .json({ message: "Error fetching data", error: err.message });
   }
 };
 
@@ -596,12 +643,12 @@ const getFoldersWithFiles = async (req, res) => {
     `;
     const result = await pool.query(query);
     const foldersMap = {};
-    result.rows.forEach(row => {
+    result.rows.forEach((row) => {
       if (!foldersMap[row.folder_id]) {
         foldersMap[row.folder_id] = {
           folder_id: row.folder_id,
           folder_name: row.folder_name,
-          files: []
+          files: [],
         };
       }
       if (row.file_id) {
@@ -620,11 +667,13 @@ const getFoldersWithFiles = async (req, res) => {
           current_direction_unit_to: row.current_direction_unit_to,
           battery_unit_to: row.battery_unit_to,
           depth_unit_to: row.depth_unit_to,
-          coord_unit_to: row.coord_unit_to
+          coord_unit_to: row.coord_unit_to,
         });
       }
     });
-    const foldersWithFiles = Object.values(foldersMap).sort((a, b) => b.folder_id - a.folder_id);
+    const foldersWithFiles = Object.values(foldersMap).sort(
+      (a, b) => b.folder_id - a.folder_id
+    );
     res.status(200).json({ data: foldersWithFiles });
   } catch (error) {
     res.status(500).json({ message: `Error: ${error.message}` });
@@ -661,12 +710,12 @@ const getAllFoldersWithFiles = async (req, res) => {
     `;
     const result = await pool.query(query);
     const foldersMap = {};
-    result.rows.forEach(row => {
+    result.rows.forEach((row) => {
       if (!foldersMap[row.folder_id]) {
         foldersMap[row.folder_id] = {
           folder_id: row.folder_id,
           folder_name: row.folder_name,
-          files: []
+          files: [],
         };
       }
       if (row.file_id) {
@@ -685,11 +734,13 @@ const getAllFoldersWithFiles = async (req, res) => {
           current_direction_unit_to: row.current_direction_unit_to,
           battery_unit_to: row.battery_unit_to,
           depth_unit_to: row.depth_unit_to,
-          coord_unit_to: row.coord_unit_to
+          coord_unit_to: row.coord_unit_to,
         });
       }
     });
-    const foldersWithFiles = Object.values(foldersMap).sort((a, b) => b.folder_id - a.folder_id);
+    const foldersWithFiles = Object.values(foldersMap).sort(
+      (a, b) => b.folder_id - a.folder_id
+    );
     res.status(200).json({ data: foldersWithFiles });
   } catch (error) {
     res.status(500).json({ message: `Error: ${error.message}` });
@@ -700,81 +751,90 @@ const changeFolder = async (req, res) => {
   const { file_id, folder_id } = req.body;
 
   if (!file_id || !folder_id) {
-    return res.status(400).json({ message: 'file_id and folder_id are required.' });
+    return res
+      .status(400)
+      .json({ message: "file_id and folder_id are required." });
   }
 
   try {
     // Check if file exists
-    const checkFile = await pool.query('SELECT * FROM tb_file WHERE id = $1', [file_id]);
+    const checkFile = await pool.query("SELECT * FROM tb_file WHERE id = $1", [
+      file_id,
+    ]);
 
     if (checkFile.rows.length === 0) {
-      return res.status(404).json({ message: 'File not found.' });
+      return res.status(404).json({ message: "File not found." });
     }
 
     // Update folder_id
-    await pool.query(
-      'UPDATE tb_file SET folder_id = $1 WHERE id = $2',
-      [folder_id, file_id]
-    );
+    await pool.query("UPDATE tb_file SET folder_id = $1 WHERE id = $2", [
+      folder_id,
+      file_id,
+    ]);
 
-    res.status(200).json({ message: 'File moved successfully.' });
+    res.status(200).json({ message: "File moved successfully." });
   } catch (err) {
-    console.error('Error moving file:', err);
-    res.status(500).json({ message: 'Server error.' });
+    console.error("Error moving file:", err);
+    res.status(500).json({ message: "Server error." });
   }
-}
-
+};
 
 const createFolder = async (req, res) => {
   const { folder_name } = req.body;
 
   if (!folder_name) {
-    return res.status(400).json({ message: 'Folder name is required' });
+    return res.status(400).json({ message: "Folder name is required" });
   }
 
   try {
     const insertQuery = `INSERT INTO tb_folders (folder_name) VALUES ($1) RETURNING *`;
     const result = await pool.query(insertQuery, [folder_name]);
 
-    res.status(201).json({ message: 'Folder created successfully', folder: result.rows[0] });
+    res
+      .status(201)
+      .json({ message: "Folder created successfully", folder: result.rows[0] });
   } catch (err) {
-    console.error('Error adding folder:', err);
-    res.status(500).json({ message: 'Internal server error' });
+    console.error("Error adding folder:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
-}
+};
 
-const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') => {
+const checkLicenseValidity = async (
+  filePath = "C:/Apache24/conf/license.json"
+) => {
   try {
     // Check if file exists
     try {
       await fs.access(filePath);
     } catch {
-      console.warn('License file not found');
+      console.warn("License file not found");
       return { valid: false, pendingDays: 0 };
     }
 
     // Read and parse file
-    const fileContent = await fs.readFile(filePath, 'utf-8');
+    const fileContent = await fs.readFile(filePath, "utf-8");
     const licenseData = JSON.parse(fileContent);
 
     const validTill = new Date(licenseData.validTill);
     const currentTime = new Date();
 
     if (isNaN(validTill.getTime())) {
-      console.warn('Invalid date in license file');
+      console.warn("Invalid date in license file");
       return { valid: false, pendingDays: 0 };
     }
 
     const pendingTime = validTill.getTime() - currentTime.getTime();
-    const pendingDays = Math.max(0, Math.ceil(pendingTime / (1000 * 60 * 60 * 24)));
+    const pendingDays = Math.max(
+      0,
+      Math.ceil(pendingTime / (1000 * 60 * 60 * 24))
+    );
 
     return {
       valid: currentTime <= validTill,
-      pendingDays
+      pendingDays,
     };
-
   } catch (error) {
-    console.error('Error reading or parsing license file:', error);
+    console.error("Error reading or parsing license file:", error);
     return { valid: false, pendingDays: 0 };
   }
 };
@@ -782,10 +842,13 @@ const checkLicenseValidity = async (filePath = 'C:/Apache24/conf/license.json') 
 const checkLicenseValidityHandler = async (req, res) => {
   try {
     const result = await checkLicenseValidity();
-    res.status(200).json({ message: 'Success', result });
+    res.status(200).json({ message: "Success", result });
   } catch (error) {
-    console.error('Error checking license validity:', error);
-    res.status(500).json({ message: error.message, result: { valid: false, pendingDays: 0 } });
+    console.error("Error checking license validity:", error);
+    res.status(500).json({
+      message: error.message,
+      result: { valid: false, pendingDays: 0 },
+    });
   }
 };
 
@@ -793,52 +856,53 @@ const updateToUnits = async (req, res) => {
   const { file_id, unitKey, unitValue } = req.body;
 
   if (!file_id || !unitKey || !unitValue) {
-    return res.status(400).json({ message: 'file_id, unitKey, and unitValue are required.' });
+    return res
+      .status(400)
+      .json({ message: "file_id, unitKey, and unitValue are required." });
   }
 
   const UNIT_KEY_TO_COLUMN = {
-    waterLevel: 'water_level_unit_to',
-    currentSpeed: 'current_speed_unit_to',
-    currentDirection: 'current_direction_unit_to',
-    battery: 'battery_unit_to',
-    depth: 'depth_unit_to',
-    latandlong: 'coord_unit_to'
+    waterLevel: "water_level_unit_to",
+    currentSpeed: "current_speed_unit_to",
+    currentDirection: "current_direction_unit_to",
+    battery: "battery_unit_to",
+    depth: "depth_unit_to",
+    latandlong: "coord_unit_to",
   };
 
   const dbColumn = UNIT_KEY_TO_COLUMN[unitKey];
 
   if (!dbColumn) {
     return res.status(400).json({
-      message: 'Invalid unitKey.',
-      validUnitKeys: Object.keys(UNIT_KEY_TO_COLUMN)
+      message: "Invalid unitKey.",
+      validUnitKeys: Object.keys(UNIT_KEY_TO_COLUMN),
     });
   }
 
   try {
-    const fileCheck = await pool.query(
-      'SELECT 1 FROM tb_file WHERE id = $1',
-      [file_id]
-    );
+    const fileCheck = await pool.query("SELECT 1 FROM tb_file WHERE id = $1", [
+      file_id,
+    ]);
 
     if (fileCheck.rows.length === 0) {
-      return res.status(404).json({ message: 'File not found.' });
+      return res.status(404).json({ message: "File not found." });
     }
 
-    await pool.query(
-      `UPDATE tb_file SET ${dbColumn} = $1 WHERE id = $2`,
-      [unitValue, file_id]
-    );
+    await pool.query(`UPDATE tb_file SET ${dbColumn} = $1 WHERE id = $2`, [
+      unitValue,
+      file_id,
+    ]);
 
     return res.status(200).json({
       success: true,
-      message: 'Unit updated successfully',
-      data: { file_id, unitKey, unitValue }
+      message: "Unit updated successfully",
+      data: { file_id, unitKey, unitValue },
     });
   } catch (err) {
-    console.error('Database error:', err);
+    console.error("Database error:", err);
     return res.status(500).json({
-      message: 'Internal server error',
-      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+      message: "Internal server error",
+      error: process.env.NODE_ENV === "development" ? err.message : undefined,
     });
   }
 };
@@ -865,6 +929,5 @@ module.exports = {
   createFolder,
   checkLicenseValidityHandler,
   updateToUnits,
-  getAllFoldersWithFiles
+  getAllFoldersWithFiles,
 };
-

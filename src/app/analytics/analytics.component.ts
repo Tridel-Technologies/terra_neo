@@ -1125,6 +1125,22 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       const tideLevel = echarts.init(tide);
 
+      // Compute dynamic y-axis bounds from data
+      const pressureValues = (this.fullData || [])
+        .map((item) => parseFloat(item.pressure))
+        .filter((v) => !isNaN(v));
+      let yMin: number | undefined = undefined;
+      let yMax: number | undefined = undefined;
+      if (pressureValues.length > 0) {
+        const minVal = Math.min(...pressureValues);
+        const maxVal = Math.max(...pressureValues);
+        const range = maxVal - minVal;
+        const padding =
+          range === 0 ? Math.max(1e-3, Math.abs(minVal) * 0.1) : range * 0.1;
+        yMin = +(minVal - padding).toFixed(3);
+        yMax = +(maxVal + padding).toFixed(3);
+      }
+
       const option = {
         title: {
           text: 'Water Level',
@@ -1180,12 +1196,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           {
             type: 'time',
             position: 'top',
-            axisLine: {
-              show: true,
-              lineStyle: {
-                color: mainText,
-              },
-            },
             axisTick: {
               show: false,
             },
@@ -1207,6 +1217,9 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               padding: [0, 0, 30, 0],
               fontSize: 16,
             },
+            min: yMin,
+            max: yMax,
+            scale: true,
             axisLabel: {
               color: mainText,
             },
@@ -1308,7 +1321,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               .filter((item) => item.high_water_level === 1)
               .map((item) => [item.date, this.formatValue(item.pressure)]),
             type: 'scatter',
-            symbolSize: 20,
+            symbolSize: 16,
             itemStyle: {
               color: '#ff0000',
               borderColor: this.base.chartFont === 'light' ? 'black' : 'white',
