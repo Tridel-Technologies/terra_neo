@@ -100,6 +100,13 @@ export class ImporterComponent {
       units: ['m', 'ft'],
       unitslabels: ['m', 'ft'],
     },
+    {
+      key: 'temperature',
+      label: 'Temperature',
+      iconClass: 'fas fa-temperature-half',
+      units: ['°C', '°F'],
+      unitslabels: ['°C', '°F'],
+    },
     // {
     //   key: 'latandlong',
     //   label: 'Latitude and Longitude',
@@ -108,7 +115,79 @@ export class ImporterComponent {
     // },
   ];
 
+  main_table_headers_spc = [
+    { name: 'Station', unit: '' },
+    { name: 'Date', unit: '' },
+    { name: 'Speed', unit: '' },
+    { name: 'Direction', unit: '' },
+    { name: 'Depth', unit: '' },
+    { name: 'Battery', unit: '' },
+    { name: 'Pressure', unit: '' },
+  ];
+
+  main_table_headers_awac = [
+    { name: 'Date', unit: '' },
+    { name: 'Battery', unit: '' },
+    { name: 'Pressure', unit: '' },
+    { name: 'Temperature', unit: '' },
+    { name: 'Pitch', unit: '' },
+    { name: 'Roll', unit: '' },
+    { name: 'Heading', unit: '' },
+    { name: 'Speed Bin1', unit: '' },
+    { name: 'Direction Bin1', unit: '' },
+    { name: 'Speed Bin2', unit: '' },
+    { name: 'Direction Bin2', unit: '' },
+    { name: 'Speed Bin3', unit: '' },
+    { name: 'Direction Bin3', unit: '' },
+    { name: 'Speed Bin4', unit: '' },
+    { name: 'Direction Bin4', unit: '' },
+    { name: 'Speed Bin5', unit: '' },
+    { name: 'Direction Bin5', unit: '' },
+    { name: 'Speed Bin6', unit: '' },
+    { name: 'Direction Bin6', unit: '' },
+    { name: 'Speed Bin7', unit: '' },
+    { name: 'Direction Bin7', unit: '' },
+    { name: 'Speed Bin8', unit: '' },
+    { name: 'Direction Bin8', unit: '' },
+    { name: 'Speed Bin9', unit: '' },
+    { name: 'Direction Bin9', unit: '' },
+    { name: 'Speed Bin10', unit: '' },
+    { name: 'Direction Bin10', unit: '' },
+    { name: 'Speed Bin11', unit: '' },
+    { name: 'Direction Bin11', unit: '' },
+    { name: 'Speed Bin12', unit: '' },
+    { name: 'Direction Bin12', unit: '' },
+    { name: 'Speed Bin13', unit: '' },
+    { name: 'Direction Bin13', unit: '' },
+    { name: 'Speed Bin14', unit: '' },
+    { name: 'Direction Bin14', unit: '' },
+    { name: 'Speed Bin15', unit: '' },
+    { name: 'Direction Bin15', unit: '' },
+    { name: 'Speed Bin16', unit: '' },
+    { name: 'Direction Bin16', unit: '' },
+    { name: 'Speed Bin17', unit: '' },
+    { name: 'Direction Bin17', unit: '' },
+    { name: 'Speed Bin18', unit: '' },
+    { name: 'Direction Bin18', unit: '' },
+    { name: 'Speed Bin19', unit: '' },
+    { name: 'Direction Bin19', unit: '' },
+    { name: 'Speed Bin20', unit: '' },
+    { name: 'Direction Bin20', unit: '' },
+  ];
+
+  active_headers = this.main_table_headers_spc;
+
+  // Upload table headers (used in import popup)
+  upload_active_headers = this.main_table_headers_spc;
+
   getTooltip(paramKey: string, unit: string): string {
+    const isNmea =
+      this.active_headers === this.main_table_headers_awac ||
+      this.upload_active_headers === this.main_table_headers_awac;
+
+    // For .nmea (AWAC), there is no Depth; suppress its tooltip
+    if (isNmea && paramKey === 'depth') return '';
+
     const tooltips: any = {
       waterLevel: {
         m: 'Meter',
@@ -131,11 +210,21 @@ export class ImporterComponent {
         m: 'Meters',
         ft: 'Feet',
       },
+      // Temperature tooltip (relevant for .nmea/AWAC)
+      temperature: {
+        '°C': 'Celsius',
+        C: 'Celsius',
+        '°F': 'Fahrenheit',
+        F: 'Fahrenheit',
+      },
       latandlong: {
         DD: 'Decimal Degree',
         DMS: 'Degree, Minute, Second',
       },
     };
+
+    // If not .nmea, hide temperature tooltip by default
+    if (!isNmea && paramKey === 'temperature') return '';
 
     return tooltips[paramKey]?.[unit] || '';
   }
@@ -161,6 +250,27 @@ export class ImporterComponent {
     } else {
       return this.selectedUnitsTo[paramKey];
     }
+  }
+
+  // Computed unit settings for UI: for AWAC (.nmea) hide Depth and show Temperature
+  get activeUnitSettings() {
+    const isNmea =
+      this.active_headers === this.main_table_headers_awac ||
+      this.upload_active_headers === this.main_table_headers_awac;
+    if (!isNmea) return this.unitSettings;
+
+    const filtered = this.unitSettings.filter((p) => p.key !== 'depth');
+    const hasTemperature = filtered.some((p) => p.key === 'temperature');
+    if (!hasTemperature) {
+      filtered.push({
+        key: 'temperature',
+        label: 'Temperature',
+        iconClass: 'fas fa-temperature-half',
+        units: ['°C', '°F'],
+        unitslabels: ['°C', '°F'],
+      });
+    }
+    return filtered;
   }
 
   onRowClick(row: any, index: number) {
@@ -266,26 +376,50 @@ export class ImporterComponent {
     this.selectedUnitsTo = { ...this.unitService.getCurrentUnits() };
   }
 
-  main_table_headers = [
-    { name: 'Station', unit: '' },
-    { name: 'Date', unit: '' },
-    { name: 'Speed', unit: '' },
-    { name: 'Direction', unit: '' },
-    { name: 'Depth', unit: '' },
-    { name: 'Battery', unit: '' },
-    { name: 'Pressure', unit: '' },
-  ];
-
   open_file(file_name: string, file_id: number) {
     this.opened_file = file_name;
     const data = {
       folder_id: file_id,
       file_name: file_name,
     };
+    // Switch headers based on file extension
+    const ext = (this.opened_file?.split('.').pop() || '').toLowerCase();
+    this.active_headers =
+      ext === 'nmea'
+        ? this.main_table_headers_awac
+        : this.main_table_headers_spc;
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
         console.log('response', response);
+        // Prefer explicit type from API when present
+        try {
+          const first =
+            Array.isArray(response) && response.length ? response[0] : {};
+          if (first && typeof first.type === 'string') {
+            const t = String(first.type).toLowerCase();
+            if (t === 'awac') {
+              this.active_headers = this.main_table_headers_awac;
+            } else if (t === 'spc') {
+              this.active_headers = this.main_table_headers_spc;
+            }
+          }
+        } catch {}
+        // Auto-detect AWAC style based on response keys as a fallback to extension-based detection
+        try {
+          const first =
+            Array.isArray(response) && response.length ? response[0] : {};
+          const hasAwacKeys =
+            first &&
+            ('datetime' in first ||
+              'bin_1_speed' in first ||
+              'bin_1_direction' in first ||
+              'speed_bin1' in first ||
+              'direction_bin1' in first);
+          if (hasAwacKeys) {
+            this.active_headers = this.main_table_headers_awac;
+          }
+        } catch {}
         if (this.isMulti) {
           let data = this.main_table;
           this.main_table = [];
@@ -300,7 +434,7 @@ export class ImporterComponent {
             console.log('Row with Max Pressure:', maxPressureRow);
 
             // Set units to header
-            this.main_table_headers.forEach((header) => {
+            this.active_headers.forEach((header) => {
               switch (header.name.toLowerCase()) {
                 case 'speed':
                   header.unit = this.main_table[0].current_speed_unit || '';
@@ -407,15 +541,14 @@ export class ImporterComponent {
                 });
               }
             }, 100);
-            const date = new Date(maxPressureRow.date);
+            const date = new Date(
+              maxPressureRow.date || maxPressureRow.datetime
+            );
             const formattedDate = this.datePipe.transform(
               date,
               'yyyy-MM-dd HH:mm:ss'
             );
             console.log(formattedDate);
-            this.high_water_level = `${formattedDate}`;
-            console.log('Row with Max Pressure:', maxPressureRow);
-            console.log('Index of Max Pressure Row:', maxPressureIndex);
 
             const high = this.main_table.filter(
               (item) => item.high_water_level === 1
@@ -424,7 +557,7 @@ export class ImporterComponent {
             this.high_water_level = high[0].date;
 
             // Set units to header
-            this.main_table_headers.forEach((header) => {
+            this.active_headers.forEach((header) => {
               switch (header.name.toLowerCase()) {
                 case 'speed':
                   header.unit = this.main_table[0].current_speed_unit || '';
@@ -504,6 +637,61 @@ export class ImporterComponent {
           }, 100);
         }
       });
+  }
+
+  // Map a row value to a column header name for the main table (supports SPC and AWAC)
+  formatMainCell(row: any, headerName: string): any {
+    if (!row || !headerName) return '';
+
+    const name = headerName.toLowerCase();
+    switch (name) {
+      case 'station':
+        return row.station_id ?? '';
+      case 'date': {
+        const dt = row.date || row.datetime;
+        if (!dt) return '';
+        const d = new Date(dt);
+        if (isNaN(d.getTime())) return '';
+        return this.datePipe.transform(d, this.dateFormat) ?? '';
+      }
+      case 'temperature':
+        return row.temperature ?? '';
+      case 'pitch':
+        return row.pitch ?? '';
+      case 'roll':
+        return row.roll ?? '';
+      case 'heading':
+        return row.heading ?? '';
+      case 'speed':
+        return row.speed ?? '';
+      case 'direction':
+        return row.direction ?? '';
+      case 'depth':
+        return row.depth ?? '';
+      case 'battery':
+        return row.battery ?? '';
+      case 'pressure':
+        return row.pressure ?? '';
+      default: {
+        // AWAC dynamic bins: support both key styles
+        // Header forms: "Speed BinX" or "Direction BinX"
+        const m = headerName.match(/(Speed|Direction)\s+Bin(\d+)/i);
+        if (m) {
+          const kind = m[1].toLowerCase(); // speed or direction
+          const idx = m[2];
+          // Possible backend key styles
+          const candidates =
+            kind === 'speed'
+              ? [`bin_${idx}_speed`, `speed_bin${idx}`]
+              : [`bin_${idx}_direction`, `direction_bin${idx}`];
+          for (const k of candidates) {
+            if (k in row) return row[k];
+          }
+          return '';
+        }
+        return '';
+      }
+    }
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -632,16 +820,19 @@ export class ImporterComponent {
 
   getFileImage(fileName: string): string {
     const extension = fileName.split('.').pop()?.toLowerCase();
-
     switch (extension) {
       case 'csv':
-        return '../../assets/csv.png'; // Path to CSV image
+        return '../../assets/csv.png';
       case 'xlsx':
-        return '../../assets/xl.png'; // Path to Excel image
+        return '../../assets/xl.png';
+      case 'nmea':
+      case 'txt':
+        return '../../assets/txt.png';
       default:
-        return 'assets/file.png'; // Default file image
+        return 'assets/file.png';
     }
   }
+
   on_openImport() {
     this.is_show_import = !this.is_show_import;
     this.historyData = [];
@@ -724,28 +915,78 @@ export class ImporterComponent {
   selected_filelist: String = '';
 
   onFileClick(file_Name: string): void {
+    // Guard against undefined file name
+    if (!file_Name) {
+      console.warn('onFileClick called without a file name');
+      return;
+    }
     this.filterhistorydata = [];
     this.selected_filelist = file_Name;
+
     setTimeout(() => {
       this.filterhistorydata = this.historyData.filter(
         (item: any) => item.fileName === file_Name
       );
-      console.log('All rows', this.filterhistorydata);
+
+      // Decide upload table headers based on selected file
+      const isNmea = (file_Name || '').toLowerCase().endsWith('.nmea');
+      const firstUploadRow = this.filterhistorydata[0] || {};
+      const typeStr = (firstUploadRow.type || '').toString().toLowerCase();
+      const hasAwacKeys =
+        this.filterhistorydata.length > 0 &&
+        ('datetime' in firstUploadRow ||
+          'bin_1_speed' in firstUploadRow ||
+          'bin_1_direction' in firstUploadRow ||
+          'speed_bin1' in firstUploadRow ||
+          'direction_bin1' in firstUploadRow);
+      if (typeStr === 'awac') {
+        this.upload_active_headers = this.main_table_headers_awac;
+      } else if (typeStr === 'spc') {
+        this.upload_active_headers = this.main_table_headers_spc;
+      } else {
+        this.upload_active_headers =
+          isNmea || hasAwacKeys
+            ? this.main_table_headers_awac
+            : this.main_table_headers_spc;
+      }
+
+      // ✅ No data found for the file
+      if (!this.filterhistorydata.length) {
+        console.warn(`No data found for file: ${file_Name}`);
+        this.toast.warning(`No data found for file: ${file_Name}`, 'Warning', {
+          timeOut: 1500,
+        });
+        return;
+      }
+
+      // ✅ Find row with max pressure
       let maxPressureIndex = 0;
-      let maxPressureValue = parseFloat(this.filterhistorydata[0].pressure);
+      let maxPressureValue = parseFloat(
+        this.filterhistorydata[0]?.pressure ?? 0
+      );
 
       for (let i = 1; i < this.filterhistorydata.length; i++) {
-        let currentPressure = parseFloat(this.filterhistorydata[i].pressure);
+        let currentPressure = parseFloat(
+          this.filterhistorydata[i]?.pressure ?? 0
+        );
         if (currentPressure > maxPressureValue) {
           maxPressureValue = currentPressure;
           maxPressureIndex = i;
         }
       }
 
-      let maxPressureRow = this.filterhistorydata[maxPressureIndex];
+      const maxPressureRow = this.filterhistorydata[maxPressureIndex];
+      if (
+        !maxPressureRow ||
+        (!maxPressureRow.date && !maxPressureRow.datetime)
+      ) {
+        console.warn(`Invalid pressure row for file: ${file_Name}`);
+        return;
+      }
+
       this.selectedRowIndex = maxPressureIndex;
 
-      // Scroll to that row
+      // ✅ Scroll to that row
       setTimeout(() => {
         const rowElement = document.getElementById(
           `row-${this.selectedRowIndex}`
@@ -757,24 +998,123 @@ export class ImporterComponent {
           });
         }
       }, 100);
-      const date = new Date(maxPressureRow.date);
+
+      const date = new Date(maxPressureRow.date || maxPressureRow.datetime);
       const formattedDate = this.datePipe.transform(
         date,
         'yyyy-MM-dd HH:mm:ss'
       );
       this.high_water_level = `${formattedDate}`;
-
-      const high = this.main_table.filter(
-        (item) => item.high_water_level === 1
-      );
-      this.high_water_level = high[0].date;
     }, 50);
   }
 
   async processFile(file: File): Promise<{ fileName: string; data: any[] }> {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
+      // ✅ Handle NMEA files separately
+      if (fileExtension === 'nmea') {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const text = e.target?.result as string;
+            const lines = text
+              .split(/\r?\n/)
+              .map((l) => l.trim())
+              .filter((l) => l.startsWith('$PNORS') || l.startsWith('$PNORC'));
+
+            const grouped: Record<string, any[]> = {};
+            let groupIndex = 0;
+            // Parse each line and group by date+time
+            lines.forEach((line) => {
+              const parts = line.split(',');
+              const type = parts[0];
+              const date = parts[1];
+              const time = parts[2];
+
+              if (type.startsWith('$PNORS')) groupIndex++;
+              const key = `${date}_${time}_${groupIndex}`;
+
+              if (!grouped[key]) grouped[key] = [];
+
+              if (type.startsWith('$PNORS')) {
+                grouped[key].push({
+                  type: 'status',
+                  date,
+                  time,
+                  pressure: parseFloat(parts[7]) || null,
+                  battery: parseFloat(parts[5]) || null,
+                  temperature: parseFloat(parts[11]) || null,
+                  heading: parseFloat(parts[10]) || null,
+                  pitch: parseFloat(parts[8]) || null,
+                  roll: parseFloat(parts[9]) || null,
+                });
+              } else if (type.startsWith('$PNORC')) {
+                grouped[key].push({
+                  type: 'current',
+                  date,
+                  time,
+                  speed: parseFloat(parts[7]) || null,
+                  direction: parseFloat(parts[8]) || null,
+                });
+              }
+            });
+
+            // Combine grouped data into final structured format
+            const finalData: any[] = [];
+
+            Object.keys(grouped).forEach((key) => {
+              const entries = grouped[key];
+              const first = entries.find((e) => e.type === 'status');
+              const currents = entries.filter((e) => e.type === 'current');
+
+              // Convert mmddyy + hhmmss to ISO timestamp
+              const rawDate = first?.date || key.split('_')[0];
+              const rawTime = first?.time || key.split('_')[1];
+              const isoDate = `20${rawDate.slice(4, 6)}-${rawDate.slice(
+                0,
+                2
+              )}-${rawDate.slice(2, 4)}`;
+              const isoTime = `${rawTime.slice(0, 2)}:${rawTime.slice(
+                2,
+                4
+              )}:${rawTime.slice(4, 6)}`;
+              const isoTimestamp = `${isoDate}T${isoTime}Z`;
+
+              const combined: any = {
+                fileName: file.name,
+                datetime: isoTimestamp,
+                pressure: first?.pressure ?? null,
+                battery: first?.battery ?? null,
+                temperature: first?.temperature ?? null,
+                heading: first?.heading ?? null,
+                pitch: first?.pitch ?? null,
+                roll: first?.roll ?? null,
+              };
+
+              currents.forEach((cur, i) => {
+                combined[`bin_${i + 1}_speed`] = cur.speed ?? null;
+                combined[`bin_${i + 1}_direction`] = cur.direction ?? null;
+              });
+
+              finalData.push(combined);
+            });
+
+            // Ensure NMEA file is tracked for selection
+            if (!this.uploaded_files.includes(file.name)) {
+              this.uploaded_files.push(file.name);
+            }
+            resolve({ fileName: file.name, data: finalData });
+          } catch (err: any) {
+            reject(err.message || `Error parsing NMEA file: ${file.name}`);
+          }
+        };
+        reader.readAsText(file);
+        return;
+      }
+
+      // ✅ Existing Excel/CSV logic (unchanged)
+      const reader = new FileReader();
       reader.onload = (e) => {
         try {
           const data = new Uint8Array(reader.result as ArrayBuffer);
@@ -801,12 +1141,6 @@ export class ImporterComponent {
             for (const key of this.expectedHeaders) {
               const value = cleanedRow[key];
               if (!value || (typeof value === 'number' && isNaN(value))) {
-                // this.toast.warning(
-                //   `Empty/NaN value in "${key}" at row ${index + 2} in file ${
-                //     file.name
-                //   }`,
-                //   'Warning'
-                // );
                 this.row_isempty = true;
               }
             }
@@ -836,10 +1170,10 @@ export class ImporterComponent {
               'Warning'
             );
           }
+
           // Find max pressure row
           let maxPressureIndex = 0;
           let maxPressureValue = parseFloat(formattedData[0].pressure);
-
           for (let i = 1; i < formattedData.length; i++) {
             const currentPressure = parseFloat(formattedData[i].pressure);
             if (currentPressure > maxPressureValue) {
@@ -848,7 +1182,6 @@ export class ImporterComponent {
             }
           }
 
-          // Set high_water_level flag
           formattedData[maxPressureIndex].high_water_level = 1;
 
           resolve({ fileName: file.name, data: formattedData });
@@ -874,19 +1207,23 @@ export class ImporterComponent {
     }
 
     let maxPressureIndex = 0;
-    let maxPressureValue = parseFloat(filteredData[0].pressure);
+    let maxPressureValue = parseFloat(String(filteredData[0].pressure ?? 0));
 
     for (let i = 1; i < filteredData.length; i++) {
-      let currentPressure = parseFloat(filteredData[i].pressure);
+      const currentPressure = parseFloat(String(filteredData[i].pressure ?? 0));
       if (currentPressure > maxPressureValue) {
         maxPressureValue = currentPressure;
         maxPressureIndex = i;
       }
     }
 
-    let maxPressureRow = filteredData[maxPressureIndex];
-    const date = new Date(maxPressureRow.date);
-    const formattedDate = this.datePipe.transform(date, 'yyyy-MM-dd HH:mm:ss');
+    const maxPressureRow = filteredData[maxPressureIndex];
+    const rawDt: any = maxPressureRow.date || maxPressureRow.datetime;
+    const parsedDate = rawDt ? new Date(rawDt) : null;
+    const formattedDate =
+      parsedDate && !isNaN(parsedDate.getTime())
+        ? this.datePipe.transform(parsedDate, 'yyyy-MM-dd HH:mm:ss')
+        : '';
 
     // Store per file's high water level
     this.fileHighWaterLevels[fileName] = {

@@ -300,7 +300,7 @@
           <table class="styled-table">
             <thead>
               <tr>
-                <th *ngFor="let column of main_table_headers">
+                <th *ngFor="let column of active_headers">
                   {{ column.name }}
                   <span *ngIf="column.unit"> ({{ column.unit }})</span>
                 </th>
@@ -313,13 +313,9 @@
                 [class.selected]="selectedRowIndex === i"
                 [attr.id]="'row-' + i"
               >
-                <td>{{ row.station_id }}</td>
-                <td>{{ row.date | date : this.dateFormat }}</td>
-                <td>{{ row.speed }}</td>
-                <td>{{ row.direction }}</td>
-                <td>{{ row.depth }}</td>
-                <td>{{ row.battery }}</td>
-                <td>{{ row.pressure }}</td>
+                <td *ngFor="let column of active_headers">
+                  {{ formatMainCell(row, column.name) }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -337,7 +333,10 @@
         <table class="styled-table">
           <thead>
             <tr>
-              <th *ngFor="let column of tableHeaders">{{ column }}</th>
+              <th *ngFor="let column of upload_active_headers">
+                {{ column.name }}
+                <span *ngIf="column.unit"> ({{ column.unit }})</span>
+              </th>
               <th>Action</th>
             </tr>
           </thead>
@@ -347,14 +346,9 @@
               [class.selected]="selectedRowIndex === i"
               [attr.id]="'row-' + i"
             >
-              <td>{{ row.station_id }}</td>
-              <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" }}</td>
-              <!-- <td>{{ row.Time }}</td> -->
-              <td>{{ row.speed }}</td>
-              <td>{{ row.direction }}</td>
-              <td>{{ row.depth }}</td>
-              <td>{{ row.battery }}</td>
-              <td>{{ row.pressure }}</td>
+              <td *ngFor="let column of upload_active_headers">
+                {{ formatMainCell(row, column.name) }}
+              </td>
               <td>
                 <!-- <button cli>Delete</button>-->
                 <i
@@ -398,7 +392,7 @@
             color: var(--button-text-color);
           "
           id="fileUpload"
-          accept=".xlsx, .csv"
+          accept=".xlsx, .csv, .nmea"
           (change)="onFilesSelected($event)"
           multiple
           [attr.webkitdirectory]="allowFolderUpload ? '' : null"
@@ -474,7 +468,7 @@
           </button>
         </div>
         <!-- Render unit selection for the active tab only -->
-        <div *ngFor="let param of unitSettings" class="parameter-row">
+        <div *ngFor="let param of activeUnitSettings" class="parameter-row">
           <div class="parameter-content">
             <span class="parameter-label" style="color: var(--font-color)">{{
               param.label

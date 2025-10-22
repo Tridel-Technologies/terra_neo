@@ -201,12 +201,16 @@ const createFolderAndFile = async (req, res) => {
     // 2. Loop through each file and handle insertions
     for (const fname of file_name) {
       const fileData = data[fname];
+      const fileType = (
+        req.body?.type ||
+        (fname?.toLowerCase?.().endsWith(".nmea") ? "awac" : "spc")
+      ).toLowerCase();
       if (!Array.isArray(fileData)) {
         continue; // Skip invalid data for this file
       }
 
       // Insert file
-      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit, water_level_unit_to, current_speed_unit_to, current_direction_unit_to, battery_unit_to, depth_unit_to, coord_unit_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
+      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit, water_level_unit_to, current_speed_unit_to, current_direction_unit_to, battery_unit_to, depth_unit_to, coord_unit_to, type, temperature_unit, temperature_unit_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`;
       const fileResult = await pool.query(fileInsertQuery, [
         fname,
         folderId,
@@ -222,6 +226,9 @@ const createFolderAndFile = async (req, res) => {
         unitsTo.battery,
         unitsTo.depth,
         null,
+        fileType,
+        unitsTo.temperature,
+        unitsTo.temperature,
       ]);
       const fileId = fileResult.rows[0]?.id;
 
@@ -231,36 +238,79 @@ const createFolderAndFile = async (req, res) => {
 
       // Create dynamic table for the file
       const tableName = `tb_${fileId}`;
-      const tblCreateQuery = `
-        CREATE TABLE ${tableName} (
+      let tblCreateQuery = "";
+      let tblperocessed = "";
+
+      if (fileType === "awac") {
+        // AWAC schema with snake_case and double precision
+        const awacCommonCols = `
           id SERIAL PRIMARY KEY,
           station_id TEXT,
           date TIMESTAMPTZ,
           lat TEXT,
           lon TEXT,
-          speed TEXT,
-          direction TEXT,
-          depth TEXT,
-          pressure TEXT,
-          battery TEXT,
+          battery DOUBLE PRECISION,
+          pressure DOUBLE PRECISION,
+          temperature DOUBLE PRECISION,
+          pitch DOUBLE PRECISION,
+          roll DOUBLE PRECISION,
+          heading DOUBLE PRECISION,
           high_water_level INTEGER,
           file_id INTEGER REFERENCES tb_file(id)
-        )`;
-      const tblperocessed = `
-        CREATE TABLE ${tableName}_processed (
-          id SERIAL PRIMARY KEY,
-          station_id TEXT,
-          date TIMESTAMPTZ,
-          lat TEXT,
-          lon TEXT,
-          speed TEXT,
-          direction TEXT,
-          depth TEXT,
-          pressure TEXT,
-          battery TEXT,
-          high_water_level INTEGER,
-          file_id INTEGER REFERENCES tb_file(id)
-        )`;
+        `;
+        // Build bin columns
+        const awacBinCols = Array.from({ length: 20 })
+          .map((_, i) => {
+            const idx = i + 1;
+            return `speed_bin${idx} DOUBLE PRECISION, direction_bin${idx} DOUBLE PRECISION`;
+          })
+          .join(",\n          ");
+
+        tblCreateQuery = `
+          CREATE TABLE ${tableName} (
+            ${awacCommonCols.replace(/\n\s*$/, "")}
+            ,
+            ${awacBinCols}
+          )`;
+        tblperocessed = `
+          CREATE TABLE ${tableName}_processed (
+            ${awacCommonCols.replace(/\n\s*$/, "")}
+            ,
+            ${awacBinCols}
+          )`;
+      } else {
+        // Default SPC schema
+        tblCreateQuery = `
+          CREATE TABLE ${tableName} (
+            id SERIAL PRIMARY KEY,
+            station_id TEXT,
+            date TIMESTAMPTZ,
+            lat TEXT,
+            lon TEXT,
+            speed TEXT,
+            direction TEXT,
+            depth TEXT,
+            pressure TEXT,
+            battery TEXT,
+            high_water_level INTEGER,
+            file_id INTEGER REFERENCES tb_file(id)
+          )`;
+        tblperocessed = `
+          CREATE TABLE ${tableName}_processed (
+            id SERIAL PRIMARY KEY,
+            station_id TEXT,
+            date TIMESTAMPTZ,
+            lat TEXT,
+            lon TEXT,
+            speed TEXT,
+            direction TEXT,
+            depth TEXT,
+            pressure TEXT,
+            battery TEXT,
+            high_water_level INTEGER,
+            file_id INTEGER REFERENCES tb_file(id)
+          )`;
+      }
       const tbCreateResult = await pool.query(tblCreateQuery);
       const tbCreateProcessed = await pool.query(tblperocessed);
 
@@ -272,31 +322,76 @@ const createFolderAndFile = async (req, res) => {
       }
 
       // Insert all rows into the dynamic table
-      const insertQuery = `
-        INSERT INTO ${tableName} (
-          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
-      const insertQuery_processed = `
-        INSERT INTO ${tableName}_processed (
-          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+      if (fileType === "awac") {
+        // Build column lists for AWAC
+        const binCols = Array.from({ length: 20 })
+          .map((_, i) => `speed_bin${i + 1}, direction_bin${i + 1}`)
+          .join(", ");
+        const insertCols = `station_id, date, lat, lon, battery, pressure, temperature, pitch, roll, heading, ${binCols}, high_water_level, file_id`;
+        const placeholders = (count) =>
+          Array.from({ length: count }, (_, i) => `$${i + 1}`).join(",");
+        // station_id(1), date(2), lat(3), lon(4), battery(5), pressure(6), temperature(7), pitch(8), roll(9), heading(10)
+        // bins 40 placeholders (20*2) => 11..50, high_water_level(51), file_id(52)
+        const totalParams = 52;
+        const insertQuery = `INSERT INTO ${tableName} (${insertCols}) VALUES (${placeholders(
+          totalParams
+        )})`;
+        const insertQuery_processed = `INSERT INTO ${tableName}_processed (${insertCols}) VALUES (${placeholders(
+          totalParams
+        )})`;
 
-      for (const row of fileData) {
-        const values = [
-          row.station_id,
-          row.date,
-          row.lat,
-          row.lon,
-          row.speed,
-          row.direction,
-          row.depth,
-          parseFloat(row.pressure) * 0.9945,
-          row.battery,
-          row.high_water_level,
-          fileId,
-        ];
-        await pool.query(insertQuery, values);
-        await pool.query(insertQuery_processed, values);
+        for (const row of fileData) {
+          const baseVals = [
+            row.station_id || null,
+            row.datetime || row.date || null,
+            row.lat || null,
+            row.lon || null,
+            row.battery != null ? parseFloat(row.battery) : null,
+            row.pressure != null ? parseFloat(row.pressure) * 0.9945 : null,
+            row.temperature != null ? parseFloat(row.temperature) : null,
+            row.pitch != null ? parseFloat(row.pitch) : null,
+            row.roll != null ? parseFloat(row.roll) : null,
+            row.heading != null ? parseFloat(row.heading) : null,
+          ];
+          const binVals = [];
+          for (let i = 1; i <= 20; i++) {
+            const s = row[`bin_${i}_speed`];
+            const d = row[`bin_${i}_direction`];
+            binVals.push(s != null ? parseFloat(s) : null);
+            binVals.push(d != null ? parseFloat(d) : null);
+          }
+          const tailVals = [row.high_water_level || 0, fileId];
+          const values = [...baseVals, ...binVals, ...tailVals];
+          await pool.query(insertQuery, values);
+          await pool.query(insertQuery_processed, values);
+        }
+      } else {
+        const insertQuery = `
+          INSERT INTO ${tableName} (
+            station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+        const insertQuery_processed = `
+          INSERT INTO ${tableName}_processed (
+            station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
+          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+
+        for (const row of fileData) {
+          const values = [
+            row.station_id,
+            row.date,
+            row.lat,
+            row.lon,
+            row.speed,
+            row.direction,
+            row.depth,
+            row.pressure != null ? parseFloat(row.pressure) * 0.9945 : null,
+            row.battery,
+            row.high_water_level,
+            fileId,
+          ];
+          await pool.query(insertQuery, values);
+          await pool.query(insertQuery_processed, values);
+        }
       }
 
       insertedFiles.push({ file_name: fname, file_id: fileId });
@@ -571,7 +666,7 @@ const getDataByFolderIdAndFileName = async (req, res) => {
       `SELECT
          tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
          tf.battery_unit, tf.depth_unit, tf.coord_unit, tf.water_level_unit_to, tf.current_speed_unit_to,
-         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to
+         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to, tf.type
        FROM
          tb_${file_id} tp
        JOIN
@@ -596,7 +691,7 @@ const getProcessedDataByFileId = async (req, res) => {
       `SELECT
          tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
          tf.battery_unit, tf.depth_unit, tf.coord_unit, tf.water_level_unit_to, tf.current_speed_unit_to,
-         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to
+         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to, tf.type
        FROM
          tb_${file_id}_processed tp
        JOIN
@@ -633,7 +728,8 @@ const getFoldersWithFiles = async (req, res) => {
         fi.current_direction_unit_to,
         fi.battery_unit_to,
         fi.depth_unit_to,
-        fi.coord_unit_to
+        fi.coord_unit_to,
+        fi.type
       FROM
         tb_folders f
       JOIN
@@ -668,6 +764,7 @@ const getFoldersWithFiles = async (req, res) => {
           battery_unit_to: row.battery_unit_to,
           depth_unit_to: row.depth_unit_to,
           coord_unit_to: row.coord_unit_to,
+          type: row.type,
         });
       }
     });
@@ -700,7 +797,8 @@ const getAllFoldersWithFiles = async (req, res) => {
         fi.current_direction_unit_to,
         fi.battery_unit_to,
         fi.depth_unit_to,
-        fi.coord_unit_to
+        fi.coord_unit_to,
+        fi.type
       FROM
         tb_folders f
       LEFT JOIN
@@ -735,6 +833,7 @@ const getAllFoldersWithFiles = async (req, res) => {
           battery_unit_to: row.battery_unit_to,
           depth_unit_to: row.depth_unit_to,
           coord_unit_to: row.coord_unit_to,
+          type: row.type,
         });
       }
     });
