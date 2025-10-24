@@ -10,6 +10,9 @@ import { ToggleSwitchModule } from 'primeng/toggleswitch';
 import { Direction1Component } from '../widget/direction1/direction1.component';
 import { GlobalConfig } from '../global/app.global';
 import { BaseComponent } from '../base/base.component';
+import { ChangeDetectorRef } from '@angular/core';
+import { AwacDataModel } from './dash_model.model';
+
 
 interface Files {
   folder_id: number;
@@ -27,12 +30,12 @@ interface fileData {
   current_speed_unit_to: string;
   depth_unit_to: string;
   water_level_unit_to: string;
+  type:string
 }
 interface dashdata {
   id: string;
   tide: string;
   dateTime: string;
-  // time:string,
   depth: string;
   battery: string;
   current_speed: string;
@@ -43,6 +46,13 @@ interface dashdata {
   current_dir_after_6: string;
   lat: string;
   lon: string;
+}
+
+export interface HighWaterTime {
+  rank: number;
+  datetime: string;
+  water_level: number;
+  dateFormatted: string;
 }
 
 @Component({
@@ -64,7 +74,7 @@ export class DashboardComponent implements OnInit {
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
-  selectedFiles: any[] = []; // Array to track selected files
+  selectedFiles: any[] = [];
   isMulti: boolean = true;
   main_table: any[] = [];
   current_hours_data: any[] = [];
@@ -89,17 +99,26 @@ export class DashboardComponent implements OnInit {
   private baseUrl: string;
   dateFormat!: string;
 
+  // High Water Times properties
+  highWaterTimes: HighWaterTime[] = [];
+  selectedHighWaterTime: HighWaterTime | null = null;
+
+
+  // awac variables
+  isAwac:boolean = false;
+
+
   constructor(
     private http: HttpClient,
     private toast: ToastrService,
     private unitSerive: UnitService,
     private globe: BaseComponent,
-    private globall: GlobalConfig
+    private globall: GlobalConfig,
+    private cdr: ChangeDetectorRef
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
   }
 
-  // Units
   units: UnitSettings = {
     waterLevel: '',
     currentSpeed: '',
@@ -116,125 +135,242 @@ export class DashboardComponent implements OnInit {
   parseFloat(value: any): number {
     return parseFloat(value);
   }
+
+  /**
+   * Find top 6 high water times from tide data
+   * Ensures they are at least 6 hours apart
+   */
+  /**
+ * Find top 6 high water times (local maxima)
+ * from the full dataset across all dates
+ */
+  getTop3HighAndLowWaterTimes(): { high: HighWaterTime[]; low: HighWaterTime[] } {
+    if (!this.main_table || this.main_table.length === 0) {
+      return { high: [], low: [] };
+    }
+  
+    const validData = this.main_table
+      .map((d) => ({
+        datetime: d.date,
+        water_level: parseFloat(d.pressure),
+      }))
+      .filter((d) => !isNaN(d.water_level));
+  
+    if (validData.length < 3) {
+      console.warn('Not enough valid tide data to find 3 highs and 3 lows');
+      return { high: [], low: [] };
+    }
+  
+    const highs: HighWaterTime[] = [];
+    const lows: HighWaterTime[] = [];
+    const neighborhood = 4; // check 4 points before and after
+  
+    for (let i = neighborhood; i < validData.length - neighborhood; i++) {
+      const curr = validData[i].water_level;
+  
+      // Check if this is a high tide
+      let isHigh = true;
+      for (let j = i - neighborhood; j <= i + neighborhood; j++) {
+        if (j === i) continue;
+        if (validData[j].water_level >= curr) {
+          isHigh = false;
+          break;
+        }
+      }
+      if (isHigh) {
+        highs.push({
+          rank: 0,
+          datetime: validData[i].datetime,
+          water_level: curr,
+          dateFormatted: this.formatHighWaterTimeDisplay(validData[i].datetime),
+        });
+      }
+  
+      // Check if this is a low tide
+      let isLow = true;
+      for (let j = i - neighborhood; j <= i + neighborhood; j++) {
+        if (j === i) continue;
+        if (validData[j].water_level <= curr) {
+          isLow = false;
+          break;
+        }
+      }
+      if (isLow) {
+        lows.push({
+          rank: 0,
+          datetime: validData[i].datetime,
+          water_level: curr,
+          dateFormatted: this.formatHighWaterTimeDisplay(validData[i].datetime),
+        });
+      }
+    }
+  
+    // Pick top 3 highs and lows by water level
+    const topHighs = highs
+      .sort((a, b) => b.water_level - a.water_level)
+      .slice(0, 3)
+      .map((d, i) => ({ ...d, rank: i + 1 }));
+  
+    const topLows = lows
+      .sort((a, b) => a.water_level - b.water_level)
+      .slice(0, 3)
+      .map((d, i) => ({ ...d, rank: i + 1 }));
+  
+    return { high: topHighs, low: topLows };
+  }
+  
+  
+  
+
+  /**
+   * Format high water time for dropdown display
+   */
+  formatHighWaterTimeDisplay(datetime: string): string {
+    const date = new Date(datetime);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const time = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return `${day} ${month} at ${time}`;
+  }
+
+  /**
+   * Handle high water time selection change
+   */
+  onHighWaterTimeChange() {
+    if (this.selectedHighWaterTime) {
+      this.processHighWaterTimeData(this.selectedHighWaterTime);
+    }
+  }
+
+  /**
+   * Process data for selected high water time (±6 hours)
+   */
+  processHighWaterTimeData(highWaterTime: HighWaterTime) {
+  console.log('Processing High Water Time:', highWaterTime);
+  const targetDateTime = new Date(highWaterTime.datetime);
+  let bf: any[] = [];
+  let af: any[] = [];
+
+  const matchingEntry = this.main_table.find(
+    (item) => new Date(item.date).getTime() === new Date(highWaterTime.datetime).getTime()
+  );
+
+  if (matchingEntry) {
+    this.currentData = matchingEntry;
+    console.log('Matching Entry:', matchingEntry);
+
+    for (let i = 1; i <= 6; i++) {
+      const beforeHour = new Date(targetDateTime.getTime() - i * 60 * 60 * 1000);
+      const afterHour = new Date(targetDateTime.getTime() + i * 60 * 60 * 1000);
+
+      const beforeHourData = this.main_table.filter((item) => {
+        const itemDate = new Date(item.date);
+        return (
+          itemDate.getFullYear() === beforeHour.getFullYear() &&
+          itemDate.getMonth() === beforeHour.getMonth() &&
+          itemDate.getDate() === beforeHour.getDate() &&
+          itemDate.getHours() === beforeHour.getHours()
+        );
+      });
+
+      const afterHourData = this.main_table.filter((item) => {
+        const itemDate = new Date(item.date);
+        return (
+          itemDate.getFullYear() === afterHour.getFullYear() &&
+          itemDate.getMonth() === afterHour.getMonth() &&
+          itemDate.getDate() === afterHour.getDate() &&
+          itemDate.getHours() === afterHour.getHours()
+        );
+      });
+
+      bf.push([...beforeHourData]);
+      af.push([...afterHourData]);
+    }
+
+    console.log('Before 6 hours:', bf);
+    console.log('After 6 hours:', af);
+
+    this.current_hours_data = [];
+    this.current_hours_data.push(bf);
+    this.current_hours_data.push(af);
+
+    const data = {
+      id: matchingEntry.station_id,
+      tide: matchingEntry.pressure,
+      dateTime: matchingEntry.date,
+      battery: matchingEntry.battery,
+      depth: matchingEntry.depth,
+      current_speed: matchingEntry.speed,
+      current_direction: matchingEntry.direction,
+      lat: matchingEntry.lat,
+      lon: matchingEntry.lon,
+      current_speed_b_6: bf[0]?.[0]?.speed || '',
+      current_dir_b_6: bf[0]?.[0]?.direction || '',
+      current_speed_after_6: af[0]?.[0]?.speed || '',
+      current_dir_after_6: af[0]?.[0]?.direction || '',
+    };
+
+    this.selected_data = data;
+    this.before_data = bf.reverse();
+    this.after_data = af;
+    this.__assign();
+    this.cdr.detectChanges();
+  } else {
+    console.error('No matching entry found for datetime:', highWaterTime.datetime);
+    this.toast.error('No data found for the selected high water time.', 'Error');
+  }
+}
+
   toggle_tap() {
-    // try {
-    const filter = this.main_table.filter(
-      (item) => item.high_water_level === 1
-    );
-    console.log(filter);
+    // Find all high water times
+    // this.highWaterTimes = this.getTop6HighWaterTimes();
+    const { high, low } = this.getTop3HighAndLowWaterTimes();
+    this.highWaterTimes = [...high, ...low];
+    
 
-    let bf: any[] = [];
-    let af: any[] = [];
-    this.currentData = filter[0];
-    console.log('current', this.currentData);
-    if (filter.length > 0) {
-      const targetDateTime = new Date(filter[0].date);
-      // this.high_watel_level = filter[0]
-      for (let i = 1; i <= 6; i++) {
-        const beforeHour = new Date(
-          targetDateTime.getTime() - i * 60 * 60 * 1000
-        );
-        // beforeHour.setHours(beforeHour.getHours() - i, 0, 0, 0); // exact hour
-
-        const afterHour = new Date(
-          targetDateTime.getTime() + i * 60 * 60 * 1000
-        );
-        // afterHour.setHours(afterHour.getHours() + i, 0, 0, 0);
-
-        const beforeHourData = this.main_table.filter((item) => {
-          const itemDate = new Date(item.date);
-          return (
-            itemDate.getFullYear() === beforeHour.getFullYear() &&
-            itemDate.getMonth() === beforeHour.getMonth() &&
-            itemDate.getDate() === beforeHour.getDate() &&
-            itemDate.getHours() === beforeHour.getHours()
-          );
-        });
-
-        const afterHourData = this.main_table.filter((item) => {
-          const itemDate = new Date(item.date);
-          return (
-            itemDate.getFullYear() === afterHour.getFullYear() &&
-            itemDate.getMonth() === afterHour.getMonth() &&
-            itemDate.getDate() === afterHour.getDate() &&
-            itemDate.getHours() === afterHour.getHours()
-          );
-        });
-        console.log('befiore hours', beforeHour, afterHour);
-        bf.push([...beforeHourData]);
-        af.push([...afterHourData]);
-        // for (let index = 0; index < bf.length; index++) {
-        //   this.avgData.push({
-        //     name:bf[index].
-        //   })
-        // }
-      }
-
-      console.log('Before 6 hours (all intervals):', bf);
-      console.log('After 6 hours (all intervals):', af);
-
-      this.current_hours_data = []; // clear before pushing again
-      this.current_hours_data.push(bf);
-      this.current_hours_data.push(af);
-      console.log('filter', filter);
-      const data = {
-        id: filter[0].station_id,
-        tide: filter[0].pressure,
-        dateTime: filter[0].date,
-        battery: filter[0].battery,
-        depth: filter[0].depth,
-        current_speed: filter[0].speed,
-        current_direction: filter[0].direction,
-        lat: filter[0].lat,
-        lon: filter[0].lon,
-        current_speed_b_6: bf[0]?.speed,
-        current_dir_b_6: bf[0]?.direction,
-        current_speed_after_6: af[0]?.speed,
-        current_dir_after_6: af[0]?.direction,
-        // You can add summaries or latest values from bf[bf.length-1] or af[0] here if needed
-      };
-
-      this.selected_data = data;
-
-      this.isLive = !this.isLive;
-      if (this.isLive) {
-        this.tap_date(this.main_table[0].date, this.main_table[0].time);
-      }
-
-      const bfMatches = this.filterByHour(bf[0]);
-      const afMatches = this.filterByHour(af[0]);
-      // const avgSpeed = this.getAverageSpeed(bfMatches, 'speed');
-      this.before_data = bf;
-      this.after_data = af;
-      // const numm = this.get_value_for_widget(1, 'speed','before');
-      console.log('matches', this.before_data, this.after_data);
-      this.__assign();
-    } else {
+    if (this.highWaterTimes.length === 0) {
       this.toast.error(
-        'This file has no high_water_level data. Please edit in the process page.',
+        'No high water level data found in this file.',
         'Error'
       );
+      return;
     }
-    // } catch (error) {
-    //   this.toast.error("This file has no high_water_level data. Please edit in the process page.", 'Error');
-    // }
+
+    // Select the first (highest) high water time by default
+    this.selectedHighWaterTime = this.highWaterTimes[0];
+    
+    this.isLive = !this.isLive;
+    
+    if (this.isLive) {
+      this.tap_date(this.main_table[0].date, this.main_table[0].time);
+    } else {
+      // Process the selected high water time
+      this.processHighWaterTimeData(this.selectedHighWaterTime);
+    }
+
+    console.log('High Water Times:', this.highWaterTimes);
   }
 
   timee: number = 6;
   changeTime(index: number) {
     this.hours = index;
-    // this.__assign();
     console.log('Selected time:', this.timee);
     this.__assign();
   }
+  
   hours: number = 6;
+  
   __assign() {
-    this.avgData = []; // clear existing data
+    this.avgData = [];
     const baseDate = new Date(this.currentData.date);
 
     for (let i = 6; i >= 1; i--) {
-      const entries = this.before_data[6 - i] || []; // fallback to empty array
-      console.log('entry', entries);
+      const entries = this.before_data[6 - i] || [];
       const avg = this.ccalculateAverage(entries);
 
       this.avgData.push({
@@ -269,24 +405,17 @@ export class DashboardComponent implements OnInit {
     console.log('avg', this.avgData);
   }
 
-  // get_value_for_widget(index:number, param:string, period:string):number{
-  //   const bfMatches = period ==='after'? this.filterByHour(this.after_data[index]) :this.filterByHour(this.before_data[index]);
-  //   return this.getAverageSpeed(bfMatches, param);
-  // }
-
   get dynamicHeight(): number {
     const items = this.filteredAvgData.length;
-    return items > 0 ? 95 / items : 13; // Divide full height by number of items
+    return items > 0 ? 95 / items : 13;
   }
+  
   get filteredAvgData() {
     const total = 6 + Number(this.hours) + 1;
-    console.log('hours selected', this.hours, total);
-
     const data = this.isbefore
       ? this.avgData.slice(6 - this.hours, 7)
       : this.avgData.slice(6, total);
 
-    console.log('filteres', data);
     return data;
   }
 
@@ -304,7 +433,6 @@ export class DashboardComponent implements OnInit {
     if (!Array.isArray(entries)) {
       entries = [];
     }
-    console.log('inside entry', entries);
     let totalPressure = 0,
       totalSpeed = 0,
       totalDirection = 0;
@@ -337,18 +465,31 @@ export class DashboardComponent implements OnInit {
       );
     });
   }
-
+current_bins:any[]=[]
   tap_date(date: string, time: string) {
-    console.log('started ', date, time);
     const filter = this.main_table.filter(
       (item) => item.date === date && item.time === time
     );
-    console.log(filter);
+console.log(filter);
+
+if (this.isAwac) {
+  this.current_bins = []; // clear existing bins
+
+  for (let i = 1; i <= 20; i++) {
+    const speedKey = `speed_bin${i}`;
+    const directionKey = `direction_bin${i}`;
+
+    this.current_bins.push({
+      [`speed_bin${i}`]: filter[0][speedKey],
+      [`direction_bin${i}`]: filter[0][directionKey],
+    });
+  }
+}
+
     const data = {
       id: filter[0].station_id,
       tide: filter[0].pressure,
       dateTime: filter[0].date,
-      // time:filter[0].time,
       depth: filter[0].depth,
       battery: filter[0].battery,
       current_speed: filter[0].speed,
@@ -362,68 +503,44 @@ export class DashboardComponent implements OnInit {
     };
     this.selected_data = data;
     this.latutude = this.selected_data.lat;
-
     this.longitude = this.selected_data.lon;
-    console.log('latitude====', this.latutude);
     this.dir = false;
-    console.log('selected', this.selected_data);
     this.directionTo = this.directionValue(
       parseFloat(this.selected_data.current_direction)
     );
     setTimeout(() => {
       this.dir = true;
     }, 100);
-    // this.dir=true;
   }
+  
   directionTo!: string;
+  
   directionValue(degrees: number): string {
     degrees = degrees % 360;
     if (degrees < 0) degrees += 360;
-    if (degrees >= 348.75 || degrees < 11.25) {
-      return 'N'; // North
-    } else if (degrees >= 11.25 && degrees < 33.75) {
-      return 'NNE'; // North-Northeast
-    } else if (degrees >= 33.75 && degrees < 56.25) {
-      return 'NE'; // Northeast
-    } else if (degrees >= 56.25 && degrees < 78.75) {
-      return 'ENE'; // East-Northeast
-    } else if (degrees >= 78.75 && degrees < 101.25) {
-      return 'E'; // East
-    } else if (degrees >= 101.25 && degrees < 123.75) {
-      return 'ESE'; // East-Southeast
-    } else if (degrees >= 123.75 && degrees < 146.25) {
-      return 'SE'; // Southeast
-    } else if (degrees >= 146.25 && degrees < 168.75) {
-      return 'SSE'; // South-Southeast
-    } else if (degrees >= 168.75 && degrees < 191.25) {
-      return 'S'; // South
-    } else if (degrees >= 191.25 && degrees < 213.75) {
-      return 'SSW'; // South-Southwest
-    } else if (degrees >= 213.75 && degrees < 236.25) {
-      return 'SW'; // Southwest
-    } else if (degrees >= 236.25 && degrees < 258.75) {
-      return 'WSW'; // West-Southwest
-    } else if (degrees >= 258.75 && degrees < 281.25) {
-      return 'W'; // West
-    } else if (degrees >= 281.25 && degrees < 303.75) {
-      return 'WNW'; // West-Northwest
-    } else if (degrees >= 303.75 && degrees < 326.25) {
-      return 'NW'; // Northwest
-    } else {
-      return 'NNW'; // North-Northwest
-    }
+    if (degrees >= 348.75 || degrees < 11.25) return 'N';
+    else if (degrees >= 11.25 && degrees < 33.75) return 'NNE';
+    else if (degrees >= 33.75 && degrees < 56.25) return 'NE';
+    else if (degrees >= 56.25 && degrees < 78.75) return 'ENE';
+    else if (degrees >= 78.75 && degrees < 101.25) return 'E';
+    else if (degrees >= 101.25 && degrees < 123.75) return 'ESE';
+    else if (degrees >= 123.75 && degrees < 146.25) return 'SE';
+    else if (degrees >= 146.25 && degrees < 168.75) return 'SSE';
+    else if (degrees >= 168.75 && degrees < 191.25) return 'S';
+    else if (degrees >= 191.25 && degrees < 213.75) return 'SSW';
+    else if (degrees >= 213.75 && degrees < 236.25) return 'SW';
+    else if (degrees >= 236.25 && degrees < 258.75) return 'WSW';
+    else if (degrees >= 258.75 && degrees < 281.25) return 'W';
+    else if (degrees >= 281.25 && degrees < 303.75) return 'WNW';
+    else if (degrees >= 303.75 && degrees < 326.25) return 'NW';
+    else return 'NNW';
   }
+  
   fileID: number | undefined;
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
   unitssTo!: UnitSettings;
+  
   ngOnInit(): void {
-    // this.unitSerive.units$.subscribe((u) => {
-    //   this.units = u;
-    // });
-    this.files_list = [];
-    // const unitss: any = localStorage.getItem('unitSettings');
-    // this.unitssTo = JSON.parse(unitss);
-    // console.log('Unitsss', this.unitssTo);
     const datetimeValue = JSON.parse(
       localStorage.getItem('unitSettings') ?? '{}'
     ).datetime;
@@ -436,17 +553,13 @@ export class DashboardComponent implements OnInit {
     }
 
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
-      console.log('resposnse==', response);
       this.files_list = response['data'];
-      console.log('files:', response, this.files_list);
 
-      // Set ToUnits - Find the first folder with files
       const folderWithFiles = this.files_list.find(
         (folder) => folder.files && folder.files.length > 0
       );
 
       this.fileID = this.globe.fileId;
-      console.log('file IFD', this.fileID);
 
       let folderIndex = -1;
       let selectedFile = null;
@@ -464,7 +577,6 @@ export class DashboardComponent implements OnInit {
         }
       }
 
-      // If no matching file found, fallback to first folder with files
       if (folderIndex === -1) {
         folderIndex = this.files_list.findIndex(
           (folder) => folder.files && folder.files.length > 0
@@ -475,12 +587,10 @@ export class DashboardComponent implements OnInit {
         }
       }
 
-      // Expand the matched folder
       this.expandedFolders = this.files_list.map(
         (_, index) => index === folderIndex
       );
 
-      // Set folder and file details if found
       if (selectedFolder && selectedFile) {
         this.openedFolder = selectedFolder.folder_id;
         this.selected_folder_name = selectedFolder.folder_name;
@@ -493,14 +603,8 @@ export class DashboardComponent implements OnInit {
         ];
         this.opened_file = selectedFile.file_name;
 
-        // Fetch data for the file
         this.open_file(selectedFile.file_name, selectedFile.file_id);
       }
-
-      setTimeout(() => {
-        // this.globe.fileId = undefined;
-      }, 100);
-      // this.isFilesLoading = false;
     });
   }
 
@@ -508,44 +612,26 @@ export class DashboardComponent implements OnInit {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
   }
+  
   toggleFileSelection(
     fileName: string,
     event: MouseEvent,
     file_id: number,
-    folder_name: string
+    folder_name: string, type:string
   ) {
     this.globe.fileId = file_id;
-    // this.dir = false;
-    console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
     this.isLive = true;
-    // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
-
-    // if (isCtrlPressed) {
-    //   this.isMulti = true;
-    //   // If Ctrl/Cmd is pressed, toggle file selection
-    //   const index = this.selectedFiles.indexOf(fileName);
-    //   if (index === -1) {
-    //     this.selectedFiles.push({
-    //       file_name: fileName,
-    //       file_id:file_id
-    //     });  // Add file to selection
-    //     console.log(this.selectedFiles)
-    //     this.open_file(fileName, file_id)
-    //   } else {
-    //     this.selectedFiles.splice(index, 1);  // Remove file from selection
-    //   }
-    // } else {
     this.isMulti = false;
-    // If Ctrl/Cmd is not pressed, select this file and deselect all others
     this.selectedFiles = [
       {
         file_name: fileName,
         file_id: file_id,
       },
-    ]; // Only keep the clicked file selected
+    ];
+
+   this.isAwac = type === 'awac' ? true : false;
     this.open_file(fileName, file_id);
-    // }
   }
 
   getFileImage(fileName: string): string {
@@ -553,18 +639,20 @@ export class DashboardComponent implements OnInit {
 
     switch (extension) {
       case 'csv':
-        return '../../assets/csv.png'; // Path to CSV image
+        return '../../assets/csv.png';
       case 'xlsx':
-        return '../../assets/xl.png'; // Path to Excel image
+        return '../../assets/xl.png';
+      case 'nmea':
+        return '../../assets/nmea.png';
       default:
-        return 'assets/file.png'; // Default file image
+        return 'assets/file.png';
     }
   }
 
   convertValue(value: number, fromUnit: string, toUnit: string): number {
     if (fromUnit === toUnit) return value;
 
-    const maxVolt = 12.4; // for battery conversion
+    const maxVolt = 12.4;
 
     const conversions: { [key: string]: (v: number) => number } = {
       'm-ft': (v) => v * 3.28084,
@@ -586,19 +674,15 @@ export class DashboardComponent implements OnInit {
       return this.parseFloat(conversions[key](value).toFixed(2));
     }
 
-    // no conversion available
     return parseFloat(value.toFixed(2));
   }
 
-  // In your component.ts
   formatDms(coordinate: string | number): string {
-    // If it's already in DMS format (comma-separated)
     if (typeof coordinate === 'string' && coordinate.includes(',')) {
       const parts = coordinate.split(',').map(Number);
       return `${parts[0]}°${parts[1]}'${parts[2]}''`;
     }
 
-    // If it's in decimal degrees (DD)
     const value =
       typeof coordinate === 'string' ? parseFloat(coordinate) : coordinate;
     const deg = Math.floor(value);
@@ -627,7 +711,6 @@ export class DashboardComponent implements OnInit {
       'volts-%': (v) => (v / maxVolt) * 100,
       '%-volts': (v) => (v * maxVolt) / 100,
 
-      // DD to DMS
       'dd-dms': (v) => {
         const deg = Math.floor(v);
         const minFloat = (v - deg) * 60;
@@ -636,7 +719,6 @@ export class DashboardComponent implements OnInit {
         return `${deg}°${min}'${sec.toFixed(2)}"`;
       },
 
-      // DMS to DD
       'dms-dd': (v) => {
         const regex = /(\d+)°(\d+)'([\d.]+)(?:'|")/;
         const match = v.match(regex);
@@ -653,7 +735,6 @@ export class DashboardComponent implements OnInit {
       return conversions[key](value);
     }
 
-    // No conversion found
     return value;
   }
 
@@ -663,6 +744,7 @@ export class DashboardComponent implements OnInit {
   depth_unit!: string;
   speed_unit!: string;
   directtion_unit!: string;
+  awacData:AwacDataModel[]=[]
   open_file(file_name: string, file_id: number) {
     this.opened_file = file_name;
     const data = {
@@ -670,60 +752,101 @@ export class DashboardComponent implements OnInit {
       file_name: file_name,
     };
     let unitstts: UnitSettings;
-    console.log(data);
+    
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
-        console.log('response', response);
-
-        this.latutude = response[0].lat;
-        this.longitude = response[0].lon;
-
-        this.bet_unit = response[0].battery_unit;
-        this.wat_unit = response[0].water_level_unit;
-        this.coor_unit = response[0].coord_unit;
-        this.depth_unit = response[0].depth_unit;
-        this.speed_unit = response[0].current_speed_unit;
-        this.directtion_unit = response[0].current_direction_unit;
-
-        unitstts = {
-          battery: response[0].battery_unit_to || '',
-          currentDirection: response[0].current_direction_unit_to || '',
-          currentSpeed: response[0].current_speed_unit_to || '',
-          depth: response[0].depth_unit_to || '',
-          latandlong: response[0].coord_unit_to || '',
-          waterLevel: response[0].water_level_unit_to || '',
-          datetime: this.dateFormat,
-        };
-        this.unitssTo = unitstts;
-
-        if (this.isMulti) {
-          let data = this.main_table;
-          this.main_table = [];
-          setTimeout(() => {
-            this.main_table = data;
-            for (let index = 0; index < response.length; index++) {
-              this.main_table.push(response[index]);
+        console.log("response = ", response);
+        if(response[0].type === 'awac'){
+          this.awacData = response;       
+          this.latutude = `${this.awacData[0].lat}`;
+          this.longitude = `${this.awacData[0].lon}`;
+  
+          this.bet_unit = `${this.awacData[0].battery_unit}`;
+          this.wat_unit = this.awacData[0].water_level_unit as string;
+          this.coor_unit = this.awacData[0].coord_unit as string;
+          this.depth_unit = this.awacData[0].depth_unit as string;
+          this.speed_unit = this.awacData[0].current_speed_unit as string;
+          this.directtion_unit = this.awacData[0].current_direction_unit as string;
+  
+          unitstts = {
+            battery: this.awacData[0].battery_unit_to || '',
+            currentDirection: this.awacData[0].current_direction_unit_to || '',
+            currentSpeed: this.awacData[0].current_speed_unit_to || '',
+            depth: this.awacData[0].depth_unit_to || '',
+            latandlong: this.awacData[0].coord_unit_to || '',
+            waterLevel: this.awacData[0].water_level_unit_to || '',
+            datetime: this.dateFormat,
+          };
+          this.unitssTo = unitstts;
+  
+          if (this.isMulti) {
+            let data = this.main_table;
+            this.main_table = [];
+            setTimeout(() => {
+              this.main_table = data;
+              for (let index = 0; index < this.awacData.length; index++) {
+                this.main_table.push(this.awacData[index]);
+              }
+              this.tap_date(this.main_table[0].date, this.main_table[0].time);
+            }, 100);
+          } else {
+            this.main_table = [];
+            setTimeout(() => {
+              this.main_table = this.awacData;
+              this.tap_date(this.main_table[0].date, this.main_table[0].time);
+            }, 100);
+          }
+        
+        }else{
+            this.latutude = response[0].lat;
+            this.longitude = response[0].lon;
+    
+            this.bet_unit = response[0].battery_unit;
+            this.wat_unit = response[0].water_level_unit;
+            this.coor_unit = response[0].coord_unit;
+            this.depth_unit = response[0].depth_unit;
+            this.speed_unit = response[0].current_speed_unit;
+            this.directtion_unit = response[0].current_direction_unit;
+    
+            unitstts = {
+              battery: response[0].battery_unit_to || '',
+              currentDirection: response[0].current_direction_unit_to || '',
+              currentSpeed: response[0].current_speed_unit_to || '',
+              depth: response[0].depth_unit_to || '',
+              latandlong: response[0].coord_unit_to || '',
+              waterLevel: response[0].water_level_unit_to || '',
+              datetime: this.dateFormat,
+            };
+            this.unitssTo = unitstts;
+    
+            if (this.isMulti) {
+              let data = this.main_table;
+              this.main_table = [];
+              setTimeout(() => {
+                this.main_table = data;
+                for (let index = 0; index < response.length; index++) {
+                  this.main_table.push(response[index]);
+                }
+                this.tap_date(this.main_table[0].date, this.main_table[0].time);
+              }, 100);
+            } else {
+              this.main_table = [];
+              setTimeout(() => {
+                this.main_table = response;
+                this.tap_date(this.main_table[0].date, this.main_table[0].time);
+              }, 100);
             }
-            console.log(this.main_table);
-            this.tap_date(this.main_table[0].date, this.main_table[0].time);
-          }, 100);
-        } else {
-          this.main_table = [];
-          setTimeout(() => {
-            this.main_table = response;
-            this.tap_date(this.main_table[0].date, this.main_table[0].time);
-          }, 100);
-        }
+          }
+        
       });
   }
+  
   getFileClass(fileName: string, file_id: number): string {
-    // Check if file is selected based on both file_name and file_id
     const isSelected = this.selectedFiles.some(
       (file) => file.file_name === fileName && file.file_id === file_id
     );
     return isSelected ? 'file-item_active' : 'file-item';
-    // }
   }
 
   avgData: any[] = [];

@@ -85,6 +85,8 @@
           depth_unit_to: '',
           coord_unit_to: '',
           datetime_unit: '',
+          min_date: '',
+          max_date: '',
         })"
       >
         Move
@@ -179,6 +181,8 @@
           depth_unit_to: '',
           coord_unit_to: '',
           datetime_unit: '',
+          min_date: '',
+          max_date: '',
         })"
       >
         Move
@@ -202,6 +206,20 @@
       <i class="fa-solid fa-cog"></i>
     </span>
     <span><h2>Parameter Settings</h2></span>
+    <button
+      style="
+        margin-left: auto;
+        cursor: pointer;
+        border-radius: 10px;
+        background-color: var(--button-bg);
+        color: var(--tooltip-text);
+        padding: 8px 15px;
+        border: none;
+      "
+      (click)="exportHeader()"
+    >
+      Export Header
+    </button>
   </div>
 
   <div class="parameter-grid">

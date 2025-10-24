@@ -175,7 +175,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   };
   private fullData: ApiData[] = [];
 
-  tideChartColor: string = localStorage.getItem('tideChartColor') ?? '#4900ff';
+  tideChartColor: string = localStorage.getItem('tideChartColor') ?? '#39b5f7';
   currentSpeedColor: string =
     localStorage.getItem('currentSpeedColor') ?? '#de002c';
   currentDirectionColor: string =

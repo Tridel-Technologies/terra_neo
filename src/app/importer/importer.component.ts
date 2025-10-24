@@ -272,8 +272,8 @@ export class ImporterComponent {
     { name: 'Speed', unit: '' },
     { name: 'Direction', unit: '' },
     { name: 'Depth', unit: '' },
+    { name: 'Water Level', unit: '' },
     { name: 'Battery', unit: '' },
-    { name: 'Pressure', unit: '' },
   ];
 
   open_file(file_name: string, file_id: number) {
@@ -314,7 +314,7 @@ export class ImporterComponent {
                 case 'battery':
                   header.unit = this.main_table[0].battery_unit || '';
                   break;
-                case 'pressure':
+                case 'water level':
                   header.unit = this.main_table[0].water_level_unit || '';
                   break;
                 default:
@@ -438,7 +438,7 @@ export class ImporterComponent {
                 case 'battery':
                   header.unit = this.main_table[0].battery_unit || '';
                   break;
-                case 'pressure':
+                case 'water level':
                   header.unit = this.main_table[0].water_level_unit || '';
                   break;
                 default:
@@ -656,8 +656,8 @@ export class ImporterComponent {
     'speedms',
     'direction',
     'bin_depth',
-    'battery',
     'pressure_in_bar',
+    'battery',
   ];
   tableHeaders = [
     'String',
@@ -665,9 +665,10 @@ export class ImporterComponent {
     'Speed',
     'Direction',
     'Bin_depth',
-    'Battery',
     'Pressure_in_bar',
+    'Battery',
   ];
+
   onFilesSelected(event: any) {
     const files: FileList = event.target.files;
 
@@ -792,63 +793,82 @@ export class ImporterComponent {
 
           this.uploaded_files.push(file.name);
 
-          const formattedData = rawData.map((row, index) => {
-            const cleanedRow: any = {};
-            this.expectedHeaders.forEach((key, i) => {
-              cleanedRow[key] = row[i];
-            });
+          const formattedData = rawData
+            .map((row, index) => {
+              const cleanedRow: any = {};
+              this.expectedHeaders.forEach((key, i) => {
+                cleanedRow[key] = row[i];
+              });
 
-            for (const key of this.expectedHeaders) {
-              const value = cleanedRow[key];
-              if (!value || (typeof value === 'number' && isNaN(value))) {
-                // this.toast.warning(
-                //   `Empty/NaN value in "${key}" at row ${index + 2} in file ${
-                //     file.name
-                //   }`,
-                //   'Warning'
-                // );
-                this.row_isempty = true;
+              // Skip header row if detected
+              if (index === 0 && Object.values(cleanedRow).includes('Date')) {
+                return null;
               }
-            }
 
-            const time = this.convertToTimeFormat(cleanedRow['Time']);
-            const date = this.convertToDateFormat(cleanedRow['Date']);
-            const dateTime = `${date}T${time}Z`;
+              // ✅ Skip row if it contains a string in numeric fields
+              const numericFields = [
+                'speedms',
+                'direction',
+                'bin_depth',
+                'battery',
+                'pressure_in_bar',
+              ];
 
-            return {
-              fileName: file.name,
-              station_id: cleanedRow['STRING'],
-              date: dateTime,
-              speed: cleanedRow['speedms'],
-              direction: cleanedRow['direction'],
-              depth: cleanedRow['bin_depth'],
-              battery: cleanedRow['battery'],
-              pressure: cleanedRow['pressure_in_bar'],
-              lat: '',
-              lon: '',
-              high_water_level: 0,
-            };
-          });
+              const hasStringValue = numericFields.some((key) => {
+                const val = cleanedRow[key];
+                if (val === null || val === undefined || val === '')
+                  return false;
+                return typeof val === 'string' && isNaN(Number(val));
+              });
 
-          if (this.row_isempty === true) {
-            this.toast.warning(
-              `Empty or NaN values in the file ${file.name} have been replaced with NULL.`,
-              'Warning'
-            );
+              if (hasStringValue) {
+                console.warn(
+                  `Skipping row ${index + 1} in ${
+                    file.name
+                  } — contains string in numeric field`
+                );
+                return null; // skip this row
+              }
+
+              // Convert time/date
+              const time = this.convertToTimeFormat(cleanedRow['Time']);
+              const date = this.convertToDateFormat(cleanedRow['Date']);
+              const dateTime = `${date}T${time}Z`;
+
+              return {
+                fileName: file.name,
+                station_id: cleanedRow['STRING'],
+                date: dateTime,
+                speed: parseFloat(cleanedRow['speedms']),
+                direction: parseFloat(cleanedRow['direction']),
+                depth: parseFloat(cleanedRow['bin_depth']),
+                battery: parseFloat(cleanedRow['battery']),
+                pressure: parseFloat(cleanedRow['pressure_in_bar']),
+                lat: '',
+                lon: '',
+                high_water_level: 0,
+              };
+            })
+            // ✅ Filter out null (skipped) rows
+            .filter((row) => row !== null);
+
+          if (formattedData.length === 0) {
+            return reject(`No valid rows found in file "${file.name}".`);
           }
+
           // Find max pressure row
           let maxPressureIndex = 0;
-          let maxPressureValue = parseFloat(formattedData[0].pressure);
+          let maxPressureValue = formattedData[0].pressure;
 
           for (let i = 1; i < formattedData.length; i++) {
-            const currentPressure = parseFloat(formattedData[i].pressure);
+            const currentPressure = formattedData[i].pressure;
             if (currentPressure > maxPressureValue) {
               maxPressureValue = currentPressure;
               maxPressureIndex = i;
             }
           }
 
-          // Set high_water_level flag
+          // Mark high water level
           formattedData[maxPressureIndex].high_water_level = 1;
 
           resolve({ fileName: file.name, data: formattedData });
@@ -874,10 +894,10 @@ export class ImporterComponent {
     }
 
     let maxPressureIndex = 0;
-    let maxPressureValue = parseFloat(filteredData[0].pressure);
+    let maxPressureValue = filteredData[0].pressure;
 
     for (let i = 1; i < filteredData.length; i++) {
-      let currentPressure = parseFloat(filteredData[i].pressure);
+      let currentPressure = filteredData[i].pressure;
       if (currentPressure > maxPressureValue) {
         maxPressureValue = currentPressure;
         maxPressureIndex = i;

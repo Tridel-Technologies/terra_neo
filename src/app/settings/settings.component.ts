@@ -36,6 +36,8 @@ interface fileData {
   depth_unit_to: string;
   coord_unit_to: string;
   datetime_unit: string;
+  min_date: string;
+  max_date: string;
 }
 
 @Component({
@@ -48,6 +50,7 @@ export class SettingsComponent {
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
+  currentFile!: number;
   selectedFiles: any[] = [];
   isMulti: boolean = false;
   files_list: Folders[] = [];
@@ -69,17 +72,14 @@ export class SettingsComponent {
     setTimeout(() => {
       this.openedFile = file;
       this.tappedFolder = folder;
-      console.log(this.openedFile);
     }, 100);
   }
 
   Foldertaped2(file: fileData[], folder: Folders) {
-    console.log('its1');
     this.openedFile2 = [];
     setTimeout(() => {
       this.openedFile2 = file;
       this.tappedFolder2 = folder;
-      console.log(this.openedFile);
     }, 100);
   }
 
@@ -141,13 +141,11 @@ export class SettingsComponent {
       folder: null,
     };
 
+    // Keep full file metadata so it isn't lost during move (e.g., min_date, max_date)
     this.fileToMove = {
-      file_name: file.file_name,
-      file_id: file.file_id,
+      ...file,
       fromFolder: this.tappedFolder.folder_id,
     };
-    console.log('filde', this.fileToMove);
-    console.log('folder', this.tappedFolder);
   }
 
   onFolderRightClick(event: MouseEvent, folder: any) {
@@ -165,7 +163,6 @@ export class SettingsComponent {
   moveFile(file: fileData) {
     this.contextMenu.visible = false;
     this.movingFile = file;
-    console.log('file', this.fileToMove);
     this.removeFileFromOriginalFolder(this.fileToMove);
   }
 
@@ -187,10 +184,8 @@ export class SettingsComponent {
   // {file_name: 'file2.csv', file_id: 12, fromFolder: 14}
 
   pasteFile(targetFolder: any) {
-    console.log('paste', this.fileToMove, targetFolder);
     if (this.fileToMove && targetFolder) {
       // Step 1: Remove the file from its original folder
-      console.log('start');
       const fromFolderIndex = this.files_list.findIndex(
         (f) => f.folder_id === this.fileToMove.fromFolder
       );
@@ -226,11 +221,9 @@ export class SettingsComponent {
       folder_id: folder.folder_id,
     };
 
-    console.log(data);
     this.http
       .post(`${this.baseUrl}change_folder`, data)
       .subscribe((response: any) => {
-        console.log(response);
         this.fileToMove = null;
         this.toastr.success('File moved', 'Success', {
           timeOut: 2000,
@@ -251,7 +244,6 @@ export class SettingsComponent {
   }
 
   onContainerRightClick(event: MouseEvent) {
-    console.log('empty');
     event.preventDefault();
     // Only open folder context if clicked directly on container (not folder/file)
     if ((event.target as HTMLElement).classList.contains('fileCContainer')) {
@@ -266,7 +258,6 @@ export class SettingsComponent {
             folder_name: folderName,
           })
           .subscribe((response: any) => {
-            console.log(response);
             this.init();
           });
         this.toastr.success('Folder created', 'Success', {
@@ -288,6 +279,10 @@ export class SettingsComponent {
         JSON.parse(localStorage.getItem('unitSettings') ?? '{}').datetime ||
         '01-Jan-2025 12:00:00',
     };
+
+    this.currentFile = file.file_id;
+    this.selectedFile = [file];
+    this.selectedFiles = [{ file_name: file.file_name, file_id: file.file_id }];
   }
 
   unitSettings = [
@@ -416,7 +411,6 @@ export class SettingsComponent {
       localStorage.getItem('unitSettings') ?? '{}'
     ).datetime;
     if (datetimeValue) {
-      console.log(datetimeValue);
       this.selectedUnits['datetime'] = datetimeValue;
     }
   }
@@ -452,7 +446,6 @@ export class SettingsComponent {
         unitKey: paramKey,
         unitValue: unit,
       };
-      console.log(payload);
       this.http.post(`${this.baseUrl}update_unit`, payload).subscribe({
         next: (res) => {
           this.toastr.success('Unit updated successfully', 'Success', {
@@ -471,11 +464,9 @@ export class SettingsComponent {
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
-    console.log(this.expandedFolders);
   }
 
   toggleFileSelection(fileName: string, event: MouseEvent, file_id: number) {
-    console.log(fileName, file_id);
     const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
 
     if (isCtrlPressed) {
@@ -487,7 +478,6 @@ export class SettingsComponent {
           file_name: fileName,
           file_id: file_id,
         }); // Add file to selection
-        console.log(this.selectedFiles);
         // this.open_file(fileName, file_id)
       } else {
         this.selectedFiles.splice(index, 1); // Remove file from selection
@@ -568,8 +558,6 @@ export class SettingsComponent {
     );
 
     if (folderContainingFile) {
-      console.log('Folder containing selected file:', folderContainingFile);
-
       // Set the folder to variable
       this.selectedFolder2 = folderContainingFile;
 
@@ -582,12 +570,88 @@ export class SettingsComponent {
         // Set the file to variable as an array (since your variable is fileData[])
         this.selectedFile = [selectedFile];
 
-        console.log('Selected File details:', selectedFile);
-        this.Foldertaped(this.selectedFile, this.selectedFolder2);
+        if (selectedFile.is_processed) {
+          this.Foldertaped2(this.selectedFile, this.selectedFolder2);
+        } else {
+          this.Foldertaped(this.selectedFile, this.selectedFolder2);
+        }
         this.setUnits(selectedFile);
       }
     } else {
-      console.log('No folder contains the selected file.');
+      this.toastr.error('File not found', 'Error', {
+        timeOut: 2000,
+      });
     }
+  }
+
+  exportHeader() {
+    let currentFile: any = null;
+    if (this.selectedFile && this.selectedFile.length > 0) {
+      currentFile = this.selectedFile[0];
+    } else if (this.openedFile && this.openedFile.length > 0) {
+      currentFile = this.openedFile[0];
+    } else if (this.openedFile2 && this.openedFile2.length > 0) {
+      currentFile = this.openedFile2[0];
+    } else if (this.selectedFiles && this.selectedFiles.length > 0) {
+      const sel = this.selectedFiles[0];
+      for (const folder of this.files_list) {
+        const found = folder.files.find((f: any) => f.file_id === sel.file_id);
+        if (found) {
+          currentFile = found;
+          break;
+        }
+      }
+    }
+
+    // Fallback: if dates are missing (e.g., after switching/moving), rehydrate from files_list by id
+    if (
+      currentFile &&
+      (!currentFile.min_date || !currentFile.max_date) &&
+      currentFile.file_id
+    ) {
+      for (const folder of this.files_list) {
+        const found = folder.files.find(
+          (f: any) => f.file_id === currentFile.file_id
+        );
+        if (found) {
+          currentFile = found;
+          break;
+        }
+      }
+    }
+
+    if (currentFile) {
+      const first = `Deployment started date : ${currentFile.min_date}`;
+      const last = `Deployment ended date : ${currentFile.max_date}`;
+      const data = `
+      Column1 = Station ID
+      Column2 = Date/Time
+      Column3 = Current Speed
+      Column4 = Current Direction
+      Column5 = Depth
+      Column6 = Pressure (in bar)
+      Column7 = Battery
+
+      ${first}
+      ${last}
+
+      Selected file: ${currentFile.file_name}`;
+
+      this.writeAndDownload(`${currentFile.file_name}_header.txt`, data);
+    } else {
+      this.toastr.error('No file selected', 'Error', {
+        timeOut: 2000,
+      });
+    }
+  }
+
+  writeAndDownload(name: string, content: string) {
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = name;
+    anchor.click();
+    window.URL.revokeObjectURL(url);
   }
 }

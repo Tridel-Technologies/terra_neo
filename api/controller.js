@@ -290,7 +290,7 @@ const createFolderAndFile = async (req, res) => {
           row.speed,
           row.direction,
           row.depth,
-          parseFloat(row.pressure) * 0.9945,
+          +(parseFloat(row.pressure) * 0.9945).toFixed(4),
           row.battery,
           row.high_water_level,
           fileId,
@@ -613,9 +613,82 @@ const getProcessedDataByFileId = async (req, res) => {
   }
 };
 
+// const getFoldersWithFiles = async (req, res) => {
+//   try {
+//     const query = `
+//       SELECT
+//         f.id AS folder_id,
+//         f.folder_name,
+//         fi.id AS file_id,
+//         fi.file_name,
+//         fi.is_processed,
+//         fi.water_level_unit,
+//         fi.current_speed_unit,
+//         fi.current_direction_unit,
+//         fi.battery_unit,
+//         fi.depth_unit,
+//         fi.coord_unit,
+//         fi.water_level_unit_to,
+//         fi.current_speed_unit_to,
+//         fi.current_direction_unit_to,
+//         fi.battery_unit_to,
+//         fi.depth_unit_to,
+//         fi.coord_unit_to,
+//         MAX(tp.date) AS max_date,
+//         MIN(tp.date) AS min_date
+//       FROM
+//         tb_folders f
+//       JOIN
+//         tb_file fi ON fi.folder_id = f.id
+//       JOIN
+//         tb_${f.id} tp ON tp.file_id = fi.id
+//       ORDER BY
+//         f.id DESC
+//     `;
+//     const result = await pool.query(query);
+//     const foldersMap = {};
+//     result.rows.forEach((row) => {
+//       if (!foldersMap[row.folder_id]) {
+//         foldersMap[row.folder_id] = {
+//           folder_id: row.folder_id,
+//           folder_name: row.folder_name,
+//           files: [],
+//         };
+//       }
+//       if (row.file_id) {
+//         foldersMap[row.folder_id].files.push({
+//           file_id: row.file_id,
+//           file_name: row.file_name,
+//           is_processed: row.is_processed,
+//           water_level_unit: row.water_level_unit,
+//           current_speed_unit: row.current_speed_unit,
+//           current_direction_unit: row.current_direction_unit,
+//           battery_unit: row.battery_unit,
+//           depth_unit: row.depth_unit,
+//           coord_unit: row.coord_unit,
+//           water_level_unit_to: row.water_level_unit_to,
+//           current_speed_unit_to: row.current_speed_unit_to,
+//           current_direction_unit_to: row.current_direction_unit_to,
+//           battery_unit_to: row.battery_unit_to,
+//           depth_unit_to: row.depth_unit_to,
+//           coord_unit_to: row.coord_unit_to,
+//           max_date: row.max_date,
+//           min_date: row.min_date,
+//         });
+//       }
+//     });
+//     const foldersWithFiles = Object.values(foldersMap).sort(
+//       (a, b) => b.folder_id - a.folder_id
+//     );
+//     res.status(200).json({ data: foldersWithFiles });
+//   } catch (error) {
+//     res.status(500).json({ message: `Error: ${error.message}` });
+//   }
+// };
 const getFoldersWithFiles = async (req, res) => {
   try {
-    const query = `
+    // 1️⃣ Fetch all folders and their files (fixed tables)
+    const baseQuery = `
       SELECT
         f.id AS folder_id,
         f.folder_name,
@@ -634,48 +707,66 @@ const getFoldersWithFiles = async (req, res) => {
         fi.battery_unit_to,
         fi.depth_unit_to,
         fi.coord_unit_to
-      FROM
-        tb_folders f
-      JOIN
-        tb_file fi ON fi.folder_id = f.id
-      ORDER BY
-        f.id DESC
+      FROM tb_folders f
+      JOIN tb_file fi ON fi.folder_id = f.id
+      ORDER BY f.id DESC
     `;
-    const result = await pool.query(query);
+
+    const result = await pool.query(baseQuery);
     const foldersMap = {};
-    result.rows.forEach((row) => {
-      if (!foldersMap[row.folder_id]) {
-        foldersMap[row.folder_id] = {
-          folder_id: row.folder_id,
+
+    // 2️⃣ Prepare an array of promises to fetch min/max dates in parallel
+    const dateQueries = result.rows.map(async (row) => {
+      const folderId = row.folder_id;
+      const tableName = `tb_${folderId}`; // dynamic table name
+
+      let minDate = null;
+      let maxDate = null;
+
+      try {
+        const dateQuery = `
+          SELECT
+            MIN(date) AS min_date,
+            MAX(date) AS max_date
+          FROM ${tableName}
+          WHERE file_id = $1
+        `;
+        const dateRes = await pool.query(dateQuery, [row.file_id]);
+        if (dateRes.rows.length > 0) {
+          minDate = dateRes.rows[0].min_date;
+          maxDate = dateRes.rows[0].max_date;
+        }
+      } catch (err) {
+        console.warn(`⚠️ Skipping ${tableName}: ${err.message}`);
+      }
+
+      // Group files under their folder
+      if (!foldersMap[folderId]) {
+        foldersMap[folderId] = {
+          folder_id: folderId,
           folder_name: row.folder_name,
           files: [],
         };
       }
-      if (row.file_id) {
-        foldersMap[row.folder_id].files.push({
-          file_id: row.file_id,
-          file_name: row.file_name,
-          is_processed: row.is_processed,
-          water_level_unit: row.water_level_unit,
-          current_speed_unit: row.current_speed_unit,
-          current_direction_unit: row.current_direction_unit,
-          battery_unit: row.battery_unit,
-          depth_unit: row.depth_unit,
-          coord_unit: row.coord_unit,
-          water_level_unit_to: row.water_level_unit_to,
-          current_speed_unit_to: row.current_speed_unit_to,
-          current_direction_unit_to: row.current_direction_unit_to,
-          battery_unit_to: row.battery_unit_to,
-          depth_unit_to: row.depth_unit_to,
-          coord_unit_to: row.coord_unit_to,
-        });
-      }
+
+      foldersMap[folderId].files.push({
+        ...row,
+        min_date: minDate,
+        max_date: maxDate,
+      });
     });
+
+    // 3️⃣ Wait for all queries to complete in parallel
+    await Promise.all(dateQueries);
+
+    // 4️⃣ Sort folders (latest first)
     const foldersWithFiles = Object.values(foldersMap).sort(
       (a, b) => b.folder_id - a.folder_id
     );
+
     res.status(200).json({ data: foldersWithFiles });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: `Error: ${error.message}` });
   }
 };

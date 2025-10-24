@@ -52,7 +52,8 @@
               f.file_name,
               $event,
               f.file_id,
-              folder.folder_name
+              folder.folder_name,
+              f.type
             )
           "
         >
@@ -70,7 +71,7 @@
     </div>
   </div>
   <div class="parent">
-    <div class="toggle" [style]="{ width: !isLive ? '600px' : '180px' }">
+    <div class="toggle" [style]="{ width: !isLive ? '700px' : '180px' }">
       <p>Live</p>
       <!-- <p-toggleswitch [(ngModel)]="isLive" (onChange)="toggle_tap()" /> -->
       <div
@@ -86,6 +87,37 @@
         <div class="toggle_button"></div>
       </div>
       <p>+/- 6 hours</p>
+
+      <div
+        class="high-water-dropdown"
+        style="width: auto"
+        *ngIf="!isLive && highWaterTimes.length > 0"
+      >
+        <select
+          id="highWaterSelect"
+          name="highWaterTime"
+          [(ngModel)]="selectedHighWaterTime"
+          (ngModelChange)="onHighWaterTimeChange()"
+          class="high-water-select"
+        >
+          <option
+            *ngFor="let hwt of highWaterTimes; let i = index"
+            [ngValue]="hwt"
+          >
+            {{ hwt.rank }}
+            {{
+              hwt.rank === 1
+                ? "st"
+                : hwt.rank === 2
+                ? "nd"
+                : hwt.rank === 3
+                ? "rd"
+                : "th"
+            }}
+            {{ i < 3 ? "High Water" : "Low Water" }}
+          </option>
+        </select>
+      </div>
 
       <select
         name="hours"
@@ -124,7 +156,7 @@
       </div>
     </div>
     <div class="right" [ngStyle]="{ width: !isLive ? '98.5%' : '76%' }">
-      <div class="ids">
+      <div class="ids" [ngStyle]="{ width: isAwac ? '29%' : '33%' }">
         <div class="station-id">
           <h5 class="title">Station ID</h5>
           <p class="sub-title">{{ selected_data.id }}</p>
@@ -236,7 +268,7 @@
           </p>
         </div>
       </div>
-      <div class="centers">
+      <div class="centers" [ngStyle]="{ width: isAwac ? '29%' : '33%' }">
         <!--  @for (item of Array_item; track $index) {
                 <div class="tide_array">
                     <div class="icon_tide"><img src="../../assets/tide.png" alt=""></div>
@@ -430,7 +462,95 @@
           </p>
         </div>
       </div>
-      <div class="currents">
+      <div class="bin_currents" *ngIf="isAwac">
+        @for (item of current_bins; track $index) {
+        <div class="bins">
+          <div class="current_speed_bin">
+            <p>Current Speed Bin{{ $index + 1 }}</p>
+            <div class="inside_bin">
+              <svg
+                width="120"
+                height="120"
+                viewBox="0 0 120 120"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <circle
+                  cx="60"
+                  cy="60"
+                  r="55"
+                  fill="#001F3F"
+                  stroke="#003366"
+                  stroke-width="3"
+                />
+
+                <path
+                  d="M20,75 Q35,65 50,75 T80,75 T110,75"
+                  stroke="#00BFFF"
+                  stroke-width="4"
+                  fill="none"
+                />
+
+                <path
+                  d="M30,45 C40,30 60,30 70,45"
+                  stroke="#00CED1"
+                  stroke-width="3"
+                  fill="none"
+                  marker-end="url(#arrowhead)"
+                />
+                <path
+                  d="M70,45 C80,60 100,60 90,40"
+                  stroke="#00CED1"
+                  stroke-width="3"
+                  fill="none"
+                  marker-end="url(#arrowhead)"
+                />
+
+                <defs>
+                  <marker
+                    id="arrowhead"
+                    markerWidth="6"
+                    markerHeight="6"
+                    refX="5"
+                    refY="3"
+                    orient="auto"
+                  >
+                    <polygon points="0 0, 6 3, 0 6" fill="#00CED1" />
+                  </marker>
+                </defs>
+              </svg>
+
+              <p>{{ item["speed_bin" + ($index + 1)] }} m</p>
+            </div>
+          </div>
+          <div class="current_direction_bin">
+            <p>Current direction Bin{{ $index + 1 }}</p>
+            <div class="inside_bin">
+              <div class="compass">
+                <img
+                  [style.transform]="
+                      'rotate(' +
+                      convertValue(
+                        parseFloat(`direction_bin`+($index+1)),
+                        directtion_unit,
+                        '°'
+                      ) +
+                      'deg)'
+                    "
+                  src="../../assets/Task_7518573_35103318.png"
+                  alt=""
+                  [ngStyle]="{
+                    width: hours < 3 ? '65px' : '40px',
+                    height: hours < 3 ? '65px' : '40px'
+                  }"
+                />
+              </div>
+              <p>{{ item["direction_bin" + ($index + 1)] }} m</p>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+      <div class="currents" *ngIf="!isAwac">
         <!--  <div class="currentspeed">f
                     @for (item of Array_item; track $index) {
                     <div class="tide_array">
@@ -462,7 +582,6 @@
             viewBox="0 0 120 120"
             xmlns="http://www.w3.org/2000/svg"
           >
-            <!-- Background Circle -->
             <circle
               cx="60"
               cy="60"
@@ -472,7 +591,6 @@
               stroke-width="3"
             />
 
-            <!-- Wave Path -->
             <path
               d="M20,75 Q35,65 50,75 T80,75 T110,75"
               stroke="#00BFFF"
@@ -480,7 +598,6 @@
               fill="none"
             />
 
-            <!-- Swirling Current Arrows -->
             <path
               d="M30,45 C40,30 60,30 70,45"
               stroke="#00CED1"
@@ -496,7 +613,6 @@
               marker-end="url(#arrowhead)"
             />
 
-            <!-- Arrowhead Definition -->
             <defs>
               <marker
                 id="arrowhead"
