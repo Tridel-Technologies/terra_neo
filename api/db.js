@@ -5,7 +5,7 @@ const pool = new Pool({
   password: "Tridel@2025",
   host: "localhost",
   port: 5432,
-  database: "inho",
+  database: "terra-neo-v2",
 });
 
 // Connect to the PostgreSQL database

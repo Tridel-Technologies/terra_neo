@@ -103,25 +103,6 @@
     >
       <div class="colorPickerContainer">
         <p-colorPicker
-          [(ngModel)]="tideChartColor"
-          (onChange)="onColorChange(tideChartColor, 'tideChartColor')"
-        >
-        </p-colorPicker>
-      </div>
-      <div
-        id="tide"
-        class="chart-diagram"
-        style="width: 100%; height: 100%"
-      ></div>
-    </div>
-
-    <div
-      class="chartContainer"
-      style="min-height: 500px"
-      *ngIf="plot.cname === 'Single Axis'"
-    >
-      <div class="colorPickerContainer">
-        <p-colorPicker
           [(ngModel)]="currentSpeedColor"
           (onChange)="onColorChange(currentSpeedColor, 'currentSpeedColor')"
         >
@@ -150,6 +131,25 @@
       </div>
       <div
         id="currentDirection"
+        class="chart-diagram"
+        style="width: 100%; height: 100%"
+      ></div>
+    </div>
+
+    <div
+      class="chartContainer"
+      style="min-height: 500px"
+      *ngIf="plot.cname === 'Single Axis'"
+    >
+      <div class="colorPickerContainer">
+        <p-colorPicker
+          [(ngModel)]="tideChartColor"
+          (onChange)="onColorChange(tideChartColor, 'tideChartColor')"
+        >
+        </p-colorPicker>
+      </div>
+      <div
+        id="tide"
         class="chart-diagram"
         style="width: 100%; height: 100%"
       ></div>
@@ -305,6 +305,7 @@
                 top: 0;
                 z-index: 1;
                 background: var(--circuit-color-pulse);
+                color: var(--tooltip-text);
               "
             >
               Timestamp
@@ -315,6 +316,7 @@
                 top: 0;
                 z-index: 1;
                 background: var(--circuit-color-pulse);
+                color: var(--tooltip-text);
               "
             >
               Current Speed ({{ units.currentSpeed }})
@@ -325,6 +327,7 @@
                 top: 0;
                 z-index: 1;
                 background: var(--circuit-color-pulse);
+                color: var(--tooltip-text);
               "
             >
               Current Direction ({{ units.currentDirection }})
@@ -335,6 +338,7 @@
                 top: 0;
                 z-index: 1;
                 background: var(--circuit-color-pulse);
+                color: var(--tooltip-text);
               "
             >
               Water Level ({{ units.waterLevel }})
@@ -345,6 +349,7 @@
                 top: 0;
                 z-index: 1;
                 background: var(--circuit-color-pulse);
+                color: var(--tooltip-text);
               "
             >
               Add

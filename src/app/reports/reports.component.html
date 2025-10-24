@@ -168,12 +168,15 @@
 
       <ng-template #header let-columns>
         <tr>
-          <th class="centered-cell">Serial No</th>
+          <th class="centered-cell" style="color: var(--tooltip-text)">
+            Serial No
+          </th>
 
           <th
             *ngFor="let col of columns"
             [pSortableColumn]="!showToggleTable ? col.field : null"
             class="centered-cell"
+            style="color: var(--tooltip-text)"
           >
             {{ col.header }}
             <p-sortIcon

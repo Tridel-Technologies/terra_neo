@@ -313,9 +313,13 @@
                 [class.selected]="selectedRowIndex === i"
                 [attr.id]="'row-' + i"
               >
-                <td *ngFor="let column of active_headers">
-                  {{ formatMainCell(row, column.name) }}
-                </td>
+                <td>{{ row.station_id }}</td>
+                <td>{{ row.date | date : this.dateFormat }}</td>
+                <td>{{ row.speed }}</td>
+                <td>{{ row.direction }}</td>
+                <td>{{ row.depth }}</td>
+                <td>{{ row.pressure }}</td>
+                <td>{{ row.battery }}</td>
               </tr>
             </tbody>
           </table>
@@ -346,9 +350,14 @@
               [class.selected]="selectedRowIndex === i"
               [attr.id]="'row-' + i"
             >
-              <td *ngFor="let column of upload_active_headers">
-                {{ formatMainCell(row, column.name) }}
-              </td>
+              <td>{{ row.station_id }}</td>
+              <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" }}</td>
+              <!-- <td>{{ row.Time }}</td> -->
+              <td>{{ row.speed }}</td>
+              <td>{{ row.direction }}</td>
+              <td>{{ row.depth }}</td>
+              <td>{{ row.pressure }}</td>
+              <td>{{ row.battery }}</td>
               <td>
                 <!-- <button cli>Delete</button>-->
                 <i

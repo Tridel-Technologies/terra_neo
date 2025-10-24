@@ -16,7 +16,6 @@
   background-color: #e0f7fa;
 }
 
-
 /* files section */
 
 .files_container {
@@ -131,7 +130,6 @@
   cursor: pointer;
 }
 
-
 /* dashboard view */
 .parent {
   height: 91%;
@@ -198,7 +196,6 @@
   background-color: rgb(255, 255, 255);
   border-radius: 9px;
   margin: 3px;
-
 }
 
 .left {
@@ -237,7 +234,6 @@
   /* background-color: rgba(0, 140, 255, 0.503); */
   border-radius: 5px;
   cursor: pointer;
-
 }
 
 .left p {
@@ -255,7 +251,6 @@
   justify-content: space-between;
   align-items: center;
   margin-top: 50px;
-
 }
 
 .ids {
@@ -362,7 +357,6 @@
 .tide img {
   height: 50%;
   width: 100%;
-
 }
 
 .tide svg {
@@ -387,7 +381,6 @@
   color: var(--font-color);
 }
 
-
 .separate-bat-depth {
   height: 100%;
   width: 100%;
@@ -395,7 +388,6 @@
   flex-direction: row;
   justify-content: space-between;
   align-items: center;
-
 }
 
 .bat,
@@ -442,7 +434,6 @@
   height: 40%;
   width: 40%;
   margin: 15px;
-
 }
 
 /* .bat{
@@ -551,7 +542,6 @@
   /* font-weight: 500; */
   font-weight: 500;
   font-size: 16px;
-
 }
 
 .cbox-left p {
@@ -646,7 +636,6 @@
   width: 100%;
 }
 
-
 .tide-not-live {
   height: 13%;
   width: 100%;
@@ -671,7 +660,6 @@
   padding: 3px;
   color: var(--font-color);
   border-radius: 6px;
-
 }
 
 .tide-not-live svg {
@@ -698,7 +686,6 @@
   height: 100%;
   width: 100%;
   background-color: var(--background-color);
-
 }
 
 table {
@@ -720,7 +707,6 @@ td {
   /* padding: 10px; */
   text-align: center;
   /* background-color: aqua; */
-
 }
 
 thead th {
@@ -744,7 +730,6 @@ caption {
   border-radius: 10px;
   height: 30px;
   padding: 5px;
-
 }
 
 .row-header {
@@ -781,7 +766,8 @@ tbody tr td:last-child {
   border-bottom-right-radius: 10px;
 }
 
-.roww {}
+.roww {
+}
 
 .af-bf {
   height: 100%;

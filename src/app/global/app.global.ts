@@ -42,7 +42,7 @@ export class GlobalConfig {
 
     // Decimal conversion
     if (typeof result === 'number') {
-      result = parseFloat(result.toFixed(4));
+      result = parseFloat(result.toFixed(2));
     }
 
     return result;
