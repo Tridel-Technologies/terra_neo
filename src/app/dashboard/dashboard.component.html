@@ -90,12 +90,12 @@
 
       <div
         class="high-water-dropdown"
-        style="width: auto"
         *ngIf="!isLive && highWaterTimes.length > 0"
       >
         <select
           id="highWaterSelect"
           name="highWaterTime"
+          style="width: auto; padding-left: 15px; padding-right: 15px"
           [(ngModel)]="selectedHighWaterTime"
           (ngModelChange)="onHighWaterTimeChange()"
           class="high-water-select"
@@ -122,6 +122,7 @@
       <select
         name="hours"
         *ngIf="!isLive"
+        style="width: auto; padding-left: 15px; padding-right: 15px"
         [(ngModel)]="hours"
         (change)="changeTime(hours)"
       >
