@@ -201,16 +201,12 @@ const createFolderAndFile = async (req, res) => {
     // 2. Loop through each file and handle insertions
     for (const fname of file_name) {
       const fileData = data[fname];
-      const fileType = (
-        req.body?.type ||
-        (fname?.toLowerCase?.().endsWith(".nmea") ? "awac" : "spc")
-      ).toLowerCase();
       if (!Array.isArray(fileData)) {
         continue; // Skip invalid data for this file
       }
 
       // Insert file
-      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit, water_level_unit_to, current_speed_unit_to, current_direction_unit_to, battery_unit_to, depth_unit_to, coord_unit_to, type, temperature_unit, temperature_unit_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17) RETURNING id`;
+      const fileInsertQuery = `INSERT INTO tb_file (file_name, folder_id, water_level_unit, current_speed_unit, current_direction_unit, battery_unit, depth_unit, coord_unit, water_level_unit_to, current_speed_unit_to, current_direction_unit_to, battery_unit_to, depth_unit_to, coord_unit_to) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14) RETURNING id`;
       const fileResult = await pool.query(fileInsertQuery, [
         fname,
         folderId,
@@ -226,9 +222,6 @@ const createFolderAndFile = async (req, res) => {
         unitsTo.battery,
         unitsTo.depth,
         null,
-        fileType,
-        unitsTo.temperature,
-        unitsTo.temperature,
       ]);
       const fileId = fileResult.rows[0]?.id;
 
@@ -238,79 +231,36 @@ const createFolderAndFile = async (req, res) => {
 
       // Create dynamic table for the file
       const tableName = `tb_${fileId}`;
-      let tblCreateQuery = "";
-      let tblperocessed = "";
-
-      if (fileType === "awac") {
-        // AWAC schema with snake_case and double precision
-        const awacCommonCols = `
+      const tblCreateQuery = `
+        CREATE TABLE ${tableName} (
           id SERIAL PRIMARY KEY,
           station_id TEXT,
           date TIMESTAMPTZ,
           lat TEXT,
           lon TEXT,
-          battery DOUBLE PRECISION,
-          pressure DOUBLE PRECISION,
-          temperature DOUBLE PRECISION,
-          pitch DOUBLE PRECISION,
-          roll DOUBLE PRECISION,
-          heading DOUBLE PRECISION,
+          speed TEXT,
+          direction TEXT,
+          depth TEXT,
+          pressure TEXT,
+          battery TEXT,
           high_water_level INTEGER,
           file_id INTEGER REFERENCES tb_file(id)
-        `;
-        // Build bin columns
-        const awacBinCols = Array.from({ length: 20 })
-          .map((_, i) => {
-            const idx = i + 1;
-            return `speed_bin${idx} DOUBLE PRECISION, direction_bin${idx} DOUBLE PRECISION`;
-          })
-          .join(",\n          ");
-
-        tblCreateQuery = `
-          CREATE TABLE ${tableName} (
-            ${awacCommonCols.replace(/\n\s*$/, "")}
-            ,
-            ${awacBinCols}
-          )`;
-        tblperocessed = `
-          CREATE TABLE ${tableName}_processed (
-            ${awacCommonCols.replace(/\n\s*$/, "")}
-            ,
-            ${awacBinCols}
-          )`;
-      } else {
-        // Default SPC schema
-        tblCreateQuery = `
-          CREATE TABLE ${tableName} (
-            id SERIAL PRIMARY KEY,
-            station_id TEXT,
-            date TIMESTAMPTZ,
-            lat TEXT,
-            lon TEXT,
-            speed TEXT,
-            direction TEXT,
-            depth TEXT,
-            pressure TEXT,
-            battery TEXT,
-            high_water_level INTEGER,
-            file_id INTEGER REFERENCES tb_file(id)
-          )`;
-        tblperocessed = `
-          CREATE TABLE ${tableName}_processed (
-            id SERIAL PRIMARY KEY,
-            station_id TEXT,
-            date TIMESTAMPTZ,
-            lat TEXT,
-            lon TEXT,
-            speed TEXT,
-            direction TEXT,
-            depth TEXT,
-            pressure TEXT,
-            battery TEXT,
-            high_water_level INTEGER,
-            file_id INTEGER REFERENCES tb_file(id)
-          )`;
-      }
+        )`;
+      const tblperocessed = `
+        CREATE TABLE ${tableName}_processed (
+          id SERIAL PRIMARY KEY,
+          station_id TEXT,
+          date TIMESTAMPTZ,
+          lat TEXT,
+          lon TEXT,
+          speed TEXT,
+          direction TEXT,
+          depth TEXT,
+          pressure TEXT,
+          battery TEXT,
+          high_water_level INTEGER,
+          file_id INTEGER REFERENCES tb_file(id)
+        )`;
       const tbCreateResult = await pool.query(tblCreateQuery);
       const tbCreateProcessed = await pool.query(tblperocessed);
 
@@ -322,58 +272,14 @@ const createFolderAndFile = async (req, res) => {
       }
 
       // Insert all rows into the dynamic table
-      if (fileType === "awac") {
-        // Build column lists for AWAC
-        const binCols = Array.from({ length: 20 })
-          .map((_, i) => `speed_bin${i + 1}, direction_bin${i + 1}`)
-          .join(", ");
-        const insertCols = `station_id, date, lat, lon, battery, pressure, temperature, pitch, roll, heading, ${binCols}, high_water_level, file_id`;
-        const placeholders = (count) =>
-          Array.from({ length: count }, (_, i) => `$${i + 1}`).join(",");
-        // station_id(1), date(2), lat(3), lon(4), battery(5), pressure(6), temperature(7), pitch(8), roll(9), heading(10)
-        // bins 40 placeholders (20*2) => 11..50, high_water_level(51), file_id(52)
-        const totalParams = 52;
-        const insertQuery = `INSERT INTO ${tableName} (${insertCols}) VALUES (${placeholders(
-          totalParams
-        )})`;
-        const insertQuery_processed = `INSERT INTO ${tableName}_processed (${insertCols}) VALUES (${placeholders(
-          totalParams
-        )})`;
-
-        for (const row of fileData) {
-          const baseVals = [
-            row.station_id || null,
-            row.datetime || row.date || null,
-            row.lat || null,
-            row.lon || null,
-            row.battery != null ? parseFloat(row.battery) : null,
-            row.pressure != null ? parseFloat(row.pressure) * 0.9945 : null,
-            row.temperature != null ? parseFloat(row.temperature) : null,
-            row.pitch != null ? parseFloat(row.pitch) : null,
-            row.roll != null ? parseFloat(row.roll) : null,
-            row.heading != null ? parseFloat(row.heading) : null,
-          ];
-          const binVals = [];
-          for (let i = 1; i <= 20; i++) {
-            const s = row[`bin_${i}_speed`];
-            const d = row[`bin_${i}_direction`];
-            binVals.push(s != null ? parseFloat(s) : null);
-            binVals.push(d != null ? parseFloat(d) : null);
-          }
-          const tailVals = [row.high_water_level || 0, fileId];
-          const values = [...baseVals, ...binVals, ...tailVals];
-          await pool.query(insertQuery, values);
-          await pool.query(insertQuery_processed, values);
-        }
-      } else {
-        const insertQuery = `
-          INSERT INTO ${tableName} (
-            station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
-          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
-        const insertQuery_processed = `
-          INSERT INTO ${tableName}_processed (
-            station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
-          ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+      const insertQuery = `
+        INSERT INTO ${tableName} (
+          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+      const insertQuery_processed = `
+        INSERT INTO ${tableName}_processed (
+          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
+        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
 
       for (const row of fileData) {
         const values = [
@@ -408,529 +314,6 @@ const createFolderAndFile = async (req, res) => {
       status: "failed",
       message: error.message || "Unexpected error occurred",
     });
-  }
-};
-
-// login page api
-//get the count of the users
-const getUser = async (req, res) => {
-  try {
-    const result = await pool.query("SELECT COUNT(*) FROM user_tb");
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-};
-
-//check for the matches
-const checkusername = async (req, res) => {
-  const { user_name, email_id } = req.body;
-  try {
-    const result = await pool.query(
-      "SELECT COUNT(*) AS count FROM user_tb WHERE user_name = $1",
-      [user_name]
-    );
-    const email_result = await pool.query(
-      "SELECT COUNT(*) AS count FROM user_tb WHERE email_id = $1",
-      [email_id]
-    );
-    res.json({
-      usernameExists: result.rows[0].count > 0,
-      emailExists: email_result.rows[0].count > 0,
-    });
-  } catch (error) {
-    console.error("Error in checkUsername:", error);
-    res.status(500).json({ message: "Error checking username." });
-  }
-};
-
-//Add the user
-const signup = async (req, res) => {
-  const { user_name, password, email_id } = req.body;
-  console.log("Incoming user:", req.body);
-  const encrypt_password = await bcrypt.hash(password, 10);
-
-  try {
-    await pool.query(
-      "INSERT INTO user_tb (user_name,password,email_id) VALUES ($1, $2, $3)",
-      [user_name, encrypt_password, email_id]
-    );
-    res.status(201).send("User added");
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-};
-
-//check the username and password to access
-const loginUser = async (req, res) => {
-  const { user_name, password } = req.body;
-  console.log("Attempting login for:", user_name);
-
-  try {
-    const result = await pool.query(
-      "SELECT * FROM user_tb WHERE user_name = $1",
-      [user_name]
-    );
-
-    if (result.rows.length === 0) {
-      console.log("No user found");
-      return res.status(401).json({ message: "User not found" });
-    }
-
-    const user = result.rows[0];
-    console.log("Found user:", user.user_name);
-
-    // ✅ Use bcrypt to compare hashed password
-    const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) {
-      return res.status(401).json({ message: "Invalid password" });
-    }
-    console.log("Login successful");
-    res.status(200).json({ message: "Login successful", user });
-  } catch (error) {
-    console.error("Login error:", error);
-    res.status(500).json({ error: error.message });
-  }
-};
-
-//check the username and email exists
-
-const forget_password = async (req, res) => {
-  const { user_name, email_id } = req.body;
-
-  try {
-    // Check if username exists
-    const userResult = await pool.query(
-      "SELECT * FROM user_tb WHERE user_name = $1",
-      [user_name]
-    );
-
-    if (userResult.rows.length === 0) {
-      return res.json({ valid: false, reason: "username" });
-    }
-
-    // Check if email matches the found user
-    const emailMatch = userResult.rows.find((u) => u.email_id === email_id);
-    if (!emailMatch) {
-      return res.json({ valid: false, reason: "email" });
-    }
-
-    res.json({ valid: true });
-  } catch (err) {
-    console.error("Forget password error:", err);
-    res.status(500).json({ message: "Server error" });
-  }
-};
-
-//change the password
-
-const change_password = async (req, res) => {
-  const { user_name, newPassword } = req.body;
-  const encrypt_password = await bcrypt.hash(newPassword, 10);
-
-  console.log("res", req.body);
-  try {
-    await pool.query("UPDATE user_tb SET password = $1 WHERE user_name = $2", [
-      encrypt_password,
-      user_name,
-    ]);
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).send(err.message);
-  }
-};
-
-const addNewRow = async (req, res) => {
-  const { speed, direction, tide, timestamp, file_id } = req.body;
-  if (!file_id || !speed || !direction || !tide || !timestamp) {
-    return res.status(400).json({ message: "All fields are required" });
-  }
-
-  try {
-    const data = await pool.query(
-      `SELECT * FROM tb_${file_id}_processed ORDER BY RANDOM() LIMIT 1`
-    );
-    if (!data.rows.length) {
-      return res.status(404).json({ message: "No data found in table" });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO tb_${file_id}_processed (station_id, date, speed, direction, depth, pressure, battery, file_id, lat, lon, high_water_level) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)`,
-      [
-        data.rows[0].station_id,
-        timestamp,
-        speed,
-        direction,
-        data.rows[0].depth,
-        tide,
-        data.rows[0].battery,
-        data.rows[0].file_id,
-        data.rows[0].lat,
-        data.rows[0].lon,
-        0,
-      ]
-    );
-
-    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [
-      file_id,
-    ]);
-
-    res.status(200).json({ message: "Row added successfully" });
-  } catch (error) {
-    res.status(500).json({ message: `Error: ${error}` });
-  }
-};
-
-const updateData = async (req, res) => {
-  try {
-    const updatePayload = req.body;
-
-    if (!Array.isArray(updatePayload) || updatePayload.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Invalid payload. Expected an array of objects with id and updated values.",
-      });
-    }
-
-    const updatePromises = updatePayload.map(async (item) => {
-      const { id, speed, direction, pressure, file_id } = item;
-
-      if (!id || !file_id) {
-        throw new Error("Each update item must include an id and file_id");
-      }
-
-      const updateObj = {};
-      if (speed !== undefined) updateObj.speed = speed;
-      if (direction !== undefined) updateObj.direction = direction;
-      if (pressure !== undefined) updateObj.pressure = pressure;
-
-      return new Promise((resolve, reject) => {
-        const setClauses = [];
-        const values = [];
-        let paramIndex = 1;
-
-        Object.entries(updateObj).forEach(([key, value]) => {
-          setClauses.push(`${key} = $${paramIndex}`);
-          values.push(value);
-          paramIndex++;
-        });
-
-        // Add id as the last parameter
-        values.push(id);
-
-        const query = `UPDATE tb_${file_id}_processed SET ${setClauses.join(
-          ", "
-        )} WHERE id = $${paramIndex}`;
-
-        pool
-          .query(query, values)
-          .then((result) => {
-            resolve({ id, affected: result.rowCount });
-          })
-          .catch((err) => {
-            console.error(`Error updating row with id ${id}:`, err);
-            reject(err);
-          });
-      });
-    });
-
-    const results = await Promise.all(updatePromises);
-    const totalUpdated = results.reduce((sum, item) => sum + item.affected, 0);
-
-    await pool.query(`UPDATE tb_file SET is_processed = true WHERE id = $1`, [
-      updatePayload[0].file_id,
-    ]);
-
-    res.status(200).json({
-      success: true,
-      message: `Successfully updated ${totalUpdated} records`,
-      results,
-    });
-  } catch (error) {
-    console.error("Error in updateData:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to update data",
-      error: error.message,
-    });
-  }
-};
-
-const getDataByFolderIdAndFileName = async (req, res) => {
-  const { file_id } = req.params;
-  console.log(req.params);
-  try {
-    const result = await pool.query(
-      `SELECT
-         tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
-         tf.battery_unit, tf.depth_unit, tf.coord_unit, tf.water_level_unit_to, tf.current_speed_unit_to,
-         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to, tf.type
-       FROM
-         tb_${file_id} tp
-       JOIN
-         tb_file tf ON tf.id = tp.file_id
-       ORDER BY
-         tp.date ASC`
-    );
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Fetch error:", err);
-    res
-      .status(500)
-      .json({ message: "Error fetching data", error: err.message });
-  }
-};
-
-const getProcessedDataByFileId = async (req, res) => {
-  const { file_id } = req.params;
-  console.log(req.params);
-  try {
-    const result = await pool.query(
-      `SELECT
-         tp.*, tf.water_level_unit, tf.current_speed_unit, tf.current_direction_unit,
-         tf.battery_unit, tf.depth_unit, tf.coord_unit, tf.water_level_unit_to, tf.current_speed_unit_to,
-         tf.current_direction_unit_to, tf.battery_unit_to, tf.depth_unit_to, tf.coord_unit_to, tf.type
-       FROM
-         tb_${file_id}_processed tp
-       JOIN
-         tb_file tf ON tf.id = tp.file_id
-       ORDER BY
-         tp.date ASC`
-    );
-    res.status(200).json(result.rows);
-  } catch (err) {
-    console.error("Fetch error:", err);
-    res
-      .status(500)
-      .json({ message: "Error fetching data", error: err.message });
-  }
-};
-
-// const getFoldersWithFiles = async (req, res) => {
-//   try {
-//     const query = `
-//       SELECT
-//         f.id AS folder_id,
-//         f.folder_name,
-//         fi.id AS file_id,
-//         fi.file_name,
-//         fi.is_processed,
-//         fi.water_level_unit,
-//         fi.current_speed_unit,
-//         fi.current_direction_unit,
-//         fi.battery_unit,
-//         fi.depth_unit,
-//         fi.coord_unit,
-//         fi.water_level_unit_to,
-//         fi.current_speed_unit_to,
-//         fi.current_direction_unit_to,
-//         fi.battery_unit_to,
-//         fi.depth_unit_to,
-//         fi.coord_unit_to,
-//         MAX(tp.date) AS max_date,
-//         MIN(tp.date) AS min_date
-//       FROM
-//         tb_folders f
-//       JOIN
-//         tb_file fi ON fi.folder_id = f.id
-//       JOIN
-//         tb_${f.id} tp ON tp.file_id = fi.id
-//       ORDER BY
-//         f.id DESC
-//     `;
-//     const result = await pool.query(query);
-//     const foldersMap = {};
-//     result.rows.forEach((row) => {
-//       if (!foldersMap[row.folder_id]) {
-//         foldersMap[row.folder_id] = {
-//           folder_id: row.folder_id,
-//           folder_name: row.folder_name,
-//           files: [],
-//         };
-//       }
-//       if (row.file_id) {
-//         foldersMap[row.folder_id].files.push({
-//           file_id: row.file_id,
-//           file_name: row.file_name,
-//           is_processed: row.is_processed,
-//           water_level_unit: row.water_level_unit,
-//           current_speed_unit: row.current_speed_unit,
-//           current_direction_unit: row.current_direction_unit,
-//           battery_unit: row.battery_unit,
-//           depth_unit: row.depth_unit,
-//           coord_unit: row.coord_unit,
-//           water_level_unit_to: row.water_level_unit_to,
-//           current_speed_unit_to: row.current_speed_unit_to,
-//           current_direction_unit_to: row.current_direction_unit_to,
-//           battery_unit_to: row.battery_unit_to,
-//           depth_unit_to: row.depth_unit_to,
-//           coord_unit_to: row.coord_unit_to,
-//           max_date: row.max_date,
-//           min_date: row.min_date,
-//         });
-//       }
-//     });
-//     const foldersWithFiles = Object.values(foldersMap).sort(
-//       (a, b) => b.folder_id - a.folder_id
-//     );
-//     res.status(200).json({ data: foldersWithFiles });
-//   } catch (error) {
-//     res.status(500).json({ message: `Error: ${error.message}` });
-//   }
-// };
-const getFoldersWithFiles = async (req, res) => {
-  try {
-    // 1️⃣ Fetch all folders and their files (fixed tables)
-    const baseQuery = `
-      SELECT
-        f.id AS folder_id,
-        f.folder_name,
-        fi.id AS file_id,
-        fi.file_name,
-        fi.is_processed,
-        fi.water_level_unit,
-        fi.current_speed_unit,
-        fi.current_direction_unit,
-        fi.battery_unit,
-        fi.depth_unit,
-        fi.coord_unit,
-        fi.water_level_unit_to,
-        fi.current_speed_unit_to,
-        fi.current_direction_unit_to,
-        fi.battery_unit_to,
-        fi.depth_unit_to,
-        fi.coord_unit_to
-      FROM tb_folders f
-      JOIN tb_file fi ON fi.folder_id = f.id
-      ORDER BY f.id DESC
-    `;
-
-    const result = await pool.query(baseQuery);
-    const foldersMap = {};
-
-    // 2️⃣ Prepare an array of promises to fetch min/max dates in parallel
-    const dateQueries = result.rows.map(async (row) => {
-      const folderId = row.folder_id;
-      const tableName = `tb_${folderId}`; // dynamic table name
-
-      let minDate = null;
-      let maxDate = null;
-
-      try {
-        const dateQuery = `
-          SELECT
-            MIN(date) AS min_date,
-            MAX(date) AS max_date
-          FROM ${tableName}
-          WHERE file_id = $1
-        `;
-        const dateRes = await pool.query(dateQuery, [row.file_id]);
-        if (dateRes.rows.length > 0) {
-          minDate = dateRes.rows[0].min_date;
-          maxDate = dateRes.rows[0].max_date;
-        }
-      } catch (err) {
-        console.warn(`⚠️ Skipping ${tableName}: ${err.message}`);
-      }
-
-      // Group files under their folder
-      if (!foldersMap[folderId]) {
-        foldersMap[folderId] = {
-          folder_id: folderId,
-          folder_name: row.folder_name,
-          files: [],
-        };
-      }
-
-      foldersMap[folderId].files.push({
-        ...row,
-        min_date: minDate,
-        max_date: maxDate,
-      });
-    });
-
-    // 3️⃣ Wait for all queries to complete in parallel
-    await Promise.all(dateQueries);
-
-    // 4️⃣ Sort folders (latest first)
-    const foldersWithFiles = Object.values(foldersMap).sort(
-      (a, b) => b.folder_id - a.folder_id
-    );
-
-    res.status(200).json({ data: foldersWithFiles });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: `Error: ${error.message}` });
-  }
-};
-
-const getAllFoldersWithFiles = async (req, res) => {
-  try {
-    const query = `
-      SELECT
-        f.id AS folder_id,
-        f.folder_name,
-        fi.id AS file_id,
-        fi.file_name,
-        fi.is_processed,
-        fi.water_level_unit,
-        fi.current_speed_unit,
-        fi.current_direction_unit,
-        fi.battery_unit,
-        fi.depth_unit,
-        fi.coord_unit,
-        fi.water_level_unit_to,
-        fi.current_speed_unit_to,
-        fi.current_direction_unit_to,
-        fi.battery_unit_to,
-        fi.depth_unit_to,
-        fi.coord_unit_to,
-        fi.type
-      FROM
-        tb_folders f
-      LEFT JOIN
-        tb_file fi ON fi.folder_id = f.id
-      ORDER BY
-        f.id DESC
-    `;
-    const result = await pool.query(query);
-    const foldersMap = {};
-    result.rows.forEach((row) => {
-      if (!foldersMap[row.folder_id]) {
-        foldersMap[row.folder_id] = {
-          folder_id: row.folder_id,
-          folder_name: row.folder_name,
-          files: [],
-        };
-      }
-      if (row.file_id) {
-        foldersMap[row.folder_id].files.push({
-          file_id: row.file_id,
-          file_name: row.file_name,
-          is_processed: row.is_processed,
-          water_level_unit: row.water_level_unit,
-          current_speed_unit: row.current_speed_unit,
-          current_direction_unit: row.current_direction_unit,
-          battery_unit: row.battery_unit,
-          depth_unit: row.depth_unit,
-          coord_unit: row.coord_unit,
-          water_level_unit_to: row.water_level_unit_to,
-          current_speed_unit_to: row.current_speed_unit_to,
-          current_direction_unit_to: row.current_direction_unit_to,
-          battery_unit_to: row.battery_unit_to,
-          depth_unit_to: row.depth_unit_to,
-          coord_unit_to: row.coord_unit_to,
-          type: row.type,
-        });
-      }
-    });
-    const foldersWithFiles = Object.values(foldersMap).sort(
-      (a, b) => b.folder_id - a.folder_id
-    );
-    res.status(200).json({ data: foldersWithFiles });
-  } catch (error) {
-    res.status(500).json({ message: `Error: ${error.message}` });
   }
 };
 
