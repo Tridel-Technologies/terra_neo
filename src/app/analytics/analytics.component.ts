@@ -242,10 +242,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.files_list = [];
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
-      console.log('files:', response, this.files_list);
       this.expandedFolders = this.files_list.map(() => false);
       this.fileID = this.base.fileId!;
-      console.log('file IFD', this.fileID);
 
       let folderIndex = -1;
       let selectedFile = null;
@@ -362,10 +360,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     file_id: number,
     folder_name: string
   ) {
-    console.log('a', file_id);
     this.base.fileId = file_id;
     // this.dir = false;
-    console.log(fileName, file_id);
     this.selected_folder_name = folder_name;
     this.isLive = true;
     // const isCtrlPressed = event.ctrlKey || event.metaKey; // Detect if Ctrl (Windows/Linux) or Cmd (Mac) is pressed
@@ -603,8 +599,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         )
         .every((key) => this.units[key] === sourceUnits[key]);
 
-      console.log('units', unitsMatch);
-
       const newRowsPromises = newRows.map((newRow) => {
         // Parse the date string to get hours and minutes
         const date = new Date(newRow.date);
@@ -674,7 +668,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
 
-        console.log(newRowPayload);
         return this.http
           .post(`${this.baseUrl}addNewRow`, newRowPayload)
           .toPromise();
@@ -690,8 +683,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           (key) => !['datetime', 'battery', 'latandlong', 'depth'].includes(key)
         )
         .every((key) => this.units[key] === sourceUnits[key]);
-
-      console.log('units', unitsMatch);
 
       const updatePayload = changedRows.map((row) => {
         let rowPayload: any;
@@ -752,7 +743,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           }
         }
 
-        console.log(rowPayload);
         return rowPayload;
       });
 
@@ -984,7 +974,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       }
       return this.units[key] == sourceUnits[key];
     });
-    console.log('match', unitsMatch);
 
     if (unitsMatch) {
       this.main_table = this.fullData;
@@ -1066,7 +1055,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       });
     }
 
-    console.log('converted', this.fullData);
     this.loading = false;
     this.cdr.detectChanges();
   }
@@ -2598,8 +2586,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const endDate =
       this.formatDateToYMD(this.selectedPolarDateRange[1]) + 'T23:59:59';
 
-    console.log('dates:', startDate, endDate);
-
     if (this.PolarSelectedInterVal === 'all') {
       const intervals = [30, 60, 360, 1440];
 
@@ -2799,7 +2785,6 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         color: speedColors[index],
       },
     }));
-    console.log('seriesData', seriesData);
 
     const option = {
       title:

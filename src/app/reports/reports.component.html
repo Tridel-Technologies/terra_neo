@@ -1,6 +1,14 @@
 <div class="report_main">
   <div class="files_container">
-    <h4 style="align-self: flex-start; margin-left: 20px">Explorer</h4>
+    <h4
+      style="
+        align-self: flex-start;
+        margin-left: 20px;
+        color: var(--font-color);
+      "
+    >
+      Explorer
+    </h4>
 
     <div class="folder" *ngFor="let folder of files_list; let i = index">
       <div class="folder-header" (click)="toggleFolder(i, folder.folder_id)">
@@ -145,6 +153,17 @@
                   (onChange)="onDataTypeChange()"
                 />
               </div>
+              <div style="margin-right: 30px" *ngIf="showToggleTable">
+                <p-select
+                  [options]="highWaterLevelOptions"
+                  [(ngModel)]="selectedHighWaterLevel"
+                  optionLabel="name"
+                  placeholder="Select Data"
+                  (onChange)="
+                    onHighWaterLevelChange(selectedHighWaterLevel.value)
+                  "
+                />
+              </div>
               <label
                 style="margin-right: 10px; margin-top: 10px; font-weight: bold"
               >
@@ -153,7 +172,7 @@
               <p-toggleswitch
                 class="custom-toggle"
                 [(ngModel)]="showToggleTable"
-                (ngModelChange)="toggle_tap()"
+                (ngModelChange)="toggle_tap(selectedHighWaterLevel.value)"
               >
               </p-toggleswitch>
               <label

@@ -39,9 +39,7 @@ export class LoginComponent implements OnInit {
 
   ngOnInit(): void {
     this.http.get(`${this.baseUrl}check`).subscribe((response: any) => {
-      console.log('response', response);
       this.licenseExpired = response.result.valid;
-      console.log(this.licenseExpired);
     });
   }
 
@@ -146,17 +144,12 @@ export class LoginComponent implements OnInit {
   checkusername() {
     const user_name = this.userName_signup;
     const email_id = this.Email_id_signup;
-    console.log(user_name, email_id);
     this.loginservice.checkuser(user_name, email_id).subscribe({
       next: (res: any) => {
-        console.log('responsecheck', res);
-        console.log('responsecheck', res);
-
         this.username_exists = res.usernameExists === true;
         this.email_exists = res.emailExists === true;
       },
       error: (err) => {
-        console.error('Error', err);
         alert('Failed to load data from server');
       },
     });
@@ -166,7 +159,6 @@ export class LoginComponent implements OnInit {
   adminonly() {
     this.loginservice.getUsers().subscribe({
       next: (res: any) => {
-        console.log('response', res);
         this.counts = parseInt(res[0]?.count || '0', 10);
         if (this.counts > 1) {
           this.toastr.warning('Adding user limit exists', 'Limit Reached');
@@ -198,7 +190,6 @@ export class LoginComponent implements OnInit {
 
       this.loginservice.signup_user(newdata).subscribe({
         next: (res) => {
-          console.log('Data sent to server:', res);
           this.toastr.success('Data successfully sent to server!', 'Success');
           this.signup_form = false;
           this.login_form = true;
@@ -242,7 +233,6 @@ export class LoginComponent implements OnInit {
       const password = this.password;
       this.loginservice.login_user(user_name, password).subscribe({
         next: (res: any) => {
-          console.log('Login success:', res);
           this.toastr.success('Login successful', 'Success');
           this.errorMsg = '';
           localStorage.setItem('user', JSON.stringify(res.user));
@@ -336,12 +326,10 @@ export class LoginComponent implements OnInit {
         },
       });
     } else {
-      console.log('this.passsword', this.password_forget);
       const user_name = this.userName_forget;
       const newPassword = this.password_forget;
       this.loginservice.change_password(user_name, newPassword).subscribe({
         next: (res: any) => {
-          console.log('response', res);
           this.toastr.success('Password reset successfully!', 'Success');
           this.emailVerified = false;
           this.password_forget = '';

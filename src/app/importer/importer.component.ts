@@ -401,7 +401,6 @@ export class ImporterComponent {
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
-        console.log('response', response);
         // Prefer explicit type from API when present
         try {
           const first =
@@ -440,8 +439,6 @@ export class ImporterComponent {
                 ? item
                 : max;
             });
-
-            console.log('Row with Max Pressure:', maxPressureRow);
 
             // Set units to header
             this.active_headers.forEach((header) => {
@@ -558,12 +555,10 @@ export class ImporterComponent {
               date,
               'yyyy-MM-dd HH:mm:ss'
             );
-            console.log(formattedDate);
 
             const high = this.main_table.filter(
               (item) => item.high_water_level === 1
             );
-            console.log(high);
             this.high_water_level = high[0].date;
 
             // Set units to header
@@ -707,7 +702,6 @@ export class ImporterComponent {
   toggleFolder(index: number, folder_id: number) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
-    console.log(this.expandedFolders);
   }
   ddtoDms(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
@@ -799,13 +793,10 @@ export class ImporterComponent {
     }
 
     this.isFilesLoading = true;
-    window.addEventListener('storage', (e) => {
-      console.log('Storage event fired!', e);
-    });
+    window.addEventListener('storage', (e) => {});
     this.files_list = [];
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
-      console.log('files:', response, this.files_list);
       this.isFilesLoading = false;
       this.expandedFolders = [false, false, false, false, false, false, false];
     });
@@ -877,6 +868,13 @@ export class ImporterComponent {
     this.tableData = [];
     const promises: Promise<any>[] = [];
     const fileWiseData: { [key: string]: any[] } = {};
+    this.toast.warning(
+      'The rows will be skipped if there are any null, empty, or non-numeric string values.',
+      'Warning',
+      {
+        timeOut: 3500,
+      }
+    );
 
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
@@ -917,7 +915,6 @@ export class ImporterComponent {
           this.getHighWaterLevel(fileName);
         });
         this.onFileClick(this.uploaded_files[0]);
-        console.log('All rows', allRows);
       }
     });
   }
@@ -1268,12 +1265,6 @@ export class ImporterComponent {
       date: formattedDate,
       row: maxPressureRow,
     };
-
-    console.log(
-      `High water level for ${fileName}:`,
-      formattedDate,
-      maxPressureRow
-    );
   }
 
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
@@ -1428,8 +1419,6 @@ export class ImporterComponent {
       unitsTo: this.selectedUnitsTo,
     };
 
-    console.log(file);
-
     // Conversion logic before API call
     const unitFieldMap = {
       pressure: 'waterLevel',
@@ -1477,7 +1466,6 @@ export class ImporterComponent {
         setTimeout(() => {
           this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
             this.files_list = response['data'];
-            console.log('files', response, this.files_list);
             this.expandedFolders = this.files_list.map(() => false);
             setTimeout(() => {
               this.isFilesLoading = false;

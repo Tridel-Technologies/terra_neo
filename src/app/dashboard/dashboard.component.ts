@@ -13,7 +13,6 @@ import { BaseComponent } from '../base/base.component';
 import { ChangeDetectorRef } from '@angular/core';
 import { AwacDataModel } from './dash_model.model';
 
-
 interface Files {
   folder_id: number;
   files: fileData[];
@@ -30,7 +29,7 @@ interface fileData {
   current_speed_unit_to: string;
   depth_unit_to: string;
   water_level_unit_to: string;
-  type:string
+  type: string;
 }
 interface dashdata {
   id: string;
@@ -103,10 +102,8 @@ export class DashboardComponent implements OnInit {
   highWaterTimes: HighWaterTime[] = [];
   selectedHighWaterTime: HighWaterTime | null = null;
 
-
   // awac variables
-  isAwac:boolean = false;
-
+  isAwac: boolean = false;
 
   constructor(
     private http: HttpClient,
@@ -141,33 +138,36 @@ export class DashboardComponent implements OnInit {
    * Ensures they are at least 6 hours apart
    */
   /**
- * Find top 6 high water times (local maxima)
- * from the full dataset across all dates
- */
-  getTop3HighAndLowWaterTimes(): { high: HighWaterTime[]; low: HighWaterTime[] } {
+   * Find top 6 high water times (local maxima)
+   * from the full dataset across all dates
+   */
+  getTop3HighAndLowWaterTimes(): {
+    high: HighWaterTime[];
+    low: HighWaterTime[];
+  } {
     if (!this.main_table || this.main_table.length === 0) {
       return { high: [], low: [] };
     }
-  
+
     const validData = this.main_table
       .map((d) => ({
         datetime: d.date,
         water_level: parseFloat(d.pressure),
       }))
       .filter((d) => !isNaN(d.water_level));
-  
+
     if (validData.length < 3) {
       console.warn('Not enough valid tide data to find 3 highs and 3 lows');
       return { high: [], low: [] };
     }
-  
+
     const highs: HighWaterTime[] = [];
     const lows: HighWaterTime[] = [];
     const neighborhood = 4; // check 4 points before and after
-  
+
     for (let i = neighborhood; i < validData.length - neighborhood; i++) {
       const curr = validData[i].water_level;
-  
+
       // Check if this is a high tide
       let isHigh = true;
       for (let j = i - neighborhood; j <= i + neighborhood; j++) {
@@ -185,7 +185,7 @@ export class DashboardComponent implements OnInit {
           dateFormatted: this.formatHighWaterTimeDisplay(validData[i].datetime),
         });
       }
-  
+
       // Check if this is a low tide
       let isLow = true;
       for (let j = i - neighborhood; j <= i + neighborhood; j++) {
@@ -204,23 +204,20 @@ export class DashboardComponent implements OnInit {
         });
       }
     }
-  
+
     // Pick top 3 highs and lows by water level
     const topHighs = highs
       .sort((a, b) => b.water_level - a.water_level)
       .slice(0, 3)
       .map((d, i) => ({ ...d, rank: i + 1 }));
-  
+
     const topLows = lows
       .sort((a, b) => a.water_level - b.water_level)
       .slice(0, 3)
       .map((d, i) => ({ ...d, rank: i + 1 }));
-  
+
     return { high: topHighs, low: topLows };
   }
-  
-  
-  
 
   /**
    * Format high water time for dropdown display
@@ -251,120 +248,120 @@ export class DashboardComponent implements OnInit {
    * Process data for selected high water time (±6 hours)
    */
   processHighWaterTimeData(highWaterTime: HighWaterTime) {
-  console.log('Processing High Water Time:', highWaterTime);
-  const targetDateTime = new Date(highWaterTime.datetime);
-  let bf: any[] = [];
-  let af: any[] = [];
+    const targetDateTime = new Date(highWaterTime.datetime);
+    let bf: any[] = [];
+    let af: any[] = [];
 
-  const matchingEntry = this.main_table.find(
-    (item) => new Date(item.date).getTime() === new Date(highWaterTime.datetime).getTime()
-  );
+    const matchingEntry = this.main_table.find(
+      (item) =>
+        new Date(item.date).getTime() ===
+        new Date(highWaterTime.datetime).getTime()
+    );
 
-  if (matchingEntry) {
-    this.currentData = matchingEntry;
-    console.log('Matching Entry:', matchingEntry);
+    if (matchingEntry) {
+      this.currentData = matchingEntry;
 
-    for (let i = 1; i <= 6; i++) {
-      const beforeHour = new Date(targetDateTime.getTime() - i * 60 * 60 * 1000);
-      const afterHour = new Date(targetDateTime.getTime() + i * 60 * 60 * 1000);
-
-      const beforeHourData = this.main_table.filter((item) => {
-        const itemDate = new Date(item.date);
-        return (
-          itemDate.getFullYear() === beforeHour.getFullYear() &&
-          itemDate.getMonth() === beforeHour.getMonth() &&
-          itemDate.getDate() === beforeHour.getDate() &&
-          itemDate.getHours() === beforeHour.getHours()
+      for (let i = 1; i <= 6; i++) {
+        const beforeHour = new Date(
+          targetDateTime.getTime() - i * 60 * 60 * 1000
         );
-      });
-
-      const afterHourData = this.main_table.filter((item) => {
-        const itemDate = new Date(item.date);
-        return (
-          itemDate.getFullYear() === afterHour.getFullYear() &&
-          itemDate.getMonth() === afterHour.getMonth() &&
-          itemDate.getDate() === afterHour.getDate() &&
-          itemDate.getHours() === afterHour.getHours()
+        const afterHour = new Date(
+          targetDateTime.getTime() + i * 60 * 60 * 1000
         );
-      });
 
-      bf.push([...beforeHourData]);
-      af.push([...afterHourData]);
+        const beforeHourData = this.main_table.filter((item) => {
+          const itemDate = new Date(item.date);
+          return (
+            itemDate.getFullYear() === beforeHour.getFullYear() &&
+            itemDate.getMonth() === beforeHour.getMonth() &&
+            itemDate.getDate() === beforeHour.getDate() &&
+            itemDate.getHours() === beforeHour.getHours()
+          );
+        });
+
+        const afterHourData = this.main_table.filter((item) => {
+          const itemDate = new Date(item.date);
+          return (
+            itemDate.getFullYear() === afterHour.getFullYear() &&
+            itemDate.getMonth() === afterHour.getMonth() &&
+            itemDate.getDate() === afterHour.getDate() &&
+            itemDate.getHours() === afterHour.getHours()
+          );
+        });
+
+        bf.push([...beforeHourData]);
+        af.push([...afterHourData]);
+      }
+
+      this.current_hours_data = [];
+      this.current_hours_data.push(bf);
+      this.current_hours_data.push(af);
+
+      const data = {
+        id: matchingEntry.station_id,
+        tide: matchingEntry.pressure,
+        dateTime: matchingEntry.date,
+        battery: matchingEntry.battery,
+        depth: matchingEntry.depth,
+        current_speed: matchingEntry.speed,
+        current_direction: matchingEntry.direction,
+        lat: matchingEntry.lat,
+        lon: matchingEntry.lon,
+        current_speed_b_6: bf[0]?.[0]?.speed || '',
+        current_dir_b_6: bf[0]?.[0]?.direction || '',
+        current_speed_after_6: af[0]?.[0]?.speed || '',
+        current_dir_after_6: af[0]?.[0]?.direction || '',
+      };
+
+      this.selected_data = data;
+      this.before_data = bf.reverse();
+      this.after_data = af;
+      this.__assign();
+      this.cdr.detectChanges();
+    } else {
+      console.error(
+        'No matching entry found for datetime:',
+        highWaterTime.datetime
+      );
+      this.toast.error(
+        'No data found for the selected high water time.',
+        'Error'
+      );
     }
-
-    console.log('Before 6 hours:', bf);
-    console.log('After 6 hours:', af);
-
-    this.current_hours_data = [];
-    this.current_hours_data.push(bf);
-    this.current_hours_data.push(af);
-
-    const data = {
-      id: matchingEntry.station_id,
-      tide: matchingEntry.pressure,
-      dateTime: matchingEntry.date,
-      battery: matchingEntry.battery,
-      depth: matchingEntry.depth,
-      current_speed: matchingEntry.speed,
-      current_direction: matchingEntry.direction,
-      lat: matchingEntry.lat,
-      lon: matchingEntry.lon,
-      current_speed_b_6: bf[0]?.[0]?.speed || '',
-      current_dir_b_6: bf[0]?.[0]?.direction || '',
-      current_speed_after_6: af[0]?.[0]?.speed || '',
-      current_dir_after_6: af[0]?.[0]?.direction || '',
-    };
-
-    this.selected_data = data;
-    this.before_data = bf.reverse();
-    this.after_data = af;
-    this.__assign();
-    this.cdr.detectChanges();
-  } else {
-    console.error('No matching entry found for datetime:', highWaterTime.datetime);
-    this.toast.error('No data found for the selected high water time.', 'Error');
   }
-}
 
   toggle_tap() {
     // Find all high water times
     // this.highWaterTimes = this.getTop6HighWaterTimes();
     const { high, low } = this.getTop3HighAndLowWaterTimes();
     this.highWaterTimes = [...high, ...low];
-    
 
     if (this.highWaterTimes.length === 0) {
-      this.toast.error(
-        'No high water level data found in this file.',
-        'Error'
-      );
+      this.toast.error('No high water level data found in this file.', 'Error');
       return;
     }
 
     // Select the first (highest) high water time by default
     this.selectedHighWaterTime = this.highWaterTimes[0];
-    
+
     this.isLive = !this.isLive;
-    
+
     if (this.isLive) {
       this.tap_date(this.main_table[0].date, this.main_table[0].time);
     } else {
       // Process the selected high water time
       this.processHighWaterTimeData(this.selectedHighWaterTime);
     }
-
-    console.log('High Water Times:', this.highWaterTimes);
   }
 
   timee: number = 6;
   changeTime(index: number) {
     this.hours = index;
-    console.log('Selected time:', this.timee);
     this.__assign();
   }
-  
+
   hours: number = 6;
-  
+
   __assign() {
     this.avgData = [];
     const baseDate = new Date(this.currentData.date);
@@ -401,15 +398,13 @@ export class DashboardComponent implements OnInit {
         date: new Date(baseDate.getTime() + i * 60 * 60 * 1000),
       });
     }
-
-    console.log('avg', this.avgData);
   }
 
   get dynamicHeight(): number {
     const items = this.filteredAvgData.length;
     return items > 0 ? 95 / items : 13;
   }
-  
+
   get filteredAvgData() {
     const total = 6 + Number(this.hours) + 1;
     const data = this.isbefore
@@ -465,26 +460,25 @@ export class DashboardComponent implements OnInit {
       );
     });
   }
-current_bins:any[]=[]
+  current_bins: any[] = [];
   tap_date(date: string, time: string) {
     const filter = this.main_table.filter(
       (item) => item.date === date && item.time === time
     );
-console.log(filter);
 
-if (this.isAwac) {
-  this.current_bins = []; // clear existing bins
+    if (this.isAwac) {
+      this.current_bins = []; // clear existing bins
 
-  for (let i = 1; i <= 20; i++) {
-    const speedKey = `speed_bin${i}`;
-    const directionKey = `direction_bin${i}`;
+      for (let i = 1; i <= 20; i++) {
+        const speedKey = `speed_bin${i}`;
+        const directionKey = `direction_bin${i}`;
 
-    this.current_bins.push({
-      [`speed_bin${i}`]: filter[0][speedKey],
-      [`direction_bin${i}`]: filter[0][directionKey],
-    });
-  }
-}
+        this.current_bins.push({
+          [`speed_bin${i}`]: filter[0][speedKey],
+          [`direction_bin${i}`]: filter[0][directionKey],
+        });
+      }
+    }
 
     const data = {
       id: filter[0].station_id,
@@ -512,9 +506,9 @@ if (this.isAwac) {
       this.dir = true;
     }, 100);
   }
-  
+
   directionTo!: string;
-  
+
   directionValue(degrees: number): string {
     degrees = degrees % 360;
     if (degrees < 0) degrees += 360;
@@ -535,11 +529,11 @@ if (this.isAwac) {
     else if (degrees >= 303.75 && degrees < 326.25) return 'NW';
     else return 'NNW';
   }
-  
+
   fileID: number | undefined;
   Array_item: number[] = [1, 2, 3, 4, 5, 3, 6, 7, 8, 8, 9, 9, 10];
   unitssTo!: UnitSettings;
-  
+
   ngOnInit(): void {
     const datetimeValue = JSON.parse(
       localStorage.getItem('unitSettings') ?? '{}'
@@ -612,12 +606,13 @@ if (this.isAwac) {
     this.openedFolder = folder_id;
     this.expandedFolders[index] = !this.expandedFolders[index];
   }
-  
+
   toggleFileSelection(
     fileName: string,
     event: MouseEvent,
     file_id: number,
-    folder_name: string, type:string
+    folder_name: string,
+    type: string
   ) {
     this.globe.fileId = file_id;
     this.selected_folder_name = folder_name;
@@ -630,7 +625,7 @@ if (this.isAwac) {
       },
     ];
 
-   this.isAwac = type === 'awac' ? true : false;
+    this.isAwac = type === 'awac' ? true : false;
     this.open_file(fileName, file_id);
   }
 
@@ -744,7 +739,7 @@ if (this.isAwac) {
   depth_unit!: string;
   speed_unit!: string;
   directtion_unit!: string;
-  awacData:AwacDataModel[]=[]
+  awacData: AwacDataModel[] = [];
   open_file(file_name: string, file_id: number) {
     this.opened_file = file_name;
     const data = {
@@ -752,23 +747,23 @@ if (this.isAwac) {
       file_name: file_name,
     };
     let unitstts: UnitSettings;
-    
+
     this.http
       .get(`${this.baseUrl}fetch_data_by_file/${file_id}`)
       .subscribe((response: any) => {
-        console.log("response = ", response);
-        if(response[0].type === 'awac'){
-          this.awacData = response;       
+        if (response[0].type === 'awac') {
+          this.awacData = response;
           this.latutude = `${this.awacData[0].lat}`;
           this.longitude = `${this.awacData[0].lon}`;
-  
+
           this.bet_unit = `${this.awacData[0].battery_unit}`;
           this.wat_unit = this.awacData[0].water_level_unit as string;
           this.coor_unit = this.awacData[0].coord_unit as string;
           this.depth_unit = this.awacData[0].depth_unit as string;
           this.speed_unit = this.awacData[0].current_speed_unit as string;
-          this.directtion_unit = this.awacData[0].current_direction_unit as string;
-  
+          this.directtion_unit = this.awacData[0]
+            .current_direction_unit as string;
+
           unitstts = {
             battery: this.awacData[0].battery_unit_to || '',
             currentDirection: this.awacData[0].current_direction_unit_to || '',
@@ -779,7 +774,7 @@ if (this.isAwac) {
             datetime: this.dateFormat,
           };
           this.unitssTo = unitstts;
-  
+
           if (this.isMulti) {
             let data = this.main_table;
             this.main_table = [];
@@ -797,51 +792,49 @@ if (this.isAwac) {
               this.tap_date(this.main_table[0].date, this.main_table[0].time);
             }, 100);
           }
-        
-        }else{
-            this.latutude = response[0].lat;
-            this.longitude = response[0].lon;
-    
-            this.bet_unit = response[0].battery_unit;
-            this.wat_unit = response[0].water_level_unit;
-            this.coor_unit = response[0].coord_unit;
-            this.depth_unit = response[0].depth_unit;
-            this.speed_unit = response[0].current_speed_unit;
-            this.directtion_unit = response[0].current_direction_unit;
-    
-            unitstts = {
-              battery: response[0].battery_unit_to || '',
-              currentDirection: response[0].current_direction_unit_to || '',
-              currentSpeed: response[0].current_speed_unit_to || '',
-              depth: response[0].depth_unit_to || '',
-              latandlong: response[0].coord_unit_to || '',
-              waterLevel: response[0].water_level_unit_to || '',
-              datetime: this.dateFormat,
-            };
-            this.unitssTo = unitstts;
-    
-            if (this.isMulti) {
-              let data = this.main_table;
-              this.main_table = [];
-              setTimeout(() => {
-                this.main_table = data;
-                for (let index = 0; index < response.length; index++) {
-                  this.main_table.push(response[index]);
-                }
-                this.tap_date(this.main_table[0].date, this.main_table[0].time);
-              }, 100);
-            } else {
-              this.main_table = [];
-              setTimeout(() => {
-                this.main_table = response;
-                this.tap_date(this.main_table[0].date, this.main_table[0].time);
-              }, 100);
-            }
+        } else {
+          this.latutude = response[0].lat;
+          this.longitude = response[0].lon;
+
+          this.bet_unit = response[0].battery_unit;
+          this.wat_unit = response[0].water_level_unit;
+          this.coor_unit = response[0].coord_unit;
+          this.depth_unit = response[0].depth_unit;
+          this.speed_unit = response[0].current_speed_unit;
+          this.directtion_unit = response[0].current_direction_unit;
+
+          unitstts = {
+            battery: response[0].battery_unit_to || '',
+            currentDirection: response[0].current_direction_unit_to || '',
+            currentSpeed: response[0].current_speed_unit_to || '',
+            depth: response[0].depth_unit_to || '',
+            latandlong: response[0].coord_unit_to || '',
+            waterLevel: response[0].water_level_unit_to || '',
+            datetime: this.dateFormat,
+          };
+          this.unitssTo = unitstts;
+
+          if (this.isMulti) {
+            let data = this.main_table;
+            this.main_table = [];
+            setTimeout(() => {
+              this.main_table = data;
+              for (let index = 0; index < response.length; index++) {
+                this.main_table.push(response[index]);
+              }
+              this.tap_date(this.main_table[0].date, this.main_table[0].time);
+            }, 100);
+          } else {
+            this.main_table = [];
+            setTimeout(() => {
+              this.main_table = response;
+              this.tap_date(this.main_table[0].date, this.main_table[0].time);
+            }, 100);
           }
-        
+        }
       });
   }
-  
+
   getFileClass(fileName: string, file_id: number): string {
     const isSelected = this.selectedFiles.some(
       (file) => file.file_name === fileName && file.file_id === file_id

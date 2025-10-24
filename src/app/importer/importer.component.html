@@ -401,7 +401,7 @@
             color: var(--button-text-color);
           "
           id="fileUpload"
-          accept=".xlsx, .csv, .nmea"
+          accept=".xlsx, .csv"
           (change)="onFilesSelected($event)"
           multiple
           [attr.webkitdirectory]="allowFolderUpload ? '' : null"

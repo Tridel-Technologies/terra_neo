@@ -95,6 +95,13 @@ interface fileData {
   is_processed: boolean;
 }
 
+export interface HighWaterTime {
+  rank: number;
+  datetime: string;
+  water_level: number;
+  dateFormatted: string;
+}
+
 @Component({
   selector: 'app-reports',
   imports: [
@@ -173,10 +180,8 @@ export class ReportsComponent implements OnInit {
     this.files_list = [];
     this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
       this.files_list = response['data'];
-      console.log('files:', response, this.files_list);
       this.expandedFolders = this.files_list.map(() => false);
       this.fileID = this.base.fileId!;
-      console.log('file IFD', this.fileID);
 
       let folderIndex = -1;
       let selectedFile = null;
@@ -205,7 +210,6 @@ export class ReportsComponent implements OnInit {
         }
       }
       this.nameOffile = selectedFolder?.files[0].file_name ?? '';
-      console.log('nameof file', this.nameOffile);
 
       // Expand the matched folder
       this.expandedFolders = this.files_list.map(
@@ -308,17 +312,22 @@ export class ReportsComponent implements OnInit {
         header: `Water Level (${this.units.waterLevel})`,
         type: 'text',
       },
-      {
-        field: 'speed',
-        header: `Speed (${this.units.currentSpeed})`,
-        type: 'text',
-      },
-      {
-        field: 'direction',
-        header: `Direction (${this.units.currentDirection})`,
-        type: 'text',
-      },
     ];
+
+    if (this.selectedHighWaterLevel?.value !== '0') {
+      this.summaryColumns.push(
+        {
+          field: 'speed',
+          header: `Speed (${this.units.currentSpeed})`,
+          type: 'text',
+        },
+        {
+          field: 'direction',
+          header: `Direction (${this.units.currentDirection})`,
+          type: 'text',
+        }
+      );
+    }
     this.selectedColumns = this.cols;
     this.globalFilterFields = (
       !this.showToggleTable ? this.cols : this.summaryColumns
@@ -332,6 +341,16 @@ export class ReportsComponent implements OnInit {
   dataTypeOptions = [
     { name: 'Raw Data', value: 'raw' },
     { name: 'Processed Data', value: 'processed' },
+  ];
+  selectedHighWaterLevel: { name: string; value: string } = {
+    name: 'High & Low Water Level',
+    value: '0',
+  };
+  highWaterLevelOptions = [
+    { name: 'High & Low Water Level', value: '0' },
+    { name: '1st High Water Level', value: '1' },
+    { name: '2nd High Water Level', value: '2' },
+    { name: '3rd High Water Level', value: '3' },
   ];
 
   exportOptions = [
@@ -399,7 +418,6 @@ export class ReportsComponent implements OnInit {
   ) {
     // this.dir = false;
     this.base.fileId = file_id;
-    console.log('qwqw', fileName, file_id);
     this.selected_folder_name = folder_name;
     this.nameOffile = fileName;
     this.isLive = true;
@@ -458,11 +476,8 @@ export class ReportsComponent implements OnInit {
         }/${file_id}`
       )
       .subscribe((response: any) => {
-        console.log('response', response);
-
         this.last_row =
           response.length > 0 ? response[response.length - 1] : null;
-        console.log('Last row:', this.last_row);
         this.main_table = [];
         setTimeout(() => {
           for (let index = 0; index < response.length; index++) {
@@ -483,7 +498,27 @@ export class ReportsComponent implements OnInit {
             this.main_table.push(row);
           }
           this.checkForConversion();
-          console.log('Main table data ', this.main_table);
+
+          // Annotate rows with top 6 high/low tide information
+          const { high, low } = this.getTop6HighAndLowWaterTimes();
+          const tideMap = new Map<
+            string,
+            { rank: number; type: 'high' | 'low' }
+          >();
+          high.forEach((h) =>
+            tideMap.set(h.datetime, { rank: h.rank, type: 'high' })
+          );
+          low.forEach((l) =>
+            tideMap.set(l.datetime, { rank: l.rank, type: 'low' })
+          );
+
+          this.main_table = this.main_table.map((r) => {
+            const ann = tideMap.get(r.date);
+            if (ann) {
+              return { ...r, tide_rank: ann.rank, tide_type: ann.type };
+            }
+            return r;
+          });
         }, 100);
       });
   }
@@ -513,7 +548,6 @@ export class ReportsComponent implements OnInit {
       }
       return this.units[key] == sourceUnits[key];
     });
-    console.log('match', unitsMatch);
 
     if (!unitsMatch) {
       this.main_table = this.main_table.map((item, index) => {
@@ -695,31 +729,187 @@ export class ReportsComponent implements OnInit {
     }
   }
 
-  toggle_tap() {
-    console.log('main_table sample:', this.main_table.slice(0, 5)); // Show first 5 records
+  getTop6HighAndLowWaterTimes(): {
+    high: HighWaterTime[];
+    low: HighWaterTime[];
+  } {
+    if (!this.main_table || this.main_table.length === 0) {
+      return { high: [], low: [] };
+    }
 
-    const filter = this.main_table.filter(
-      (item) => item.high_water_level === 1
+    const validData = this.main_table
+      .map((d) => ({
+        datetime: d.date,
+        water_level: parseFloat(d.pressure),
+      }))
+      .filter((d) => !isNaN(d.water_level));
+
+    if (validData.length < 6) {
+      console.warn('Not enough valid tide data to find 6 highs and 6 lows');
+      return { high: [], low: [] };
+    }
+
+    const highs: HighWaterTime[] = [];
+    const lows: HighWaterTime[] = [];
+    const neighborhood = 4; // check 4 points before and after
+
+    for (let i = neighborhood; i < validData.length - neighborhood; i++) {
+      const curr = validData[i].water_level;
+
+      // Check if this is a high tide
+      let isHigh = true;
+      for (let j = i - neighborhood; j <= i + neighborhood; j++) {
+        if (j === i) continue;
+        if (validData[j].water_level >= curr) {
+          isHigh = false;
+          break;
+        }
+      }
+      if (isHigh) {
+        highs.push({
+          rank: 0,
+          datetime: validData[i].datetime,
+          water_level: curr,
+          dateFormatted: this.formatHighWaterTimeDisplay(validData[i].datetime),
+        });
+      }
+
+      // Check if this is a low tide
+      let isLow = true;
+      for (let j = i - neighborhood; j <= i + neighborhood; j++) {
+        if (j === i) continue;
+        if (validData[j].water_level <= curr) {
+          isLow = false;
+          break;
+        }
+      }
+      if (isLow) {
+        lows.push({
+          rank: 0,
+          datetime: validData[i].datetime,
+          water_level: curr,
+          dateFormatted: this.formatHighWaterTimeDisplay(validData[i].datetime),
+        });
+      }
+    }
+
+    // Pick top 6 highs and lows by water level
+    const topHighs = highs
+      .sort((a, b) => b.water_level - a.water_level)
+      .slice(0, 6)
+      .map((d, i) => ({ ...d, rank: i + 1 }));
+
+    const topLows = lows
+      .sort((a, b) => a.water_level - b.water_level)
+      .slice(0, 6)
+      .map((d, i) => ({ ...d, rank: i + 1 }));
+
+    return { high: topHighs, low: topLows };
+  }
+
+  /**
+   * Format high water time for dropdown display
+   */
+  formatHighWaterTimeDisplay(datetime: string): string {
+    const date = new Date(datetime);
+    const day = date.getDate();
+    const month = date.toLocaleDateString('en-US', { month: 'short' });
+    const time = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+
+    return `${day} ${month} at ${time}`;
+  }
+
+  toggle_tap(highWaterLevelNumber: string | number) {
+    highWaterLevelNumber = Number(highWaterLevelNumber);
+    this.setupColumns();
+
+    // Use pre-annotated ranks/types from main_table
+    const topHighs: HighWaterTime[] = this.main_table
+      .filter(
+        (r: any) => r.tide_type === 'high' && typeof r.tide_rank === 'number'
+      )
+      .map((r: any) => ({
+        rank: r.tide_rank,
+        datetime: r.date,
+        water_level: parseFloat(r.pressure),
+        dateFormatted: this.formatHighWaterTimeDisplay(r.date),
+      }))
+      .filter((h) => !isNaN(h.water_level))
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, 6);
+
+    const topLows: HighWaterTime[] = this.main_table
+      .filter(
+        (r: any) => r.tide_type === 'low' && typeof r.tide_rank === 'number'
+      )
+      .map((r: any) => ({
+        rank: r.tide_rank,
+        datetime: r.date,
+        water_level: parseFloat(r.pressure),
+        dateFormatted: this.formatHighWaterTimeDisplay(r.date),
+      }))
+      .filter((l) => !isNaN(l.water_level))
+      .sort((a, b) => a.rank - b.rank)
+      .slice(0, 6);
+
+    // If input is 0, return all 6 highs and 6 lows with value and timestamp
+    if (highWaterLevelNumber === 0) {
+      this.toggleTableData = [];
+
+      topHighs.forEach((h) => {
+        const ts = formatDate(new Date(h.datetime), this.dateFormat, 'en-US');
+        const suffix = this.getOrdinalSuffix(h.rank);
+        this.toggleTableData.push({
+          name: `${h.rank}${suffix} High`,
+          timestamp: ts,
+          pressure: h.water_level,
+          speed: NaN,
+          direction: NaN,
+        });
+      });
+
+      topLows.forEach((l) => {
+        const ts = formatDate(new Date(l.datetime), this.dateFormat, 'en-US');
+        const suffix = this.getOrdinalSuffix(l.rank);
+        this.toggleTableData.push({
+          name: `${l.rank}${suffix} Low`,
+          timestamp: ts,
+          pressure: l.water_level,
+          speed: NaN,
+          direction: NaN,
+        });
+      });
+
+      return;
+    }
+
+    if (topHighs.length < highWaterLevelNumber) {
+      console.error(
+        `No ${highWaterLevelNumber}${this.getOrdinalSuffix(
+          highWaterLevelNumber
+        )} high water level found. Only ${topHighs.length} available.`
+      );
+      throw new Error(`Insufficient high water level data`);
+    }
+
+    // Find the high water level with the specified rank
+    const targetHighWater = topHighs.find(
+      (h) => h.rank === highWaterLevelNumber
     );
-    console.log('Filtered high_water_level === 1:', filter);
 
-    if (filter.length === 0) {
-      console.error('No records where high_water_level === 1 found.');
-      throw new Error('No high_water_level data');
+    if (!targetHighWater) {
+      console.error(
+        `High water level with rank ${highWaterLevelNumber} not found`
+      );
+      throw new Error(`High water level ${highWaterLevelNumber} not found`);
     }
 
     try {
-      const filter = this.main_table.filter(
-        (item) => item.high_water_level === 1
-      );
-      if (filter.length === 0) {
-        throw new Error('No high_water_level data');
-      }
-
-      const targetDateTime = new Date(filter[0].date);
-      const targetMinutes = targetDateTime.getMinutes();
-      console.log('targetDateTime', targetDateTime);
-      console.log('targetMinutes', targetMinutes);
+      const targetDateTime = new Date(targetHighWater.datetime);
 
       // We'll collect arrays of data per hour for before and after 6 hours
       const bf: any[][] = [];
@@ -759,8 +949,14 @@ export class ReportsComponent implements OnInit {
         af.push(afterDataArray);
       }
 
-      // Current data as before
-      const currentData = filter[0];
+      // Find the exact record in main_table for the target high water time
+      const currentData = this.main_table.find(
+        (item) => new Date(item.date).getTime() === targetDateTime.getTime()
+      );
+
+      if (!currentData) {
+        throw new Error('Could not find exact record for high water time');
+      }
 
       // Prepare toggleTableData with averaged values
       this.toggleTableData = [];
@@ -790,8 +986,12 @@ export class ReportsComponent implements OnInit {
         this.dateFormat,
         'en-US'
       );
+
+      // Create appropriate label based on high water level number and rank
+      const highWaterLabel = this.getHighWaterLevelLabel(highWaterLevelNumber);
+
       this.toggleTableData.push({
-        name: 'High Water Time',
+        name: highWaterLabel,
         timestamp: currentFormattedDate,
         pressure: currentData.pressure ?? NaN,
         speed: currentData.speed ?? NaN,
@@ -818,13 +1018,33 @@ export class ReportsComponent implements OnInit {
             : NaN,
         });
       }
-
-      // this.showToggleTable = !this.showToggleTable;
     } catch (error) {
       this.toast.error(
-        'This file has no high_water_level data. Please edit in the process page.',
+        `Error processing ${highWaterLevelNumber}${this.getOrdinalSuffix(
+          highWaterLevelNumber
+        )} high water level data. Please check the data.`,
         'Error'
       );
+    }
+  }
+
+  // Updated helper method to support up to 6 high water levels
+  getHighWaterLevelLabel(level: number): string {
+    switch (level) {
+      case 1:
+        return '1st High Water Time';
+      case 2:
+        return '2nd High Water Time';
+      case 3:
+        return '3rd High Water Time';
+      case 4:
+        return '4th High Water Time';
+      case 5:
+        return '5th High Water Time';
+      case 6:
+        return '6th High Water Time';
+      default:
+        return 'High Water Time';
     }
   }
 
@@ -835,9 +1055,22 @@ export class ReportsComponent implements OnInit {
     }
   }
 
+  onHighWaterLevelChange(highWaterLevelNumber: string | number) {
+    this.setupColumns();
+    this.toggle_tap(highWaterLevelNumber);
+  }
+
   getRowStyle(row: any): { [key: string]: string } {
     if (row.highlight) {
       return { 'background-color': '#ffeb3b' }; // Highlight color for high water level
+    }
+
+    // Fallback styling when tide_type is provided on raw data rows
+    if (row.tide_type === 'high') {
+      return { 'background-color': '#c5e1ff' };
+    }
+    if (row.tide_type === 'low') {
+      return { 'background-color': '#ffe0c5' };
     }
 
     // Check if it's a 'before' or 'after' row by position or content
@@ -851,14 +1084,15 @@ export class ReportsComponent implements OnInit {
         const hour = +match[1];
         // Your toggleTableData is in order: [6 before ... 1 before, HighWater, 1 after ... 6 after]
         const highIndex = this.toggleTableData.findIndex(
-          (r) => r.name === 'High Water Time'
+          (r) =>
+            typeof r.name === 'string' && r.name.includes('High Water Time')
         );
 
         const index = this.toggleTableData.findIndex((r) => r === row);
         if (index < highIndex) {
-          return { 'background-color': '#e0f7fa' }; // Light blue for before
+          return { 'background-color': '#c5e1ff' }; // Light blue for before
         } else if (index > highIndex) {
-          return { 'background-color': '#fff3e0' }; // Light orange for after
+          return { 'background-color': '#ffe0c5' }; // Light orange for after
         }
       }
     }
@@ -871,6 +1105,14 @@ export class ReportsComponent implements OnInit {
       return 'highlight-row';
     }
 
+    // Apply classes based on tide_type when available on raw data rows
+    if (row.tide_type === 'high') {
+      return 'peak-row';
+    }
+    if (row.tide_type === 'low') {
+      return 'before-row';
+    }
+
     if (typeof row.name === 'string') {
       if (row.name.includes('High Water')) {
         return 'peak-row';
@@ -880,7 +1122,8 @@ export class ReportsComponent implements OnInit {
       if (match) {
         const hour = +match[1];
         const highIndex = this.toggleTableData.findIndex(
-          (r) => r.name === 'High Water Time'
+          (r) =>
+            typeof r.name === 'string' && r.name.includes('High Water Time')
         );
         const index = this.toggleTableData.findIndex((r) => r === row);
 
