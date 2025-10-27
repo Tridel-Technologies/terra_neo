@@ -408,8 +408,28 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
   open_file(file_id: number) {
     this.loading = true;
 
+    // Clear all data and state before fetching
     this.fullData = [];
     this.main_table = [];
+    this.totalRecords = 0;
+    this.selectedPointId = null;
+    this.changedRows.clear();
+    this.units = {
+      waterLevel: '',
+      currentSpeed: '',
+      currentDirection: '',
+      battery: '',
+      depth: '',
+      latandlong: '',
+      datetime: '',
+    };
+    // Reset virtual scroller position if available
+    if (this.table?.resetScrollTop) {
+      this.table.resetScrollTop();
+    }
+    // Update the view to reflect cleared state
+    this.cdr.detectChanges();
+
     this.cleanupCharts();
 
     // Reset chart instances
@@ -882,73 +902,76 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.main_table = this.fullData;
     }
 
-    const indexToHighlight = this.main_table.findIndex(
-      (item) => item.id === this.selectedPointId
-    );
+    // defer the scroll & highlight logic to avoid recursive detection
+    setTimeout(() => {
+      const indexToHighlight = this.main_table.findIndex(
+        (item) => item.id === this.selectedPointId
+      );
 
-    if (
-      indexToHighlight !== null &&
-      indexToHighlight >= 0 &&
-      indexToHighlight < this.main_table.length
-    ) {
-      this.selectedPointId = this.main_table[indexToHighlight].id;
-
-      const rowHeight = 46; // should match your virtualScrollItemSize
-      const tableWrapper = this.tableWrapper?.nativeElement;
-
-      if (this.table?.scrollToVirtualIndex) {
-        this.table.scrollToVirtualIndex(indexToHighlight);
-      } else if (tableWrapper) {
-        // Center the row manually
-        const visibleHeight = tableWrapper.clientHeight;
-        const targetScrollTop =
-          indexToHighlight * rowHeight - visibleHeight / 2 + rowHeight / 2;
-        const maxScroll = tableWrapper.scrollHeight - visibleHeight;
-
-        const scrollTop = Math.min(Math.max(targetScrollTop, 0), maxScroll);
-
-        tableWrapper.scrollTo({
-          top: scrollTop,
-          behavior: 'smooth',
-        });
-      }
-
-      // Delay highlight to allow scroll to settle
-      setTimeout(() => {
+      if (indexToHighlight >= 0) {
+        this.selectedPointId = this.main_table[indexToHighlight].id;
+        const rowHeight = 46;
         const tableWrapper = this.tableWrapper?.nativeElement;
-        if (tableWrapper) {
-          const rows = tableWrapper.querySelectorAll('tr');
-          const selectedRow = Array.from(rows).find(
-            (r: any) =>
-              r.getAttribute('data-id') === String(this.selectedPointId)
+
+        if (this.table?.scrollToVirtualIndex) {
+          this.table.scrollToVirtualIndex(indexToHighlight);
+        } else if (tableWrapper) {
+          const visibleHeight = tableWrapper.clientHeight;
+          const targetScrollTop =
+            indexToHighlight * rowHeight - visibleHeight / 2 + rowHeight / 2;
+          const maxScroll = tableWrapper.scrollHeight - visibleHeight;
+          const scrollTop = Math.min(Math.max(targetScrollTop, 0), maxScroll);
+
+          tableWrapper.scrollTo({
+            top: scrollTop,
+            behavior: 'smooth',
+          });
+        }
+
+        // highlight the row safely after rendering
+        setTimeout(() => {
+          const tableWrapper = this.tableWrapper?.nativeElement;
+          if (!tableWrapper) return;
+
+          const selectedRow = tableWrapper.querySelector(
+            `tr[data-id="${this.selectedPointId}"]`
           ) as HTMLElement;
 
           if (selectedRow) {
             selectedRow.classList.add('temp-highlight');
-
-            // Remove highlight after 1.5 seconds
-            setTimeout(() => {
-              selectedRow.classList.remove('temp-highlight');
-            }, 1500);
+            setTimeout(
+              () => selectedRow.classList.remove('temp-highlight'),
+              1500
+            );
           }
-        }
-      }, 400); // Adjusted delay for scroll + render
+        }, 400);
 
-      // Resize charts (safe placement)
-      setTimeout(() => {
-        this.chartInstances.forEach((chart) => {
-          if (!chart.isDisposed()) {
-            chart.resize();
-          }
-        });
-      }, 500);
-    }
+        // resize charts safely
+        setTimeout(() => {
+          this.chartInstances.forEach((chart) => {
+            if (!chart.isDisposed()) chart.resize();
+          });
+        }, 500);
+      }
+    });
   }
 
   closeDialog() {
     this.visible = false;
     this.selectedPointId = null;
   }
+
+  // onDialogHide() {
+  //   this.selectedPointId = null;
+  //   this.changedRows.clear();
+  //   // Remove any temporary new rows and restore from cached fullData
+  //   if (this.fullData && this.fullData.length > 0) {
+  //     this.main_table = this.fullData.filter((row) => !row.isNewRow);
+  //   } else {
+  //     this.main_table = [];
+  //   }
+  //   this.loading = false;
+  // }
 
   loadData(event: any) {
     this.loading = true;

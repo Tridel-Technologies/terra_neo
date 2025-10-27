@@ -100,13 +100,13 @@ export class ImporterComponent {
       units: ['m', 'ft'],
       unitslabels: ['m', 'ft'],
     },
-    {
-      key: 'temperature',
-      label: 'Temperature',
-      iconClass: 'fas fa-temperature-half',
-      units: ['°C', '°F'],
-      unitslabels: ['°C', '°F'],
-    },
+    // {
+    //   key: 'temperature',
+    //   label: 'Temperature',
+    //   iconClass: 'fas fa-temperature-half',
+    //   units: ['°C', '°F'],
+    //   unitslabels: ['°C', '°F'],
+    // },
     // {
     //   key: 'latandlong',
     //   label: 'Latitude and Longitude',
@@ -121,15 +121,15 @@ export class ImporterComponent {
     { name: 'Speed', unit: '' },
     { name: 'Direction', unit: '' },
     { name: 'Depth', unit: '' },
-    { name: 'Battery', unit: '' },
     { name: 'Pressure', unit: '' },
+    { name: 'Battery', unit: '' },
   ];
 
   main_table_headers_awac = [
     { name: 'Date', unit: '' },
     { name: 'Battery', unit: '' },
     { name: 'Pressure', unit: '' },
-    { name: 'Temperature', unit: '' },
+    // { name: 'Temperature', unit: '' },
     { name: 'Pitch', unit: '' },
     { name: 'Roll', unit: '' },
     { name: 'Heading', unit: '' },
@@ -211,12 +211,12 @@ export class ImporterComponent {
         ft: 'Feet',
       },
       // Temperature tooltip (relevant for .nmea/AWAC)
-      temperature: {
-        '°C': 'Celsius',
-        C: 'Celsius',
-        '°F': 'Fahrenheit',
-        F: 'Fahrenheit',
-      },
+      // temperature: {
+      //   '°C': 'Celsius',
+      //   C: 'Celsius',
+      //   '°F': 'Fahrenheit',
+      //   F: 'Fahrenheit',
+      // },
       latandlong: {
         DD: 'Decimal Degree',
         DMS: 'Degree, Minute, Second',
@@ -260,16 +260,16 @@ export class ImporterComponent {
     if (!isNmea) return this.unitSettings;
 
     const filtered = this.unitSettings.filter((p) => p.key !== 'depth');
-    const hasTemperature = filtered.some((p) => p.key === 'temperature');
-    if (!hasTemperature) {
-      filtered.push({
-        key: 'temperature',
-        label: 'Temperature',
-        iconClass: 'fas fa-temperature-half',
-        units: ['°C', '°F'],
-        unitslabels: ['°C', '°F'],
-      });
-    }
+    // const hasTemperature = filtered.some((p) => p.key === 'temperature');
+    // if (!hasTemperature) {
+    //   filtered.push({
+    //     key: 'temperature',
+    //     label: 'Temperature',
+    //     iconClass: 'fas fa-temperature-half',
+    //     units: ['°C', '°F'],
+    //     unitslabels: ['°C', '°F'],
+    //   });
+    // }
     return filtered;
   }
 
@@ -659,8 +659,7 @@ export class ImporterComponent {
         if (isNaN(d.getTime())) return '';
         return this.datePipe.transform(d, this.dateFormat) ?? '';
       }
-      case 'temperature':
-        return row.temperature ?? '';
+
       case 'pitch':
         return row.pitch ?? '';
       case 'roll':
@@ -1094,7 +1093,7 @@ export class ImporterComponent {
                 datetime: isoTimestamp,
                 pressure: first?.pressure ?? null,
                 battery: first?.battery ?? null,
-                temperature: first?.temperature ?? null,
+                // temperature: first?.temperature ?? null,
                 heading: first?.heading ?? null,
                 pitch: first?.pitch ?? null,
                 roll: first?.roll ?? null,
