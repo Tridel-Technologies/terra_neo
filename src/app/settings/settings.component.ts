@@ -549,7 +549,7 @@ export class SettingsComponent {
     if (this.basee.fileId) {
       selectedFileID = this.basee.fileId; // or globee.fileID if dynamic
     } else {
-      selectedFileID = this.processedFiles[0].files[0].file_id;
+      selectedFileID = this.files_list[0].files[0].file_id;
     }
 
     // Find the folder containing the file

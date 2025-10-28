@@ -467,6 +467,31 @@ export class ReportsComponent implements OnInit {
       folder_id: file_id,
     };
 
+    // Reset UI/state before fetching
+    this.loading = true;
+    this.main_table = [];
+    this.totalRecords = 0;
+    this.last_row = null;
+    this.before_data = [];
+    this.after_data = [];
+    this.current_hours_data = [];
+    this.toggleTableData = [];
+    this.showToggleTable = false;
+    this.searchQuery = '';
+    this.exportSelectedOption = null;
+
+    // Reset units and refresh columns to avoid stale headers
+    this.units = {
+      waterLevel: '',
+      currentSpeed: '',
+      currentDirection: '',
+      battery: '',
+      depth: '',
+      latandlong: '',
+      datetime: '',
+    };
+    this.setupColumns();
+
     this.http
       .get(
         `${this.baseUrl}${
@@ -475,51 +500,61 @@ export class ReportsComponent implements OnInit {
             : 'fetch_data_by_file'
         }/${file_id}`
       )
-      .subscribe((response: any) => {
-        this.last_row =
-          response.length > 0 ? response[response.length - 1] : null;
-        this.main_table = [];
-        setTimeout(() => {
-          for (let index = 0; index < response.length; index++) {
-            const row = { ...response[index] };
+      .subscribe({
+        next: (response: any) => {
+          this.last_row =
+            response.length > 0 ? response[response.length - 1] : null;
+          this.main_table = [];
+          setTimeout(() => {
+            for (let index = 0; index < response.length; index++) {
+              const row = { ...response[index] };
 
-            if (row.date) {
-              const date = new Date(row.date);
-              row.date = formatDate(date, this.dateFormat, 'en-US');
-            }
-
-            // Decimal conversion
-            ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
-              if (row[key] != null) {
-                row[key] = this.formatValue(row[key]);
+              if (row.date) {
+                const date = new Date(row.date);
+                row.date = formatDate(date, this.dateFormat, 'en-US');
               }
+
+              // Decimal conversion
+              ['pressure', 'speed', 'direction', 'depth'].forEach((key) => {
+                if (row[key] != null) {
+                  row[key] = this.formatValue(row[key]);
+                }
+              });
+
+              this.main_table.push(row);
+            }
+            this.totalRecords = this.main_table.length;
+            this.checkForConversion();
+
+            // Annotate rows with top 6 high/low tide information
+            const { high, low } = this.getTop6HighAndLowWaterTimes();
+            const tideMap = new Map<
+              string,
+              { rank: number; type: 'high' | 'low' }
+            >();
+            high.forEach((h) =>
+              tideMap.set(h.datetime, { rank: h.rank, type: 'high' })
+            );
+            low.forEach((l) =>
+              tideMap.set(l.datetime, { rank: l.rank, type: 'low' })
+            );
+
+            this.main_table = this.main_table.map((r) => {
+              const ann = tideMap.get(r.date);
+              if (ann) {
+                return { ...r, tide_rank: ann.rank, tide_type: ann.type };
+              }
+              return r;
             });
 
-            this.main_table.push(row);
-          }
-          this.checkForConversion();
-
-          // Annotate rows with top 6 high/low tide information
-          const { high, low } = this.getTop6HighAndLowWaterTimes();
-          const tideMap = new Map<
-            string,
-            { rank: number; type: 'high' | 'low' }
-          >();
-          high.forEach((h) =>
-            tideMap.set(h.datetime, { rank: h.rank, type: 'high' })
-          );
-          low.forEach((l) =>
-            tideMap.set(l.datetime, { rank: l.rank, type: 'low' })
-          );
-
-          this.main_table = this.main_table.map((r) => {
-            const ann = tideMap.get(r.date);
-            if (ann) {
-              return { ...r, tide_rank: ann.rank, tide_type: ann.type };
-            }
-            return r;
-          });
-        }, 100);
+            this.loading = false;
+          }, 100);
+        },
+        error: (err) => {
+          console.error('Failed to load report data', err);
+          this.toast.error('Failed to load data');
+          this.loading = false;
+        },
       });
   }
 

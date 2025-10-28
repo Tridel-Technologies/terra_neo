@@ -121,14 +121,14 @@ export class ImporterComponent {
     { name: 'Speed', unit: '' },
     { name: 'Direction', unit: '' },
     { name: 'Depth', unit: '' },
-    { name: 'Pressure', unit: '' },
+    { name: 'Water Level', unit: '' },
     { name: 'Battery', unit: '' },
   ];
 
   main_table_headers_awac = [
     { name: 'Date', unit: '' },
     { name: 'Battery', unit: '' },
-    { name: 'Pressure', unit: '' },
+    { name: 'Water Level', unit: '' },
     // { name: 'Temperature', unit: '' },
     { name: 'Pitch', unit: '' },
     { name: 'Roll', unit: '' },
@@ -1269,7 +1269,7 @@ export class ImporterComponent {
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
 
-    const maxVolt = 4.2; // for battery conversion
+    const maxVolt = 12.4; // for battery conversion
 
     const conversions: { [key: string]: (v: any) => any } = {
       'm-ft': (v) => v * 3.28084,

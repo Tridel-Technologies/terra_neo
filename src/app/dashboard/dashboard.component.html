@@ -184,7 +184,9 @@
                   convertcoored(
                     formatDms(latutude),
                     "dms",
-                    unitssTo!.latandlong
+                    unitssTo!.latandlong,
+                    true,
+                    false
                   )
                 }}
                 <br />
@@ -193,26 +195,58 @@
                   convertcoored(
                     formatDms(longitude),
                     "dms",
-                    unitssTo!.latandlong
+                    unitssTo!.latandlong,
+                    false,
+                    true
                   )
                 }}
               </ng-container>
               <ng-template #nonDms>
                 Lat:
-                {{ convertcoored(latutude, coor_unit, unitssTo!.latandlong) }}
+                {{
+                  convertcoored(
+                    latutude,
+                    coor_unit,
+                    unitssTo!.latandlong,
+                    true,
+                    false
+                  )
+                }}
                 <br />
                 Long:
-                {{ convertcoored(longitude, coor_unit, unitssTo!.latandlong) }}
+                {{
+                  convertcoored(
+                    longitude,
+                    coor_unit,
+                    unitssTo!.latandlong,
+                    false,
+                    true
+                  )
+                }}
               </ng-template>
             </ng-container>
             <ng-template #defaultCoords>
               <ng-container *ngIf="coor_unit === 'dms'; else rawCoords">
-                Lat: {{ formatDms(latutude) }} <br />
-                Long: {{ formatDms(longitude) }}
+                Lat:
+                {{
+                  convertcoored(formatDms(latutude), "dms", "dms", true, false)
+                }}
+                <br />
+                Long:
+                {{
+                  convertcoored(formatDms(longitude), "dms", "dms", false, true)
+                }}
               </ng-container>
               <ng-template #rawCoords>
-                Lat: {{ latutude }} <br />
-                Long: {{ longitude }}
+                Lat:
+                {{
+                  convertcoored(parseFloat(latutude), "dd", "dd", true, false)
+                }}
+                <br />
+                Long:
+                {{
+                  convertcoored(parseFloat(longitude), "dd", "dd", false, true)
+                }}
               </ng-template>
             </ng-template>
           </p>
@@ -232,7 +266,7 @@
               ></app-battery>
               <p style="align-self: center">
                 {{
-                  convertValue(
+                  convertcoored(
                     parseFloat(selected_data.battery),
                     bet_unit,
                     unitssTo!!.battery
@@ -246,7 +280,7 @@
               <img src="../../assets/depth.png" alt="" />
               <p>
                 {{
-                  convertValue(
+                  convertcoored(
                     parseFloat(selected_data.depth),
                     depth_unit,
                     unitssTo!!.depth
@@ -259,7 +293,7 @@
           <h5 class="title" *ngIf="isLive">Depth</h5>
           <p class="sub-title" *ngIf="isLive">
             {{
-              convertValue(
+              convertcoored(
                 parseFloat(selected_data.depth),
                 depth_unit,
                 unitssTo!.depth
@@ -320,7 +354,7 @@
           </svg>
           <p style="align-self: center">
             {{
-              convertValue(
+              convertcoored(
                 parseFloat(selected_data?.tide || "0"),
                 wat_unit,
                 unitssTo!.waterLevel
@@ -403,7 +437,7 @@
             <br />
             <p style="margin: 0; font-weight: 400">
               {{
-                convertValue(
+                convertcoored(
                   parseFloat(tide.tide || "0"),
                   wat_unit,
                   unitssTo!.waterLevel
@@ -447,13 +481,17 @@
             <app-battery
               [isLive]="isLive"
               [voltage]="
-                convertValue(truncate(selected_data.battery), bet_unit, 'volts')
+                convertcoored(
+                  truncate(selected_data.battery),
+                  bet_unit,
+                  'volts'
+                )
               "
             ></app-battery>
           </div>
           <p style="align-self: center">
             {{
-              convertValue(
+              convertcoored(
                 parseFloat(selected_data.battery),
                 bet_unit,
                 unitssTo!.battery
@@ -530,7 +568,7 @@
                 <img
                   [style.transform]="
                       'rotate(' +
-                      convertValue(
+                      convertcoored(
                         parseFloat(`direction_bin`+($index+1)),
                         directtion_unit,
                         '°'
@@ -630,7 +668,7 @@
 
           <p style="align-self: center">
             {{
-              convertValue(
+              convertcoored(
                 parseFloat(selected_data.current_speed),
                 speed_unit,
                 unitssTo!.currentSpeed
@@ -645,7 +683,7 @@
           <app-direction1
             *ngIf="dir"
             [direction]="
-              convertValue(
+              convertcoored(
                 parseFloat(selected_data.current_direction),
                 directtion_unit,
                 '°'
@@ -659,7 +697,7 @@
             *ngIf="selected_data.current_direction"
           >
             {{
-              convertValue(
+              convertcoored(
                 parseFloat(selected_data.current_direction),
                 directtion_unit,
                 unitssTo!.currentDirection
@@ -744,7 +782,7 @@
                 Current Speed <br />
                 <p>
                   {{
-                    convertValue(
+                    convertcoored(
                       current.speed,
                       speed_unit,
                       unitssTo!.currentSpeed
@@ -761,7 +799,7 @@
                 <img
                   [style.transform]="
                     'rotate(' +
-                    convertValue(
+                    convertcoored(
                       parseFloat(current.direction),
                       directtion_unit,
                       '°'
@@ -780,7 +818,7 @@
                 Direction <br />
                 <p>
                   {{
-                    convertValue(
+                    convertcoored(
                       parseFloat(current.direction),
                       directtion_unit,
                       unitssTo!.currentDirection
@@ -789,7 +827,7 @@
                   {{ unitssTo!.currentDirection }}
                   {{
                     directionValue(
-                      convertValue(
+                      convertcoored(
                         parseFloat(current.direction),
                         directtion_unit,
                         "°"

@@ -4,7 +4,7 @@ export class GlobalConfig {
   convertValue(value: number | string, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
 
-    const maxVolt = 4.2; // for battery conversion
+    const maxVolt = 12.4; // for battery conversion
 
     const conversions: { [key: string]: (v: any) => number | string } = {
       'm-ft': (v) => v * 3.28084,

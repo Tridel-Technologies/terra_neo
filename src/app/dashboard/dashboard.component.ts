@@ -644,34 +644,6 @@ export class DashboardComponent implements OnInit {
     }
   }
 
-  convertValue(value: number, fromUnit: string, toUnit: string): number {
-    if (fromUnit === toUnit) return value;
-
-    const maxVolt = 12.4;
-
-    const conversions: { [key: string]: (v: number) => number } = {
-      'm-ft': (v) => v * 3.28084,
-      'ft-m': (v) => v / 3.28084,
-      'm-cm': (v) => v * 100,
-      'cm-m': (v) => v / 100,
-      'ft-cm': (v) => (v / 3.28084) * 100,
-      'cm-ft': (v) => (v / 100) * 3.28084,
-      'm/s-knots': (v) => v * 1.94384,
-      'knots-m/s': (v) => v / 1.94384,
-      'radians-°': (v) => v * (180 / Math.PI),
-      '°-radians': (v) => v * (Math.PI / 180),
-      'volts-%': (v) => (v / maxVolt) * 100,
-      '%-volts': (v) => (v * maxVolt) / 100,
-    };
-
-    const key = `${fromUnit}-${toUnit}`;
-    if (conversions[key]) {
-      return this.parseFloat(conversions[key](value).toFixed(2));
-    }
-
-    return parseFloat(value.toFixed(2));
-  }
-
   formatDms(coordinate: string | number): string {
     if (typeof coordinate === 'string' && coordinate.includes(',')) {
       const parts = coordinate.split(',').map(Number);
@@ -688,9 +660,14 @@ export class DashboardComponent implements OnInit {
     return `${deg}°${min}'${sec.toFixed(2)}''`;
   }
 
-  convertcoored(value: any, fromUnit: string, toUnit: string): any {
-    if (fromUnit === toUnit) return value;
-    const maxVolt = 4.2;
+  convertcoored(
+    value: any,
+    fromUnit: string,
+    toUnit: string,
+    isLatitude = false,
+    isLongitude = false
+  ): any {
+    const maxVolt = 12.4;
 
     const conversions: { [key: string]: (v: any) => any } = {
       'm-ft': (v) => v * 3.28084,
@@ -707,8 +684,8 @@ export class DashboardComponent implements OnInit {
       '%-volts': (v) => (v * maxVolt) / 100,
 
       'dd-dms': (v) => {
-        const deg = Math.floor(v);
-        const minFloat = (v - deg) * 60;
+        const deg = Math.floor(Math.abs(v));
+        const minFloat = (Math.abs(v) - deg) * 60;
         const min = Math.floor(minFloat);
         const sec = (minFloat - min) * 60;
         return `${deg}°${min}'${sec.toFixed(2)}"`;
@@ -721,16 +698,41 @@ export class DashboardComponent implements OnInit {
         const deg = parseInt(match[1]);
         const min = parseInt(match[2]);
         const sec = parseFloat(match[3]);
-        return parseFloat((deg + min / 60 + sec / 3600).toFixed(6));
+        return parseFloat((deg + min / 60 + sec / 3600).toFixed(6)) + '°';
       },
     };
 
+    let result: any = value;
     const key = `${fromUnit}-${toUnit}`;
-    if (conversions[key]) {
-      return conversions[key](value);
+
+    // Perform conversion only if units differ and conversion exists
+    if (fromUnit !== toUnit && conversions[key]) {
+      result = conversions[key](value);
     }
 
-    return value;
+    // Determine N/S/E/W direction
+    let direction = '';
+    if (isLatitude) direction = value >= 0 ? 'N' : 'S';
+    else if (isLongitude) direction = value >= 0 ? 'E' : 'W';
+
+    // Format coordinate outputs with direction
+    if (
+      fromUnit === 'dd' ||
+      toUnit === 'dd' ||
+      fromUnit === 'dms' ||
+      toUnit === 'dms'
+    ) {
+      if (typeof result === 'number') result = result.toFixed(6);
+      if (fromUnit === 'dd' && toUnit === 'dd') {
+        result = `${result}° ${direction}`;
+      } else {
+        result = `${result} ${direction}`;
+      }
+    } else if (typeof result === 'number') {
+      result = result.toFixed(2);
+    }
+
+    return result;
   }
 
   bet_unit!: string;
@@ -802,7 +804,6 @@ export class DashboardComponent implements OnInit {
           this.depth_unit = response[0].depth_unit;
           this.speed_unit = response[0].current_speed_unit;
           this.directtion_unit = response[0].current_direction_unit;
-
           unitstts = {
             battery: response[0].battery_unit_to || '',
             currentDirection: response[0].current_direction_unit_to || '',
