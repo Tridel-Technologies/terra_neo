@@ -401,7 +401,7 @@
             color: var(--button-text-color);
           "
           id="fileUpload"
-          accept=".xlsx, .csv"
+          accept=".xlsx, .csv, .nmea"
           (change)="onFilesSelected($event)"
           multiple
           [attr.webkitdirectory]="allowFolderUpload ? '' : null"
@@ -413,7 +413,7 @@
       <span
         *ngIf="uploaded_files.length === 0"
         style="color: red; font-size: 12px; margin: -10px"
-        >Upload only .xlsx, .csv file format</span
+        >Upload only .xlsx, .csv, .nmea file format</span
       >
       <div class="uploaded_files" style="margin-left: 40px">
         <p
