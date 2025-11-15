@@ -330,9 +330,20 @@
 
   <div class="home_main" *ngIf="is_show_import">
     <div class="table_container">
-      <p style="color: var(--font-color)" *ngIf="historyData.length === 0">
+      <p
+        style="color: var(--font-color); align-self: center"
+        *ngIf="historyData.length === 0"
+      >
         No Files Selected
       </p>
+      <div class="multiDeleteBox" *ngIf="historyData.length > 0">
+        <input
+          type="checkbox"
+          (change)="isMultiDelete = !isMultiDelete"
+          title="Delete"
+        />
+        <p style="">Multi Delete</p>
+      </div>
       <div class="bod" *ngIf="historyData.length > 0">
         <table class="styled-table">
           <thead>
@@ -360,6 +371,7 @@
               <td>{{ row.battery }}</td>
               <td>
                 <!-- <button cli>Delete</button>-->
+                @if (!isMultiDelete) {
                 <i
                   id="trash"
                   class="fa-solid fa-trash"
@@ -367,11 +379,27 @@
                   (click)="deleteRow(i)"
                   style="color: red"
                 ></i>
+
+                }@else{
+                <input
+                  type="checkbox"
+                  (change)="addDeleteRows($event, i)"
+                  title="Delete"
+                />
+
+                }
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <button
+        *ngIf="selectedRowsforDelete.length !== 0"
+        class="DeleteButton"
+        (click)="deleteMulti()"
+      >
+        Delete
+      </button>
     </div>
     <div class="file_upload_container">
       <h1
@@ -516,4 +544,5 @@
 
 <div *ngIf="isFilesLoading" class="loader-overlay">
   <img src="../../assets/809.gif" /><img />
+  <p>Uploading, please wait...</p>
 </div>

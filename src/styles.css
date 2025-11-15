@@ -21,6 +21,7 @@ html {
   /* Font Colors */
   --font-color: #212529;
   --font-secondary-color: #6c757d;
+  --font-tertiary-color: #e0dddd;
 
   /* Backgrounds */
   --background-color: #ffffff;
@@ -90,6 +91,7 @@ html {
 
   --font-color: #ffffff;
   --font-secondary-color: #ced4da;
+  --font-tertiary-color: #616161;
 
   --background-color: #121212;
   --background-secondary: #1e1e1e;

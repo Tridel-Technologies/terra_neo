@@ -1314,6 +1314,90 @@ export class ImporterComponent {
 
     return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
   }
+  isMultiDelete: boolean = false;
+  selectedRowsforDelete: number[] = [];
+
+  addDeleteRows(event: any, index: number) {
+    if (event.target.checked) {
+      // add only if not already added
+      if (!this.selectedRowsforDelete.includes(index)) {
+        this.selectedRowsforDelete.push(index);
+      }
+    } else {
+      // remove when unchecked
+      this.selectedRowsforDelete = this.selectedRowsforDelete.filter(
+        (i) => i !== index
+      );
+    }
+  }
+  deleteMulti() {
+    const confirmed = confirm(
+      'Are you sure you want to delete the selected rows?'
+    );
+    if (!confirmed) return;
+
+    // 1. Build the filtered view once (rows shown in the UI)
+    const filtered = this.historyData.filter(
+      (item: any) => item.fileName === this.selected_filelist
+    );
+
+    // 2. Map the selected indexes (relative to filtered) to actual items
+    const itemsToDelete = this.selectedRowsforDelete
+      .map((i) => filtered[i])
+      .filter(Boolean); // remove any undefined if index was stale
+
+    if (itemsToDelete.length === 0) {
+      this.selectedRowsforDelete = [];
+      return;
+    }
+
+    // 3. Map each item to its index in the original historyData
+    const originalIndexes = itemsToDelete
+      .map((item) =>
+        this.historyData.findIndex(
+          (h: any) =>
+            h.fileName === item.fileName &&
+            JSON.stringify(h) === JSON.stringify(item)
+        )
+      )
+      .filter((idx) => idx > -1); // only keep found ones
+
+    // 4. Remove duplicates and sort DESC so splices don't shift remaining targets
+    const uniqueDesc = Array.from(new Set(originalIndexes)).sort(
+      (a, b) => b - a
+    );
+
+    // 5. Delete from historyData using original indexes (safe)
+    for (const idx of uniqueDesc) {
+      this.historyData.splice(idx, 1);
+    }
+
+    // 6. Also remove these items from fileWiseUploadData[fileKey] (if present)
+    const fileKey = this.selected_filelist?.toString();
+    if (
+      fileKey &&
+      this.fileWiseUploadData[fileKey] &&
+      Array.isArray(this.fileWiseUploadData[fileKey])
+    ) {
+      this.fileWiseUploadData[fileKey] = this.fileWiseUploadData[
+        fileKey
+      ].filter(
+        (fItem: any) =>
+          !itemsToDelete.some(
+            (t) => JSON.stringify(t) === JSON.stringify(fItem)
+          )
+      );
+    }
+
+    // 7. Refresh filtered view shown to user
+    this.filterhistorydata = this.historyData.filter(
+      (item: any) => item.fileName === this.selected_filelist
+    );
+
+    // 8. Clear selection
+    this.selectedRowsforDelete = [];
+    this.toast.success('Rows deleted successfully', 'Success');
+  }
 
   deleteRow(index: number) {
     // Get all items related to selected file
@@ -1356,6 +1440,7 @@ export class ImporterComponent {
         (item: any) => item.fileName === this.selected_filelist
       );
     }
+    this.toast.success('Row deleted successfully', 'Success');
   }
 
   convertToTimeFormat(value: number): string {

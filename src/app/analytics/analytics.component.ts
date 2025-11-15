@@ -1088,25 +1088,52 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     endValue: number
   ) {
     const option = chart.getOption() as EChartsOption;
-    // Calculate time difference in days
+
     const startDate = new Date(startValue);
     const endDate = new Date(endValue);
     const diffTime = Math.abs(endDate.getTime() - startDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    // Set x-axis label based on time range
     let xAxisLabel = 'Hour';
+    let formatter: any = null;
+
     if (diffDays <= 1) {
       xAxisLabel = 'Hour';
+      formatter = (value: number) => {
+        const d = new Date(value);
+        const day = d.getDate().toString().padStart(2, '0');
+        return `${d.toLocaleString('en-US', {
+          month: 'short',
+        })} ${day} ${d.getHours()}:00`;
+      };
     } else if (diffDays <= 31) {
       xAxisLabel = 'Day';
+      formatter = (value: number) => {
+        const d = new Date(value);
+        const day = d.getDate().toString().padStart(2, '0');
+        const month = d.toLocaleString('en-US', { month: 'short' }); // e.g., Nov
+        return `${day} ${month}`; // 👉 shows "05 Nov"
+      };
     } else if (diffDays <= 365) {
       xAxisLabel = 'Month';
+      formatter = (value: number) => {
+        const d = new Date(value);
+        return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+      };
     } else {
       xAxisLabel = 'Year';
+      formatter = (value: number) => new Date(value).getFullYear().toString();
     }
 
+    // Apply Name
     (option.xAxis as any[])[0].name = xAxisLabel;
+
+    // Apply Formatter
+    (option.xAxis as any[])[0].axisLabel = {
+      ...((option.xAxis as any[])[0].axisLabel || {}),
+      formatter,
+    };
+
     chart.setOption(option);
   }
 
@@ -1119,7 +1146,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
     const subText = computedStyle
-      .getPropertyValue('--font-secondary-color')
+      .getPropertyValue('--font-tertiary-color')
       .trim();
     // const text = computedStyle.getPropertyValue('--circuit-color-pulse').trim();
 
@@ -1297,12 +1324,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 90,
+            start: 80,
             end: 100,
           },
           {
             type: 'inside',
-            start: 90,
+            start: 80,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1401,7 +1428,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
     const subText = computedStyle
-      .getPropertyValue('--font-secondary-color')
+      .getPropertyValue('--font-tertiary-color')
       .trim();
 
     if (speed) {
@@ -1567,12 +1594,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98, // You can adjust to define how much of the chart is visible initially
+            start: 80, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 98,
+            start: 80,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1641,7 +1668,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
     const subText = computedStyle
-      .getPropertyValue('--font-secondary-color')
+      .getPropertyValue('--font-tertiary-color')
       .trim();
 
     if (direction) {
@@ -1811,12 +1838,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98, // You can adjust to define how much of the chart is visible initially
+            start: 80, // You can adjust to define how much of the chart is visible initially
             end: 100, // Set the percentage of the range initially visible
           },
           {
             type: 'inside',
-            start: 98,
+            start: 80,
             end: 100, // Can be modified based on your dataset's initial view preference
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -1919,7 +1946,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
     const subText = computedStyle
-      .getPropertyValue('--font-secondary-color')
+      .getPropertyValue('--font-tertiary-color')
       .trim();
 
     if (chartContainer) {
@@ -2056,12 +2083,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98,
+            start: 80,
             end: 100,
           },
           {
             type: 'inside',
-            start: 98,
+            start: 80,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
@@ -2217,7 +2244,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const bgColor = computedStyle.getPropertyValue('--background-color').trim();
     const mainText = computedStyle.getPropertyValue('--text-color').trim();
     const subText = computedStyle
-      .getPropertyValue('--font-secondary-color')
+      .getPropertyValue('--font-tertiary-color')
       .trim();
 
     if (mid) {
@@ -2449,12 +2476,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
             type: 'slider',
             bottom: 20,
             height: 15,
-            start: 98,
+            start: 80,
             end: 100,
           },
           {
             type: 'inside',
-            start: 98,
+            start: 80,
             end: 100,
             zoomOnMouseWheel: true,
             moveOnMouseMove: true,
