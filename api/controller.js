@@ -718,7 +718,8 @@ const getFoldersWithFiles = async (req, res) => {
     // 2️⃣ Prepare an array of promises to fetch min/max dates in parallel
     const dateQueries = result.rows.map(async (row) => {
       const folderId = row.folder_id;
-      const tableName = `tb_${folderId}`; // dynamic table name
+      const fileId = row.file_id;
+      const tableName = `tb_${fileId}`; // dynamic table name
 
       let minDate = null;
       let maxDate = null;
@@ -731,7 +732,7 @@ const getFoldersWithFiles = async (req, res) => {
           FROM ${tableName}
           WHERE file_id = $1
         `;
-        const dateRes = await pool.query(dateQuery, [row.file_id]);
+        const dateRes = await pool.query(dateQuery, [fileId]);
         if (dateRes.rows.length > 0) {
           minDate = dateRes.rows[0].min_date;
           maxDate = dateRes.rows[0].max_date;
