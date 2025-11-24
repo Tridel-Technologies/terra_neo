@@ -1,4 +1,10 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import {
+  Component,
+  OnInit,
+  OnDestroy,
+  OnChanges,
+  SimpleChanges,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TableModule } from 'primeng/table';
 import { ButtonModule } from 'primeng/button';
@@ -20,6 +26,7 @@ import { GlobalConfig } from '../global/app.global';
 import { UnitSettings } from '../settings/unit.service';
 import { formatDate } from '@angular/common';
 import { BaseComponent } from '../base/base.component';
+import { Input } from '@angular/core';
 
 interface Column {
   field: string;
@@ -119,7 +126,8 @@ export interface HighWaterTime {
   styleUrl: './reports.component.css',
   providers: [Toast],
 })
-export class ReportsComponent implements OnInit {
+export class ReportsComponent implements OnInit, OnChanges {
+  @Input() timezone!: string;
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
@@ -175,6 +183,12 @@ export class ReportsComponent implements OnInit {
   }
 
   unitssTo!: UnitSettings;
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['timezone']) {
+      this.timezone = changes['timezone'].currentValue;
+    }
+  }
 
   ngOnInit(): void {
     this.files_list = [];
@@ -511,7 +525,12 @@ export class ReportsComponent implements OnInit {
 
               if (row.date) {
                 const date = new Date(row.date);
-                row.date = formatDate(date, this.dateFormat, 'en-US');
+                row.date = formatDate(
+                  date,
+                  this.dateFormat,
+                  'en-US',
+                  this.timezone
+                );
               }
 
               // Decimal conversion

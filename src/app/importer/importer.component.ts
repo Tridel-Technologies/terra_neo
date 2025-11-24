@@ -1,6 +1,6 @@
 import { CommonModule, DatePipe } from '@angular/common';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
-import { Component } from '@angular/core';
+import { Component, Input, OnChanges, SimpleChanges } from '@angular/core';
 import * as XLSX from 'xlsx';
 import { GlobalConfig } from '../global/app.global';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +28,11 @@ interface fileData {
   styleUrl: './importer.component.css',
   providers: [DatePipe, GlobalConfig],
 })
-export class ImporterComponent {
+export class ImporterComponent implements OnChanges {
+  Number(arg0: any) {
+    throw new Error('Method not implemented.');
+  }
+  @Input() timezone!: string;
   showImport: boolean = false;
   errorMessage: string = '';
   maxFileSizeMB = 5;
@@ -175,6 +179,11 @@ export class ImporterComponent {
     { name: 'Direction Bin20', unit: '' },
   ];
 
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['timezone']) {
+      this.timezone = changes['timezone'].currentValue;
+    }
+  }
   active_headers = this.main_table_headers_spc;
 
   // Upload table headers (used in import popup)
@@ -287,6 +296,34 @@ export class ImporterComponent {
     this.showCoordinates = !this.showCoordinates;
   }
 
+  private adjustHighWaterLevel(highWaterLevel: any): any {
+    if (!highWaterLevel) return highWaterLevel;
+
+    try {
+      // If it's a Date object
+      if (highWaterLevel instanceof Date) {
+        return new Date(highWaterLevel.getTime() - 5.5 * 60 * 60 * 1000);
+      }
+      // If it's a string that can be parsed as Date
+      else if (typeof highWaterLevel === 'string') {
+        const date = new Date(highWaterLevel);
+        if (!isNaN(date.getTime())) {
+          return new Date(date.getTime() - 5.5 * 60 * 60 * 1000).toISOString();
+        }
+      }
+      // If it's a timestamp number
+      else if (typeof highWaterLevel === 'number') {
+        return highWaterLevel - 5.5 * 60 * 60 * 1000;
+      }
+
+      // Return original if we can't parse it
+      return highWaterLevel;
+    } catch (error) {
+      console.error('Error adjusting high water level timestamp:', error);
+      return highWaterLevel;
+    }
+  }
+
   update_Values() {
     if (this.latlongType === 'dd') {
       if (this.latitude === null && this.lon === null) {
@@ -314,7 +351,6 @@ export class ImporterComponent {
     for (let index = 0; index < this.selectedFiles.length; index++) {
       files.push(this.selectedFiles[index]);
     }
-    // file_name, lat, lon, high_water_level
 
     let data = {};
     if (this.latlongType === 'dd') {
@@ -322,7 +358,7 @@ export class ImporterComponent {
         file_name: files,
         lat: this.latitude,
         lon: this.lon,
-        high_water_level: this.high_water_level,
+        high_water_level: new Date(this.high_water_level).toISOString(),
         unit: this.latlongType,
       };
     } else {
@@ -332,7 +368,7 @@ export class ImporterComponent {
         file_name: files,
         lat: lat,
         lon: lon,
-        high_water_level: this.high_water_level,
+        high_water_level: new Date(this.high_water_level).toISOString(),
         unit: this.latlongType,
       };
     }
@@ -560,6 +596,11 @@ export class ImporterComponent {
               (item) => item.high_water_level === 1
             );
             this.high_water_level = high[0].date;
+            if (this.high_water_level) {
+              this.selectedRowIndex = this.main_table.findIndex(
+                (item) => item.date === this.high_water_level
+              );
+            }
 
             // Set units to header
             this.active_headers.forEach((header) => {
@@ -957,6 +998,19 @@ export class ImporterComponent {
             : this.main_table_headers_spc;
       }
 
+      // Remove rows with NaN numeric values only for SPC uploads
+      const usingSpc =
+        this.upload_active_headers === this.main_table_headers_spc;
+      if (usingSpc) {
+        this.filterhistorydata = this.filterhistorydata.filter((row: any) => {
+          const keys = ['speed', 'direction', 'depth', 'battery', 'pressure'];
+          return keys.every(
+            (k) =>
+              row[k] !== null && row[k] !== undefined && !Number.isNaN(row[k])
+          );
+        });
+      }
+
       // ✅ No data found for the file
       if (!this.filterhistorydata.length) {
         console.warn(`No data found for file: ${file_Name}`);
@@ -1181,15 +1235,32 @@ export class ImporterComponent {
               const date = this.convertToDateFormat(cleanedRow['Date']);
               const dateTime = `${date}T${time}Z`;
 
+              const speed = parseFloat(cleanedRow['speedms']);
+              const direction = parseFloat(cleanedRow['direction']);
+              const depth = parseFloat(
+                cleanedRow['bin_depth'] + cleanedRow['pressure_in_bar']
+              );
+              const battery = parseFloat(cleanedRow['battery']);
+              const pressure = parseFloat(cleanedRow['pressure_in_bar']);
+
+              // Skip if any numeric field is NaN
+              if (
+                [speed, direction, depth, battery, pressure].some((n) =>
+                  Number.isNaN(n)
+                )
+              ) {
+                return null;
+              }
+
               return {
                 fileName: file.name,
                 station_id: cleanedRow['STRING'],
                 date: dateTime,
-                speed: parseFloat(cleanedRow['speedms']),
-                direction: parseFloat(cleanedRow['direction']),
-                depth: parseFloat(cleanedRow['bin_depth']),
-                battery: parseFloat(cleanedRow['battery']),
-                pressure: parseFloat(cleanedRow['pressure_in_bar']),
+                speed,
+                direction,
+                depth,
+                battery,
+                pressure,
                 lat: '',
                 lon: '',
                 high_water_level: 0,
@@ -1269,7 +1340,7 @@ export class ImporterComponent {
   convertcoored(value: any, fromUnit: string, toUnit: string): any {
     if (fromUnit === toUnit) return value;
 
-    const maxVolt = 12.4; // for battery conversion
+    const maxVolt = 32; // for battery conversion
 
     const conversions: { [key: string]: (v: any) => any } = {
       'm-ft': (v) => v * 3.28084,
@@ -1400,6 +1471,8 @@ export class ImporterComponent {
   }
 
   deleteRow(index: number) {
+    const confirmed = confirm('Are you sure you want to delete this row?');
+    if (!confirmed) return;
     // Get all items related to selected file
     const filtered = this.historyData.filter(
       (item: any) => item.fileName === this.selected_filelist

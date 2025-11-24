@@ -276,7 +276,9 @@
             <h4 *ngIf="!isMulti">Select High Water Time</h4>
             <input
               type="text"
-              [(ngModel)]="high_water_level"
+              [value]="
+                high_water_level | date : 'dd-MM-yyyy HH:mm:ss' : timezone
+              "
               *ngIf="!isMulti"
               readonly
             />
@@ -314,10 +316,10 @@
                 [attr.id]="'row-' + i"
               >
                 <td>{{ row.station_id }}</td>
-                <td>{{ row.date | date : this.dateFormat }}</td>
+                <td>{{ row.date | date : this.dateFormat : timezone }}</td>
                 <td>{{ row.speed }}</td>
                 <td>{{ row.direction }}</td>
-                <td>{{ row.depth }}</td>
+                <td>{{ row.depth | number : "1.4-4" }}</td>
                 <td>{{ row.pressure }}</td>
                 <td>{{ row.battery }}</td>
               </tr>
@@ -362,11 +364,11 @@
               [attr.id]="'row-' + i"
             >
               <td>{{ row.station_id }}</td>
-              <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" }}</td>
+              <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" : timezone }}</td>
               <!-- <td>{{ row.Time }}</td> -->
               <td>{{ row.speed }}</td>
               <td>{{ row.direction }}</td>
-              <td>{{ row.depth }}</td>
+              <td>{{ row.depth.toFixed(4) }}</td>
               <td>{{ row.pressure }}</td>
               <td>{{ row.battery }}</td>
               <td>

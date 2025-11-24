@@ -69,6 +69,7 @@ export interface HighWaterTime {
   providers: [GlobalConfig],
 })
 export class DashboardComponent implements OnInit {
+  @Input() timezone!: string;
   @Input() dir: boolean = false;
   expandedFolders: boolean[] = [];
   opened_file!: string;
@@ -667,7 +668,7 @@ export class DashboardComponent implements OnInit {
     isLatitude = false,
     isLongitude = false
   ): any {
-    const maxVolt = 12.4;
+    const maxVolt = 32;
 
     const conversions: { [key: string]: (v: any) => any } = {
       'm-ft': (v) => v * 3.28084,

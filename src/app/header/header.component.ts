@@ -5,10 +5,12 @@ import { BaseComponent } from '../base/base.component';
 import { Router } from '@angular/router';
 import { ThemeService } from '../theme_service/theme.service';
 import { TooltipModule } from 'primeng/tooltip';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-header',
-  imports: [CommonModule, TooltipModule],
+  imports: [CommonModule, TooltipModule, ToggleSwitchModule, FormsModule],
   standalone: true,
   // styleUrls: ['./header.component.css'],
   // templateUrl: './header.component.html',
@@ -16,7 +18,9 @@ import { TooltipModule } from 'primeng/tooltip';
   styleUrl: './header.component.css',
 })
 export class HeaderComponent implements OnInit {
+  // @Input() timezone!: string;
   @Input() index!: number;
+  checked: boolean = true;
   theme: string = 'light';
   private themeSource = new BehaviorSubject<string>('dark');
   currentTheme$ = this.themeSource.asObservable();
@@ -65,5 +69,10 @@ export class HeaderComponent implements OnInit {
     localStorage.removeItem('loginTime');
     localStorage.removeItem('user');
     this.router.navigate(['/login']);
+  }
+
+  onToggleChange() {
+    this.base.timezone = this.checked ? 'UTC' : 'IST';
+    console.log(this.checked, this.base.timezone);
   }
 }

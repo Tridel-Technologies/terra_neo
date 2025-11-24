@@ -8,12 +8,16 @@
   <h5>Processed Data</h5>
 
   <!-- FOLDER VIEW -->
-  <div class="files_cont" *ngIf="openedFile2.length === 0">
+  <div
+    class="files_cont"
+    *ngIf="openedFile2.length === 0"
+    (contextmenu)="onContainerRightClick($event)"
+  >
     <ng-container *ngFor="let folder of processedFiles">
       <div
         class="Folder"
         (click)="Foldertaped2(folder.files, folder)"
-        *ngIf="folder.files && folder.files.length > 0"
+        *ngIf="folder.files"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -57,13 +61,13 @@
     <div
       class="Folder"
       *ngFor="let file of openedFile2"
-      (contextmenu)="onFileRightClick($event, file)"
       (click)="setUnits(file)"
     >
       <img [src]="getFileClass(file.file_name)" alt="" />
       <p>{{ file.file_name }}</p>
     </div>
   </div>
+  <!-- (contextmenu)="onFileRightClick($event, file)" -->
 
   <!-- CONTEXT MENU -->
   <div
@@ -105,7 +109,11 @@
 
   <h5>Raw Data</h5>
   <!-- FOLDER VIEW -->
-  <div class="files_cont" *ngIf="openedFile.length === 0">
+  <div
+    class="files_cont"
+    *ngIf="openedFile.length === 0"
+    (contextmenu)="onContainerRightClick($event)"
+  >
     <ng-container *ngFor="let folder of non_processed">
       <div
         class="Folder"

@@ -364,7 +364,10 @@
             "
             [attr.data-id]="item.id"
           >
-            <td>{{ item.date | date:`${this.dateFormat}`:'en-US' }}</td>
+            <td>
+              {{ item.date | date : dateFormat : timezone : "en-US" }}
+            </td>
+
             <td>
               <input
                 type="text"

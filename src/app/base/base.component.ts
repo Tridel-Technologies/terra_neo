@@ -40,7 +40,7 @@ export class BaseComponent {
   licenseExpired: boolean = false;
   remainingDays: number = 0;
   baseUrl: string;
-
+  timezone: string = 'UTC';
   constructor(private http: HttpClient, private router: Router) {
     this.baseUrl = new GlobalConfig().baseUrl;
   }

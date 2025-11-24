@@ -31,6 +31,7 @@ import { CascadeSelectModule } from 'primeng/cascadeselect';
 import { ThemeService } from '../theme_service/theme.service';
 import { UnitSettings } from '../settings/unit.service';
 import { GlobalConfig } from '../global/app.global';
+import { Input } from '@angular/core';
 
 interface Files {
   id: number;
@@ -123,6 +124,7 @@ interface fileData {
   ],
 })
 export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
+  @Input() timezone!: string;
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
@@ -1101,28 +1103,34 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
       xAxisLabel = 'Hour';
       formatter = (value: number) => {
         const d = new Date(value);
-        const day = d.getDate().toString().padStart(2, '0');
-        return `${d.toLocaleString('en-US', {
-          month: 'short',
-        })} ${day} ${d.getHours()}:00`;
+        // Use formatDate with timezone
+        const formatted = formatDate(d, 'MMM dd HH:00', 'en-US', this.timezone);
+        return formatted;
       };
     } else if (diffDays <= 31) {
       xAxisLabel = 'Day';
       formatter = (value: number) => {
         const d = new Date(value);
-        const day = d.getDate().toString().padStart(2, '0');
-        const month = d.toLocaleString('en-US', { month: 'short' }); // e.g., Nov
-        return `${day} ${month}`; // 👉 shows "05 Nov"
+        // Use formatDate with timezone
+        const formatted = formatDate(d, 'dd MMM', 'en-US', this.timezone);
+        return formatted;
       };
     } else if (diffDays <= 365) {
       xAxisLabel = 'Month';
       formatter = (value: number) => {
         const d = new Date(value);
-        return d.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+        // Use formatDate with timezone
+        const formatted = formatDate(d, 'MMM yyyy', 'en-US', this.timezone);
+        return formatted;
       };
     } else {
       xAxisLabel = 'Year';
-      formatter = (value: number) => new Date(value).getFullYear().toString();
+      formatter = (value: number) => {
+        const d = new Date(value);
+        // Use formatDate with timezone
+        const formatted = formatDate(d, 'yyyy', 'en-US', this.timezone);
+        return formatted;
+      };
     }
 
     // Apply Name
@@ -1198,7 +1206,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
               const date = params[0].data[0];
               let formattedDate = date;
               try {
-                formattedDate = formatDate(date, this.dateFormat, 'en-US');
+                formattedDate = formatDate(
+                  date,
+                  this.dateFormat,
+                  'en-US',
+                  this.timezone
+                );
               } catch (e) {
                 // fallback to original date string
               }
@@ -1458,7 +1471,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                 formattedDate = formatDate(
                   new Date(date),
                   this.dateFormat,
-                  'en-US'
+                  'en-US',
+                  this.timezone
                 );
               } catch (e) {
                 // fallback to original date string
@@ -1698,7 +1712,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                 formattedDate = formatDate(
                   new Date(date),
                   this.dateFormat,
-                  'en-US'
+                  'en-US',
+                  this.timezone
                 );
               } catch (e) {
                 // fallback to original date string
@@ -1989,7 +2004,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                 formattedDate = formatDate(
                   new Date(date),
                   this.dateFormat,
-                  'en-US'
+                  'en-US',
+                  this.timezone
                 );
               } catch (e) {
                 // fallback to original date string
@@ -2277,7 +2293,8 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
                 formattedDate = formatDate(
                   new Date(date),
                   this.dateFormat,
-                  'en-US'
+                  'en-US',
+                  this.timezone
                 );
               } catch (e) {
                 // fallback to original date string
@@ -2735,7 +2752,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           {
             type: 'text',
             right: '2.5%',
-            top: '0%',
+            top: '6%',
             style: {
               text: `(${speedLabelUnit})`,
               fill: mainText,
@@ -2751,7 +2768,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
           {
             type: 'text',
             right: '5%',
-            top: '0%',
+            top: '8%',
             style: {
               text: `(${speedLabelUnit})`,
               fill: mainText,
@@ -2886,7 +2903,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         show: true,
         data: speedCategories,
         orient: 'vertical',
-        top: '3%',
+        top: '10%',
         right: '0%',
         textStyle: {
           color: mainText,
@@ -2909,6 +2926,25 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
         axisLabel: {
           color: mainText,
           formatter: '{value}',
+        },
+      },
+      toolbox: {
+        feature: {
+          // dataZoom: {
+          //   yAxisIndex: 'none',
+          //   title: {
+          //     zoom: 'Zoom',
+          //     back: 'Reset Zoom',
+          //   },
+          // },
+
+          saveAsImage: {
+            backgroundColor: bgColor,
+            pixelRatio: 2,
+          },
+        },
+        iconStyle: {
+          borderColor: mainText,
         },
       },
       tooltip: {
@@ -2949,6 +2985,12 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  private toTimezoneDate(dateStr: string): Date {
+    const date = new Date(dateStr);
+    // The timezone handling is now managed by formatDate with the timezone parameter
+    return date;
+  }
+
   private groupByIntervalWithinDateRange(
     data: ApiData[],
     startDate: string,
@@ -2961,7 +3003,7 @@ export class AnalyticsComponent implements OnInit, AfterViewInit, OnDestroy {
     const dateEnd = new Date(endDate);
 
     data.forEach((entry) => {
-      const localTime = this.toIST(entry.date);
+      const localTime = this.toTimezoneDate(entry.date);
 
       if (localTime >= dateStart && localTime <= dateEnd) {
         const roundedTime = new Date(

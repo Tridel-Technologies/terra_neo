@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { UnitService } from './unit.service';
 import { HttpClient, HttpClientModule } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -47,6 +47,7 @@ interface fileData {
   styleUrl: './settings.component.css',
 })
 export class SettingsComponent {
+  @Input() timezone!: string;
   expandedFolders: boolean[] = [];
   opened_file!: string;
   openedFolder!: number;
@@ -507,9 +508,9 @@ export class SettingsComponent {
   init() {
     this.files_list = [];
     setTimeout(() => {
-      this.http.get(`${this.baseUrl}files`).subscribe((response: any) => {
+      this.http.get(`${this.baseUrl}allFiles`).subscribe((response: any) => {
         this.files_list = response['data'];
-
+        console.log(this.files_list);
         this.non_processed = [];
         this.processedFiles = [];
 
@@ -520,7 +521,20 @@ export class SettingsComponent {
           const processedFiles = folder.files.filter(
             (file) => file.is_processed
           );
+          const emptyFolders = folder.files.length === 0;
 
+          console.log('Empty:', emptyFolders);
+
+          // If folder is empty → push directly
+          if (emptyFolders) {
+            this.non_processed.push({
+              ...folder,
+              files: [], // keep empty array
+            });
+            return; // skip rest
+          }
+
+          // If non-processed files exist
           if (nonProcessedFiles.length > 0) {
             this.non_processed.push({
               ...folder,
@@ -528,6 +542,7 @@ export class SettingsComponent {
             });
           }
 
+          // If processed files exist
           if (processedFiles.length > 0) {
             this.processedFiles.push({
               ...folder,
@@ -545,11 +560,14 @@ export class SettingsComponent {
   selectedFolder2!: Folders;
   selectedFile: fileData[] = [];
   openSelectedFile() {
-    let selectedFileID = 0;
-    if (this.basee.fileId) {
-      selectedFileID = this.basee.fileId; // or globee.fileID if dynamic
-    } else {
-      selectedFileID = this.files_list[0].files[0].file_id;
+    let selectedFileID = this.basee.fileId;
+
+    if (!selectedFileID) {
+      const fileObj = this.files_list
+        .flatMap((g: any) => g.files)
+        .find((f: any) => f.file_id);
+
+      selectedFileID = fileObj?.file_id || null;
     }
 
     // Find the folder containing the file
