@@ -29,13 +29,10 @@ interface fileData {
   providers: [DatePipe, GlobalConfig],
 })
 export class ImporterComponent implements OnChanges {
-  Number(arg0: any) {
-    throw new Error('Method not implemented.');
-  }
   @Input() timezone!: string;
   showImport: boolean = false;
   errorMessage: string = '';
-  maxFileSizeMB = 5;
+  maxFileSizeMB = 25;
   tableData: any[] = [];
   displayedColumns: string[] = [];
   historyData: any = [];
@@ -65,6 +62,7 @@ export class ImporterComponent implements OnChanges {
   latSec!: number | null;
   row_isempty: boolean = false;
   dateFormat!: string;
+  Math = Math;
 
   latlongType: 'dd' | 'dms' = 'dd';
 
@@ -178,6 +176,31 @@ export class ImporterComponent implements OnChanges {
     { name: 'Speed Bin20', unit: '' },
     { name: 'Direction Bin20', unit: '' },
   ];
+
+  buildAwacHeaders(binCount: number) {
+    const headers: any[] = [
+      { name: 'Date', unit: '' },
+      { name: 'Battery', unit: '' },
+      { name: 'Water Level', unit: '' },
+      { name: 'Pitch', unit: '' },
+      { name: 'Roll', unit: '' },
+      { name: 'Heading', unit: '' },
+    ];
+
+    for (let i = 1; i <= binCount; i++) {
+      headers.push({
+        name: `Speed Bin${i}`,
+        unit: '',
+      });
+
+      headers.push({
+        name: `Direction Bin${i}`,
+        unit: '',
+      });
+    }
+
+    return headers;
+  }
 
   ngOnChanges(changes: SimpleChanges): void {
     if (changes['timezone']) {
@@ -404,7 +427,7 @@ export class ImporterComponent implements OnChanges {
     private toast: ToastrService,
     private datePipe: DatePipe,
     private globe: BaseComponent,
-    private unitService: UnitService
+    private unitService: UnitService,
   ) {
     this.baseUrl = new GlobalConfig().baseUrl;
     this.convertValues = new GlobalConfig().convertValue;
@@ -518,7 +541,7 @@ export class ImporterComponent implements OnChanges {
                   this.latitude = this.ddtoDms(
                     latDms1,
                     coord_unit,
-                    coord_unit_to
+                    coord_unit_to,
                   );
                   this.lon = this.ddtoDms(lonDms1, coord_unit, coord_unit_to);
                 } else {
@@ -575,7 +598,7 @@ export class ImporterComponent implements OnChanges {
             // Scroll to that row
             setTimeout(() => {
               const rowElement = document.getElementById(
-                `row-${this.selectedRowIndex}`
+                `row-${this.selectedRowIndex}`,
               );
               if (rowElement) {
                 rowElement.scrollIntoView({
@@ -584,21 +607,13 @@ export class ImporterComponent implements OnChanges {
                 });
               }
             }, 100);
-            const date = new Date(
-              maxPressureRow.date || maxPressureRow.datetime
-            );
-            const formattedDate = this.datePipe.transform(
-              date,
-              'yyyy-MM-dd HH:mm:ss'
-            );
-
             const high = this.main_table.filter(
-              (item) => item.high_water_level === 1
+              (item) => item.high_water_level === 1,
             );
-            this.high_water_level = high[0].date;
+            this.high_water_level = high[0]?.date || high[0]?.datetime || '';
             if (this.high_water_level) {
               this.selectedRowIndex = this.main_table.findIndex(
-                (item) => item.date === this.high_water_level
+                (item) => item.date === this.high_water_level,
               );
             }
 
@@ -645,7 +660,7 @@ export class ImporterComponent implements OnChanges {
                   this.latitude = this.ddtoDms(
                     latDms1,
                     coord_unit,
-                    coord_unit_to
+                    coord_unit_to,
                   );
                   this.lon = this.ddtoDms(lonDms1, coord_unit, coord_unit_to);
                 } else {
@@ -696,8 +711,8 @@ export class ImporterComponent implements OnChanges {
       case 'date': {
         const dt = row.date || row.datetime;
         if (!dt) return '';
-        const d = new Date(dt);
-        if (isNaN(d.getTime())) return '';
+        const d = this.parseAnyDate(dt);
+        if (!d) return '';
         return this.datePipe.transform(d, this.dateFormat) ?? '';
       }
 
@@ -737,6 +752,75 @@ export class ImporterComponent implements OnChanges {
         return '';
       }
     }
+  }
+
+  parseAnyDate(value: any): Date | null {
+    if (value === null || value === undefined) return null;
+
+    if (value instanceof Date) {
+      return isNaN(value.getTime()) ? null : value;
+    }
+
+    if (typeof value === 'number') {
+      const str = value.toString();
+      if (str.length === 8) {
+        const y = parseInt(str.substring(0, 4), 10);
+        const m = parseInt(str.substring(4, 6), 10) - 1;
+        const d = parseInt(str.substring(6, 8), 10);
+        const dt = new Date(Date.UTC(y, m, d));
+        return isNaN(dt.getTime()) ? null : dt;
+      }
+      const dt = new Date(value > 1e11 ? value : value * 1000);
+      return isNaN(dt.getTime()) ? null : dt;
+    }
+
+    const str = String(value).trim();
+    if (!str) return null;
+
+    let d = new Date(str);
+    if (!isNaN(d.getTime())) {
+      return d;
+    }
+
+    const ddMMyyyyPattern =
+      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/;
+    const match = str.match(ddMMyyyyPattern);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = parseInt(match[3], 10);
+      const hours = match[4] ? parseInt(match[4], 10) : 0;
+      const minutes = match[5] ? parseInt(match[5], 10) : 0;
+      const seconds = match[6] ? parseInt(match[6], 10) : 0;
+
+      const parsed = new Date(
+        Date.UTC(year, month, day, hours, minutes, seconds),
+      );
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    const yyyyMMddPattern =
+      /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/;
+    const matchYyyy = str.match(yyyyMMddPattern);
+    if (matchYyyy) {
+      const year = parseInt(matchYyyy[1], 10);
+      const month = parseInt(matchYyyy[2], 10) - 1;
+      const day = parseInt(matchYyyy[3], 10);
+      const hours = matchYyyy[4] ? parseInt(matchYyyy[4], 10) : 0;
+      const minutes = matchYyyy[5] ? parseInt(matchYyyy[5], 10) : 0;
+      const seconds = matchYyyy[6] ? parseInt(matchYyyy[6], 10) : 0;
+
+      const parsed = new Date(
+        Date.UTC(year, month, day, hours, minutes, seconds),
+      );
+      if (!isNaN(parsed.getTime())) {
+        return parsed;
+      }
+    }
+
+    return null;
   }
 
   toggleFolder(index: number, folder_id: number) {
@@ -820,7 +904,7 @@ export class ImporterComponent implements OnChanges {
   getFileClass(fileName: string, file_id: number): string {
     // Check if file is selected based on both file_name and file_id
     const isSelected = this.selectedFiles.some(
-      (file) => file.file_name === fileName && file.file_id === file_id
+      (file) => file.file_name === fileName && file.file_id === file_id,
     );
     return isSelected ? 'file-item_active' : 'file-item';
     // }
@@ -848,7 +932,7 @@ export class ImporterComponent implements OnChanges {
     });
 
     const datetimeValue = JSON.parse(
-      localStorage.getItem('unitSettings') ?? '{}'
+      localStorage.getItem('unitSettings') ?? '{}',
     ).datetime;
     if (datetimeValue == '30-03-2025 12:00:00') {
       this.dateFormat = 'dd-MM-Y HH:mm:ss';
@@ -913,7 +997,7 @@ export class ImporterComponent implements OnChanges {
       'Warning',
       {
         timeOut: 3500,
-      }
+      },
     );
 
     for (let i = 0; i < files.length; i++) {
@@ -923,7 +1007,7 @@ export class ImporterComponent implements OnChanges {
       if (file.size > maxSizeBytes) {
         this.toast.error(
           `❌ File "${file.name}" exceeds ${this.maxFileSizeMB}MB`,
-          'Error'
+          'Error',
         );
         continue;
       }
@@ -935,7 +1019,7 @@ export class ImporterComponent implements OnChanges {
         .catch((err) => {
           this.toast.warning(
             `❌ Skipping file "${file.name}" due to error: ${err}`,
-            'Error'
+            'Error',
           );
         });
 
@@ -962,40 +1046,97 @@ export class ImporterComponent implements OnChanges {
   filterhistorydata: any[] = [];
   selected_filelist: String = '';
 
+  // ============================================================
+  // Upload table pagination
+  // ============================================================
+
+  uploadPageSize = 100;
+  uploadCurrentPage = 1;
+
+  get uploadTotalPages(): number {
+    return Math.max(
+      1,
+      Math.ceil(this.filterhistorydata.length / this.uploadPageSize),
+    );
+  }
+
+  get uploadVisibleRows(): any[] {
+    const start = (this.uploadCurrentPage - 1) * this.uploadPageSize;
+
+    return this.filterhistorydata.slice(start, start + this.uploadPageSize);
+  }
+
+  goToUploadPage(page: number): void {
+    if (page < 1 || page > this.uploadTotalPages) {
+      return;
+    }
+
+    this.uploadCurrentPage = page;
+
+    // Scroll the upload table back to the top
+    setTimeout(() => {
+      const table = document.querySelector('.upload-data-table');
+
+      if (table) {
+        table.scrollIntoView({
+          behavior: 'smooth',
+          block: 'start',
+        });
+      }
+    });
+  }
+
+  nextUploadPage(): void {
+    this.goToUploadPage(this.uploadCurrentPage + 1);
+  }
+
+  previousUploadPage(): void {
+    this.goToUploadPage(this.uploadCurrentPage - 1);
+  }
+
   onFileClick(file_Name: string): void {
-    // Guard against undefined file name
     if (!file_Name) {
       console.warn('onFileClick called without a file name');
       return;
     }
+
+    this.uploadCurrentPage = 1;
+
     this.filterhistorydata = [];
     this.selected_filelist = file_Name;
 
     setTimeout(() => {
       this.filterhistorydata = this.historyData.filter(
-        (item: any) => item.fileName === file_Name
+        (item: any) => item.fileName === file_Name,
       );
 
-      // Decide upload table headers based on selected file
       const isNmea = (file_Name || '').toLowerCase().endsWith('.nmea');
+
       const firstUploadRow = this.filterhistorydata[0] || {};
+
       const typeStr = (firstUploadRow.type || '').toString().toLowerCase();
+
+      const binCount = Object.keys(firstUploadRow).reduce((max, key) => {
+        const match = key.match(/^bin_(\d+)_(speed|direction)$/);
+
+        return match ? Math.max(max, Number(match[1])) : max;
+      }, 0);
+
       const hasAwacKeys =
-        this.filterhistorydata.length > 0 &&
-        ('datetime' in firstUploadRow ||
-          'bin_1_speed' in firstUploadRow ||
-          'bin_1_direction' in firstUploadRow ||
-          'speed_bin1' in firstUploadRow ||
-          'direction_bin1' in firstUploadRow);
-      if (typeStr === 'awac') {
-        this.upload_active_headers = this.main_table_headers_awac;
-      } else if (typeStr === 'spc') {
+        binCount > 0 ||
+        'datetime' in firstUploadRow ||
+        'heading' in firstUploadRow ||
+        'pitch' in firstUploadRow ||
+        'roll' in firstUploadRow;
+
+      if (typeStr === 'spc') {
         this.upload_active_headers = this.main_table_headers_spc;
+      } else if (isNmea || hasAwacKeys) {
+        this.upload_active_headers = this.buildAwacHeaders(
+          Math.max(binCount, 1),
+        );
       } else {
-        this.upload_active_headers =
-          isNmea || hasAwacKeys
-            ? this.main_table_headers_awac
-            : this.main_table_headers_spc;
+        this.upload_active_headers = this.main_table_headers_spc;
       }
 
       // Remove rows with NaN numeric values only for SPC uploads
@@ -1006,7 +1147,7 @@ export class ImporterComponent implements OnChanges {
           const keys = ['speed', 'direction', 'depth', 'battery', 'pressure'];
           return keys.every(
             (k) =>
-              row[k] !== null && row[k] !== undefined && !Number.isNaN(row[k])
+              row[k] !== null && row[k] !== undefined && !Number.isNaN(row[k]),
           );
         });
       }
@@ -1023,12 +1164,12 @@ export class ImporterComponent implements OnChanges {
       // ✅ Find row with max pressure
       let maxPressureIndex = 0;
       let maxPressureValue = parseFloat(
-        this.filterhistorydata[0]?.pressure ?? 0
+        this.filterhistorydata[0]?.pressure ?? 0,
       );
 
       for (let i = 1; i < this.filterhistorydata.length; i++) {
         let currentPressure = parseFloat(
-          this.filterhistorydata[i]?.pressure ?? 0
+          this.filterhistorydata[i]?.pressure ?? 0,
         );
         if (currentPressure > maxPressureValue) {
           maxPressureValue = currentPressure;
@@ -1050,7 +1191,7 @@ export class ImporterComponent implements OnChanges {
       // ✅ Scroll to that row
       setTimeout(() => {
         const rowElement = document.getElementById(
-          `row-${this.selectedRowIndex}`
+          `row-${this.selectedRowIndex}`,
         );
         if (rowElement) {
           rowElement.scrollIntoView({
@@ -1060,12 +1201,13 @@ export class ImporterComponent implements OnChanges {
         }
       }, 100);
 
-      const date = new Date(maxPressureRow.date || maxPressureRow.datetime);
-      const formattedDate = this.datePipe.transform(
-        date,
-        'yyyy-MM-dd HH:mm:ss'
-      );
-      this.high_water_level = `${formattedDate}`;
+      const rawDateVal = maxPressureRow.date || maxPressureRow.datetime;
+      if (rawDateVal) {
+        const parsedDate = new Date(rawDateVal);
+        this.high_water_level = !isNaN(parsedDate.getTime()) ? rawDateVal : '';
+      } else {
+        this.high_water_level = '';
+      }
     }, 50);
   }
 
@@ -1134,11 +1276,11 @@ export class ImporterComponent implements OnChanges {
               const rawTime = first?.time || key.split('_')[1];
               const isoDate = `20${rawDate.slice(4, 6)}-${rawDate.slice(
                 0,
-                2
+                2,
               )}-${rawDate.slice(2, 4)}`;
               const isoTime = `${rawTime.slice(0, 2)}:${rawTime.slice(
                 2,
-                4
+                4,
               )}:${rawTime.slice(4, 6)}`;
               const isoTimestamp = `${isoDate}T${isoTime}Z`;
 
@@ -1174,79 +1316,614 @@ export class ImporterComponent implements OnChanges {
         return;
       }
 
-      // ✅ Existing Excel/CSV logic (unchanged)
+      // Excel / CSV / ADCP export
       const reader = new FileReader();
+
       reader.onload = (e) => {
         try {
-          const data = new Uint8Array(reader.result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
-          const sheetName = workbook.SheetNames[0];
+          let rawData: any[][];
 
-          const rawData: any[][] = XLSX.utils.sheet_to_json(
-            workbook.Sheets[sheetName],
-            { header: 1 }
-          );
+          /*
+           * ---------------------------------------------------------
+           * CSV
+           * ---------------------------------------------------------
+           *
+           * Supports:
+           * - comma CSV
+           * - semicolon CSV
+           * - tab separated CSV
+           */
+          if (fileExtension === 'csv') {
+            const text = (e.target?.result as string) || '';
 
-          if (rawData.length === 0) {
+            if (!text.trim()) {
+              return reject(`File "${file.name}" is empty.`);
+            }
+
+            /*
+             * ---------------------------------------------------------
+             * Detect delimiter from first non-empty line
+             * ---------------------------------------------------------
+             */
+            const firstLine =
+              text.split(/\r?\n/).find((line) => line.trim()) || '';
+
+            /*
+             * ---------------------------------------------------------
+             * Detect VRS ADCP BEFORE XLSX parsing
+             *
+             * This is important because VRS files can be large.
+             * ---------------------------------------------------------
+             */
+            const firstHeaders = firstLine
+              .split(';')
+              .map((v) => v.trim().toLowerCase());
+
+            const isVrsAdcpFile =
+              firstHeaders.includes('datetime') &&
+              firstHeaders.includes('battery') &&
+              firstHeaders.includes('heading') &&
+              firstHeaders.includes('pitch') &&
+              firstHeaders.includes('roll') &&
+              firstHeaders.includes('pressure') &&
+              firstHeaders.some((h) => /^speed#\d+\(/.test(h));
+
+            /*
+             * =========================================================
+             * VRS ADCP CSV
+             * =========================================================
+             *
+             * Do NOT use XLSX for this format.
+             */
+            if (isVrsAdcpFile) {
+              const rawLines = text.split(/\r?\n/);
+
+              const headerRow = rawLines[0]
+                .split(';')
+                .map((value) => value.trim());
+
+              const normalizedHeaders = headerRow.map((h) => h.toLowerCase());
+
+              const dateTimeIndex = normalizedHeaders.indexOf('datetime');
+
+              const batteryIndex = normalizedHeaders.indexOf('battery');
+
+              const headingIndex = normalizedHeaders.indexOf('heading');
+
+              const pitchIndex = normalizedHeaders.indexOf('pitch');
+
+              const rollIndex = normalizedHeaders.indexOf('roll');
+
+              const pressureIndex = normalizedHeaders.indexOf('pressure');
+
+              const temperatureIndex = normalizedHeaders.indexOf('temperature');
+
+              /*
+               * Map Speed#N and Dir#N columns.
+               */
+              const speedColumns: {
+                index: number;
+                bin: number;
+              }[] = [];
+
+              const directionColumns: {
+                index: number;
+                bin: number;
+              }[] = [];
+
+              normalizedHeaders.forEach((header, index) => {
+                const speedMatch = header.match(/^speed#(\d+)\(/);
+
+                const directionMatch = header.match(/^dir#(\d+)\(/);
+
+                if (speedMatch) {
+                  speedColumns.push({
+                    index,
+                    bin: Number(speedMatch[1]),
+                  });
+                }
+
+                if (directionMatch) {
+                  directionColumns.push({
+                    index,
+                    bin: Number(directionMatch[1]),
+                  });
+                }
+              });
+
+              const directionByBin = new Map<number, number>();
+
+              directionColumns.forEach(({ bin, index }) => {
+                directionByBin.set(bin, index);
+              });
+
+              const toNumber = (value: any): number | null => {
+                if (value === null || value === undefined) {
+                  return null;
+                }
+
+                const valueStr = String(value).trim();
+
+                if (!valueStr) {
+                  return null;
+                }
+
+                const number = Number(valueStr);
+
+                return Number.isFinite(number) ? number : null;
+              };
+
+              /*
+               * ---------------------------------------------------------
+               * Parse rows directly.
+               *
+               * IMPORTANT:
+               * We do not create an XLSX workbook.
+               * ---------------------------------------------------------
+               */
+              const formattedData: any[] = [];
+
+              for (let rowIndex = 1; rowIndex < rawLines.length; rowIndex++) {
+                const line = rawLines[rowIndex];
+
+                if (!line || !line.trim()) {
+                  continue;
+                }
+
+                const row = line.split(';');
+
+                const rawDateTime = row[dateTimeIndex];
+
+                if (rawDateTime === undefined || !String(rawDateTime).trim()) {
+                  continue;
+                }
+
+                const parsedDt = this.parseAnyDate(rawDateTime);
+                const isoDtStr = parsedDt
+                  ? parsedDt.toISOString()
+                  : String(rawDateTime).trim();
+
+                const combined: any = {
+                  fileName: file.name,
+                  type: 'awac',
+
+                  datetime: isoDtStr,
+
+                  date: isoDtStr,
+
+                  battery: toNumber(row[batteryIndex]),
+
+                  heading: toNumber(row[headingIndex]),
+
+                  pitch: toNumber(row[pitchIndex]),
+
+                  roll: toNumber(row[rollIndex]),
+
+                  pressure: toNumber(row[pressureIndex]),
+
+                  temperature:
+                    temperatureIndex >= 0
+                      ? toNumber(row[temperatureIndex])
+                      : null,
+
+                  high_water_level: 0,
+                };
+
+                /*
+                 * Add all 38 bins.
+                 */
+                for (let i = 0; i < speedColumns.length; i++) {
+                  const { index, bin } = speedColumns[i];
+
+                  const directionIndex = directionByBin.get(bin);
+
+                  combined[`bin_${bin}_speed`] = toNumber(row[index]);
+
+                  combined[`bin_${bin}_direction`] =
+                    directionIndex !== undefined
+                      ? toNumber(row[directionIndex])
+                      : null;
+                }
+
+                formattedData.push(combined);
+                // Ignore rows where all measurement values are empty or 0.00
+                const hasValidValue =
+                  (combined.battery !== null && combined.battery !== 0) ||
+                  (combined.heading !== null && combined.heading !== 0) ||
+                  (combined.pitch !== null && combined.pitch !== 0) ||
+                  (combined.roll !== null && combined.roll !== 0) ||
+                  (combined.pressure !== null && combined.pressure !== 0) ||
+                  (combined.temperature !== null && combined.temperature !== 0);
+
+                // Check velocity bins
+                const hasValidBinValue = speedColumns.some(({ bin }) => {
+                  const speed = combined[`bin_${bin}_speed`];
+
+                  const direction = combined[`bin_${bin}_direction`];
+
+                  return (
+                    (speed !== null && speed !== 0) ||
+                    (direction !== null && direction !== 0)
+                  );
+                });
+
+                if (hasValidValue || hasValidBinValue) {
+                  formattedData.push(combined);
+                }
+              }
+
+              if (!formattedData.length) {
+                return reject(
+                  `No valid ADCP rows found in file "${file.name}".`,
+                );
+              }
+
+              /*
+               * Find high-water row.
+               */
+              let maxPressureIndex = 0;
+              let maxPressureValue = -Infinity;
+
+              for (let i = 0; i < formattedData.length; i++) {
+                const pressure = formattedData[i].pressure;
+
+                if (
+                  pressure !== null &&
+                  Number.isFinite(pressure) &&
+                  pressure > maxPressureValue
+                ) {
+                  maxPressureValue = pressure;
+
+                  maxPressureIndex = i;
+                }
+              }
+
+              if (maxPressureValue !== -Infinity) {
+                formattedData[maxPressureIndex].high_water_level = 1;
+              }
+
+              if (!this.uploaded_files.includes(file.name)) {
+                this.uploaded_files.push(file.name);
+              }
+
+              return resolve({
+                fileName: file.name,
+                data: formattedData,
+              });
+            }
+
+            /*
+             * =========================================================
+             * EXISTING CSV FILES
+             * =========================================================
+             *
+             * Leave the old XLSX parser for your existing CSV formats.
+             */
+            const delimiters = [';', ',', '\t'];
+
+            const delimiter = delimiters.reduce(
+              (best, current) =>
+                firstLine.split(current).length > firstLine.split(best).length
+                  ? current
+                  : best,
+              ',',
+            );
+
+            const workbook = XLSX.read(text, {
+              type: 'string',
+              FS: delimiter,
+              raw: true,
+            });
+
+            const sheetName = workbook.SheetNames[0];
+
+            rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+              header: 1,
+              raw: true,
+              defval: null,
+            }) as any[][];
+          } else {
+            /*
+             * ---------------------------------------------------------
+             * XLS / XLSX
+             * ---------------------------------------------------------
+             */
+            const data = new Uint8Array(e.target?.result as ArrayBuffer);
+
+            const workbook = XLSX.read(data, {
+              type: 'array',
+              raw: true,
+            });
+
+            const sheetName = workbook.SheetNames[0];
+
+            rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], {
+              header: 1,
+              raw: true,
+              defval: null,
+            }) as any[][];
+          }
+
+          if (!rawData.length) {
             return reject(`File "${file.name}" is empty.`);
           }
 
+          /*
+           * ---------------------------------------------------------
+           * Detect header
+           * ---------------------------------------------------------
+           */
+          const headerRow = (rawData[0] || []).map((value: any) =>
+            String(value ?? '').trim(),
+          );
+
+          const normalizedHeaders = headerRow.map((h) => h.toLowerCase());
+
+          /*
+           * ---------------------------------------------------------
+           * Detect Vrs ADCP format
+           * ---------------------------------------------------------
+           */
+          const dateTimeIndex = normalizedHeaders.indexOf('datetime');
+
+          const batteryIndex = normalizedHeaders.indexOf('battery');
+
+          const headingIndex = normalizedHeaders.indexOf('heading');
+
+          const pitchIndex = normalizedHeaders.indexOf('pitch');
+
+          const rollIndex = normalizedHeaders.indexOf('roll');
+
+          const pressureIndex = normalizedHeaders.indexOf('pressure');
+
+          const isVrsAdcp =
+            dateTimeIndex >= 0 &&
+            batteryIndex >= 0 &&
+            headingIndex >= 0 &&
+            pitchIndex >= 0 &&
+            rollIndex >= 0 &&
+            pressureIndex >= 0 &&
+            normalizedHeaders.some((h) => /^speed#\d+\(/.test(h));
+
           this.uploaded_files.push(file.name);
+
+          /*
+           * =========================================================
+           * VRS ADCP FORMAT
+           * =========================================================
+           */
+          if (isVrsAdcp) {
+            const speedColumns: {
+              index: number;
+              bin: number;
+            }[] = [];
+
+            const directionColumns: {
+              index: number;
+              bin: number;
+            }[] = [];
+
+            normalizedHeaders.forEach((header, index) => {
+              const speedMatch = header.match(/^speed#(\d+)\(/);
+
+              const directionMatch = header.match(/^dir#(\d+)\(/);
+
+              if (speedMatch) {
+                speedColumns.push({
+                  index,
+                  bin: Number(speedMatch[1]),
+                });
+              }
+
+              if (directionMatch) {
+                directionColumns.push({
+                  index,
+                  bin: Number(directionMatch[1]),
+                });
+              }
+            });
+
+            const directionByBin = new Map(
+              directionColumns.map((x) => [x.bin, x.index]),
+            );
+
+            const toNumber = (value: any): number | null => {
+              if (
+                value === null ||
+                value === undefined ||
+                String(value).trim() === ''
+              ) {
+                return null;
+              }
+
+              const number = Number(String(value).trim());
+
+              return Number.isFinite(number) ? number : null;
+            };
+
+            const temperatureIndex = normalizedHeaders.indexOf('temperature');
+
+            const formattedData = rawData
+              .slice(1)
+              .map((row: any[]) => {
+                const get = (index: number) => row[index];
+
+                const rawDateTime = get(dateTimeIndex);
+
+                if (
+                  rawDateTime === null ||
+                  rawDateTime === undefined ||
+                  String(rawDateTime).trim() === ''
+                ) {
+                  return null;
+                }
+
+                const combined: any = {
+                  fileName: file.name,
+
+                  // Important: mark it as AWAC/ADCP
+                  type: 'awac',
+
+                  datetime: String(rawDateTime).trim(),
+
+                  date: String(rawDateTime).trim(),
+
+                  pressure: toNumber(get(pressureIndex)),
+
+                  battery: toNumber(get(batteryIndex)),
+
+                  heading: toNumber(get(headingIndex)),
+
+                  pitch: toNumber(get(pitchIndex)),
+
+                  roll: toNumber(get(rollIndex)),
+
+                  temperature:
+                    temperatureIndex >= 0
+                      ? toNumber(get(temperatureIndex))
+                      : null,
+
+                  high_water_level: 0,
+                };
+
+                /*
+                 * Create:
+                 *
+                 * bin_1_speed
+                 * bin_1_direction
+                 * bin_2_speed
+                 * bin_2_direction
+                 *
+                 * ...
+                 */
+                speedColumns.forEach(({ index, bin }) => {
+                  combined[`bin_${bin}_speed`] = toNumber(get(index));
+
+                  const directionIndex = directionByBin.get(bin);
+
+                  combined[`bin_${bin}_direction`] =
+                    directionIndex !== undefined
+                      ? toNumber(get(directionIndex))
+                      : null;
+                });
+
+                return combined;
+              })
+              .filter((row) => row !== null);
+
+            if (!formattedData.length) {
+              return reject(`No valid ADCP rows found in file "${file.name}".`);
+            }
+
+            /*
+             * Existing high-water-level behavior.
+             */
+            const pressureRows = formattedData.filter(
+              (row) => row.pressure !== null,
+            );
+
+            if (pressureRows.length) {
+              const maxRow = pressureRows.reduce(
+                (max, row) => (row.pressure > max.pressure ? row : max),
+                pressureRows[0],
+              );
+
+              maxRow.high_water_level = 1;
+            }
+
+            resolve({
+              fileName: file.name,
+              data: formattedData,
+            });
+
+            return;
+          }
+
+          /*
+           * =========================================================
+           * GENERIC CSV / SPC / AWAC FORMAT
+           * =========================================================
+           */
+          const toNumber = (val: any): number | null => {
+            if (val === null || val === undefined || String(val).trim() === '')
+              return null;
+            const num = Number(String(val).trim());
+            return Number.isFinite(num) ? num : null;
+          };
 
           const formattedData = rawData
             .map((row, index) => {
+              if (!row || !row.length) return null;
+
+              const rawDtVal =
+                row[0] !== null && row[0] !== undefined ? row[0] : row[1];
+              const parsedDate = this.parseAnyDate(rawDtVal);
+
+              // Skip header if first row does not contain a valid date
+              if (index === 0 && !parsedDate) {
+                return null;
+              }
+
+              // Generic multi-column AWAC/ADCP format (e.g. DD/MM/YYYY HH:mm:ss; val1; val2; ...)
+              if (
+                parsedDate &&
+                (row.length > 8 || !normalizedHeaders.includes('speedms'))
+              ) {
+                const isoTimestamp = parsedDate.toISOString();
+                const combined: any = {
+                  fileName: file.name,
+                  type: 'awac',
+                  datetime: isoTimestamp,
+                  date: isoTimestamp,
+                  pressure: null,
+                  battery: null,
+                  heading: null,
+                  pitch: null,
+                  roll: null,
+                  high_water_level: 0,
+                };
+
+                let binIdx = 1;
+                for (let c = 1; c < row.length - 1; c += 2) {
+                  const spd = toNumber(row[c]);
+                  const dir = toNumber(row[c + 1]);
+                  if (spd !== null || dir !== null) {
+                    combined[`bin_${binIdx}_speed`] = spd;
+                    combined[`bin_${binIdx}_direction`] = dir;
+                    binIdx++;
+                  }
+                }
+
+                return combined;
+              }
+
+              // Standard SPC format
               const cleanedRow: any = {};
               this.expectedHeaders.forEach((key, i) => {
                 cleanedRow[key] = row[i];
               });
 
-              // Skip header row if detected
-              if (index === 0 && Object.values(cleanedRow).includes('Date')) {
+              if (index === 0 && normalizedHeaders.includes('date')) {
                 return null;
               }
 
-              // ✅ Skip row if it contains a string in numeric fields
-              const numericFields = [
-                'speedms',
-                'direction',
-                'bin_depth',
-                'battery',
-                'pressure_in_bar',
-              ];
-
-              const hasStringValue = numericFields.some((key) => {
-                const val = cleanedRow[key];
-                if (val === null || val === undefined || val === '')
-                  return false;
-                return typeof val === 'string' && isNaN(Number(val));
-              });
-
-              if (hasStringValue) {
-                console.warn(
-                  `Skipping row ${index + 1} in ${
-                    file.name
-                  } — contains string in numeric field`
-                );
-                return null; // skip this row
-              }
-
-              // Convert time/date
               const time = this.convertToTimeFormat(cleanedRow['Time']);
-              const date = this.convertToDateFormat(cleanedRow['Date']);
-              const dateTime = `${date}T${time}Z`;
+              const dateStr = this.convertToDateFormat(cleanedRow['Date']);
+              const dateTime = parsedDate
+                ? parsedDate.toISOString()
+                : `${dateStr}T${time}Z`;
 
               const speed = parseFloat(cleanedRow['speedms']);
               const direction = parseFloat(cleanedRow['direction']);
               const depth = parseFloat(
-                cleanedRow['bin_depth'] + cleanedRow['pressure_in_bar']
+                cleanedRow['bin_depth'] + cleanedRow['pressure_in_bar'],
               );
               const battery = parseFloat(cleanedRow['battery']);
               const pressure = parseFloat(cleanedRow['pressure_in_bar']);
 
-              // Skip if any numeric field is NaN
               if (
                 [speed, direction, depth, battery, pressure].some((n) =>
-                  Number.isNaN(n)
+                  Number.isNaN(n),
                 )
               ) {
                 return null;
@@ -1256,6 +1933,7 @@ export class ImporterComponent implements OnChanges {
                 fileName: file.name,
                 station_id: cleanedRow['STRING'],
                 date: dateTime,
+                datetime: dateTime,
                 speed,
                 direction,
                 depth,
@@ -1266,35 +1944,39 @@ export class ImporterComponent implements OnChanges {
                 high_water_level: 0,
               };
             })
-            // ✅ Filter out null (skipped) rows
             .filter((row) => row !== null);
 
-          if (formattedData.length === 0) {
+          if (!formattedData.length) {
             return reject(`No valid rows found in file "${file.name}".`);
           }
 
-          // Find max pressure row
           let maxPressureIndex = 0;
-          let maxPressureValue = formattedData[0].pressure;
+          let maxPressureValue = formattedData[0].pressure ?? 0;
 
           for (let i = 1; i < formattedData.length; i++) {
-            const currentPressure = formattedData[i].pressure;
-            if (currentPressure > maxPressureValue) {
-              maxPressureValue = currentPressure;
+            const press = formattedData[i].pressure ?? 0;
+            if (press > maxPressureValue) {
+              maxPressureValue = press;
               maxPressureIndex = i;
             }
           }
 
-          // Mark high water level
           formattedData[maxPressureIndex].high_water_level = 1;
 
-          resolve({ fileName: file.name, data: formattedData });
+          resolve({
+            fileName: file.name,
+            data: formattedData,
+          });
         } catch (err: any) {
-          reject(err.message || `Error processing file: ${file.name}`);
+          reject(err?.message || `Error processing file: ${file.name}`);
         }
       };
 
-      reader.readAsArrayBuffer(file);
+      if (fileExtension === 'csv') {
+        reader.readAsText(file);
+      } else {
+        reader.readAsArrayBuffer(file);
+      }
     });
   }
 
@@ -1302,7 +1984,7 @@ export class ImporterComponent implements OnChanges {
 
   getHighWaterLevel(fileName: string): void {
     const filteredData = this.historyData.filter(
-      (item: any) => item.fileName === fileName
+      (item: any) => item.fileName === fileName,
     );
 
     if (filteredData.length === 0) {
@@ -1397,19 +2079,19 @@ export class ImporterComponent implements OnChanges {
     } else {
       // remove when unchecked
       this.selectedRowsforDelete = this.selectedRowsforDelete.filter(
-        (i) => i !== index
+        (i) => i !== index,
       );
     }
   }
   deleteMulti() {
     const confirmed = confirm(
-      'Are you sure you want to delete the selected rows?'
+      'Are you sure you want to delete the selected rows?',
     );
     if (!confirmed) return;
 
     // 1. Build the filtered view once (rows shown in the UI)
     const filtered = this.historyData.filter(
-      (item: any) => item.fileName === this.selected_filelist
+      (item: any) => item.fileName === this.selected_filelist,
     );
 
     // 2. Map the selected indexes (relative to filtered) to actual items
@@ -1428,14 +2110,14 @@ export class ImporterComponent implements OnChanges {
         this.historyData.findIndex(
           (h: any) =>
             h.fileName === item.fileName &&
-            JSON.stringify(h) === JSON.stringify(item)
-        )
+            JSON.stringify(h) === JSON.stringify(item),
+        ),
       )
       .filter((idx) => idx > -1); // only keep found ones
 
     // 4. Remove duplicates and sort DESC so splices don't shift remaining targets
     const uniqueDesc = Array.from(new Set(originalIndexes)).sort(
-      (a, b) => b - a
+      (a, b) => b - a,
     );
 
     // 5. Delete from historyData using original indexes (safe)
@@ -1455,14 +2137,14 @@ export class ImporterComponent implements OnChanges {
       ].filter(
         (fItem: any) =>
           !itemsToDelete.some(
-            (t) => JSON.stringify(t) === JSON.stringify(fItem)
-          )
+            (t) => JSON.stringify(t) === JSON.stringify(fItem),
+          ),
       );
     }
 
     // 7. Refresh filtered view shown to user
     this.filterhistorydata = this.historyData.filter(
-      (item: any) => item.fileName === this.selected_filelist
+      (item: any) => item.fileName === this.selected_filelist,
     );
 
     // 8. Clear selection
@@ -1475,7 +2157,7 @@ export class ImporterComponent implements OnChanges {
     if (!confirmed) return;
     // Get all items related to selected file
     const filtered = this.historyData.filter(
-      (item: any) => item.fileName === this.selected_filelist
+      (item: any) => item.fileName === this.selected_filelist,
     );
 
     // Get the actual item to delete using the index from filtered list
@@ -1486,7 +2168,7 @@ export class ImporterComponent implements OnChanges {
       const originalIndex = this.historyData.findIndex(
         (item: any) =>
           item.fileName === itemToDelete.fileName &&
-          JSON.stringify(item) === JSON.stringify(itemToDelete)
+          JSON.stringify(item) === JSON.stringify(itemToDelete),
       );
 
       if (originalIndex > -1) {
@@ -1501,7 +2183,7 @@ export class ImporterComponent implements OnChanges {
       ) {
         const fileArray = this.fileWiseUploadData[fileKey];
         const fileArrayIndex = fileArray.findIndex(
-          (item: any) => JSON.stringify(item) === JSON.stringify(itemToDelete)
+          (item: any) => JSON.stringify(item) === JSON.stringify(itemToDelete),
         );
         if (fileArrayIndex > -1) {
           fileArray.splice(fileArrayIndex, 1);
@@ -1510,7 +2192,7 @@ export class ImporterComponent implements OnChanges {
 
       // Now update the filtered list
       this.filterhistorydata = this.historyData.filter(
-        (item: any) => item.fileName === this.selected_filelist
+        (item: any) => item.fileName === this.selected_filelist,
       );
     }
     this.toast.success('Row deleted successfully', 'Success');
@@ -1603,7 +2285,7 @@ export class ImporterComponent implements OnChanges {
               row[field] = this.convertValues(
                 Number(row[field]),
                 this.selectedUnitsFrom[unitKey],
-                this.selectedUnitsTo[unitKey]
+                this.selectedUnitsTo[unitKey],
               );
             }
           }
@@ -1633,7 +2315,72 @@ export class ImporterComponent implements OnChanges {
       },
       (error) => {
         this.isFilesLoading = false;
-      }
+      },
     );
+  }
+
+  getUploadCellValue(row: any, column: any): any {
+    const name = (column?.name || '').toString();
+
+    if (name === 'Date') {
+      const raw = row.datetime ?? row.date ?? '';
+      const parsed = this.parseAnyDate(raw);
+      return parsed ? parsed : raw;
+    }
+
+    if (name === 'Battery') {
+      return row.battery ?? '';
+    }
+
+    if (name === 'Water Level') {
+      return row.pressure ?? '';
+    }
+
+    if (name === 'Pitch') {
+      return row.pitch ?? '';
+    }
+
+    if (name === 'Roll') {
+      return row.roll ?? '';
+    }
+
+    if (name === 'Heading') {
+      return row.heading ?? '';
+    }
+
+    const speedMatch = name.match(/^Speed Bin(\d+)$/);
+
+    if (speedMatch) {
+      return row[`bin_${speedMatch[1]}_speed`] ?? '';
+    }
+
+    const directionMatch = name.match(/^Direction Bin(\d+)$/);
+
+    if (directionMatch) {
+      return row[`bin_${directionMatch[1]}_direction`] ?? '';
+    }
+
+    // Existing SPC format
+    switch (name) {
+      case 'Station':
+        return row.station_id ?? '';
+
+      case 'Speed':
+        return row.speed ?? '';
+
+      case 'Direction':
+        return row.direction ?? '';
+
+      case 'Depth':
+        if (row.depth === null || row.depth === undefined || row.depth === '')
+          return '';
+        return typeof row.depth === 'number' ? row.depth.toFixed(4) : row.depth;
+
+      case 'Water Level':
+        return row.pressure ?? '';
+
+      default:
+        return '';
+    }
   }
 }

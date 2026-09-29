@@ -178,6 +178,62 @@ const updateValues = async (req, res) => {
   }
 };
 
+function formatToPgTimestamp(val) {
+  if (val === null || val === undefined) return null;
+
+  if (val instanceof Date) {
+    return isNaN(val.getTime()) ? null : val.toISOString();
+  }
+
+  const str = String(val).trim();
+  if (!str) return null;
+
+  let d = new Date(str);
+  if (!isNaN(d.getTime())) {
+    return d.toISOString();
+  }
+
+  const ddMMyyyyPattern =
+    /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/;
+  const match = str.match(ddMMyyyyPattern);
+  if (match) {
+    const day = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10) - 1;
+    const year = parseInt(match[3], 10);
+    const hours = match[4] ? parseInt(match[4], 10) : 0;
+    const minutes = match[5] ? parseInt(match[5], 10) : 0;
+    const seconds = match[6] ? parseInt(match[6], 10) : 0;
+
+    const parsed = new Date(
+      Date.UTC(year, month, day, hours, minutes, seconds)
+    );
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  const yyyyMMddPattern =
+    /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})(?:\s+(\d{1,2}):(\d{1,2})(?::(\d{1,2}))?)?$/;
+  const matchYyyy = str.match(yyyyMMddPattern);
+  if (matchYyyy) {
+    const year = parseInt(matchYyyy[1], 10);
+    const month = parseInt(matchYyyy[2], 10) - 1;
+    const day = parseInt(matchYyyy[3], 10);
+    const hours = matchYyyy[4] ? parseInt(matchYyyy[4], 10) : 0;
+    const minutes = matchYyyy[5] ? parseInt(matchYyyy[5], 10) : 0;
+    const seconds = matchYyyy[6] ? parseInt(matchYyyy[6], 10) : 0;
+
+    const parsed = new Date(
+      Date.UTC(year, month, day, hours, minutes, seconds)
+    );
+    if (!isNaN(parsed.getTime())) {
+      return parsed.toISOString();
+    }
+  }
+
+  return val;
+}
+
 const createFolderAndFile = async (req, res) => {
   const { folder_name, file_name, data, unitsFrom, unitsTo } = req.body;
   if (!folder_name || !Array.isArray(file_name) || typeof data !== "object") {
@@ -210,17 +266,17 @@ const createFolderAndFile = async (req, res) => {
       const fileResult = await pool.query(fileInsertQuery, [
         fname,
         folderId,
-        unitsTo.waterLevel,
-        unitsTo.currentSpeed,
-        unitsTo.currentDirection,
-        unitsTo.battery,
-        unitsTo.depth,
+        unitsTo?.waterLevel || null,
+        unitsTo?.currentSpeed || null,
+        unitsTo?.currentDirection || null,
+        unitsTo?.battery || null,
+        unitsTo?.depth || null,
         null,
-        unitsTo.waterLevel,
-        unitsTo.currentSpeed,
-        unitsTo.currentDirection,
-        unitsTo.battery,
-        unitsTo.depth,
+        unitsTo?.waterLevel || null,
+        unitsTo?.currentSpeed || null,
+        unitsTo?.currentDirection || null,
+        unitsTo?.battery || null,
+        unitsTo?.depth || null,
         null,
       ]);
       const fileId = fileResult.rows[0]?.id;
@@ -229,74 +285,146 @@ const createFolderAndFile = async (req, res) => {
         continue;
       }
 
+      if (fileData.length === 0) {
+        insertedFiles.push({ file_name: fname, file_id: fileId });
+        continue;
+      }
+
+      // Collect all unique keys across rows for this file
+      const allKeys = new Set();
+      fileData.forEach((row) => {
+        if (row && typeof row === "object") {
+          Object.keys(row).forEach((key) => {
+            if (key !== "fileName" && key !== "file_id") {
+              allKeys.add(key);
+            }
+          });
+        }
+      });
+
+      // Essential base columns in logical order
+      const essentialCols = [
+        "station_id",
+        "date",
+        "datetime",
+        "lat",
+        "lon",
+        "speed",
+        "direction",
+        "depth",
+        "pressure",
+        "battery",
+        "pitch",
+        "roll",
+        "heading",
+        "temperature",
+        "high_water_level",
+      ];
+
+      const columnsToCreate = [];
+      essentialCols.forEach((col) => {
+        if (allKeys.has(col)) {
+          columnsToCreate.push(col);
+          allKeys.delete(col);
+        }
+      });
+
+      // Sort remaining dynamic columns (e.g. bin_1_speed, bin_1_direction, bin_2_speed... bin_38_direction)
+      const remainingCols = Array.from(allKeys).sort((a, b) => {
+        const matchA = a.match(/^bin_(\d+)_(speed|direction)$/);
+        const matchB = b.match(/^bin_(\d+)_(speed|direction)$/);
+        if (matchA && matchB) {
+          const numA = parseInt(matchA[1], 10);
+          const numB = parseInt(matchB[1], 10);
+          if (numA !== numB) return numA - numB;
+          return matchA[2] === "speed" ? -1 : 1;
+        }
+        return a.localeCompare(b);
+      });
+
+      columnsToCreate.push(...remainingCols);
+
+      // Ensure 'date' column exists in column list
+      if (
+        !columnsToCreate.includes("date") &&
+        !columnsToCreate.includes("datetime")
+      ) {
+        columnsToCreate.unshift("date");
+      }
+
       // Create dynamic table for the file
       const tableName = `tb_${fileId}`;
+      const colDefs = columnsToCreate
+        .map((col) => {
+          if (col === "date" || col === "datetime") {
+            return `"${col}" TIMESTAMPTZ`;
+          }
+          if (col === "high_water_level") {
+            return `"${col}" INTEGER DEFAULT 0`;
+          }
+          return `"${col}" TEXT`;
+        })
+        .join(", ");
+
       const tblCreateQuery = `
         CREATE TABLE ${tableName} (
           id SERIAL PRIMARY KEY,
-          station_id TEXT,
-          date TIMESTAMPTZ,
-          lat TEXT,
-          lon TEXT,
-          speed TEXT,
-          direction TEXT,
-          depth TEXT,
-          pressure TEXT,
-          battery TEXT,
-          high_water_level INTEGER,
+          ${colDefs},
           file_id INTEGER REFERENCES tb_file(id)
         )`;
-      const tblperocessed = `
+      const tblProcessedQuery = `
         CREATE TABLE ${tableName}_processed (
           id SERIAL PRIMARY KEY,
-          station_id TEXT,
-          date TIMESTAMPTZ,
-          lat TEXT,
-          lon TEXT,
-          speed TEXT,
-          direction TEXT,
-          depth TEXT,
-          pressure TEXT,
-          battery TEXT,
-          high_water_level INTEGER,
+          ${colDefs},
           file_id INTEGER REFERENCES tb_file(id)
         )`;
-      const tbCreateResult = await pool.query(tblCreateQuery);
-      const tbCreateProcessed = await pool.query(tblperocessed);
 
-      if (
-        tbCreateResult.command !== "CREATE" &&
-        tbCreateProcessed.command !== "CREATE"
-      ) {
-        continue; // Skip if table creation failed
-      }
+      await pool.query(tblCreateQuery);
+      await pool.query(tblProcessedQuery);
 
-      // Insert all rows into the dynamic table
-      const insertQuery = `
-        INSERT INTO ${tableName} (
-          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
-      const insertQuery_processed = `
-        INSERT INTO ${tableName}_processed (
-          station_id, date, lat, lon, speed, direction, depth, pressure, battery, high_water_level, file_id
-        ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, $11)`;
+      // Insert all rows dynamically
+      const insertCols = [...columnsToCreate, "file_id"];
+      const colNamesStr = insertCols.map((c) => `"${c}"`).join(", ");
+      const placeholdersStr = insertCols.map((_, i) => `$${i + 1}`).join(", ");
+
+      const insertQuery = `INSERT INTO ${tableName} (${colNamesStr}) VALUES (${placeholdersStr})`;
+      const insertProcessedQuery = `INSERT INTO ${tableName}_processed (${colNamesStr}) VALUES (${placeholdersStr})`;
 
       for (const row of fileData) {
-        const values = [
-          row.station_id,
-          row.date,
-          row.lat,
-          row.lon,
-          row.speed,
-          row.direction,
-          row.depth,
-          +(parseFloat(row.pressure) * 0.9945).toFixed(4),
-          row.battery,
-          row.high_water_level,
-          fileId,
-        ];
+        const values = columnsToCreate.map((col) => {
+          let val = row[col];
+
+          if (val === undefined && (col === "date" || col === "datetime")) {
+            val = row.datetime || row.date;
+          }
+
+          if (val === undefined) {
+            val = null;
+          }
+
+          if ((col === "date" || col === "datetime") && val !== null) {
+            val = formatToPgTimestamp(val);
+          }
+
+          if (
+            col === "pressure" &&
+            val !== null &&
+            val !== undefined &&
+            val !== ""
+          ) {
+            const numVal = parseFloat(val);
+            if (!isNaN(numVal)) {
+              val = +(numVal * 0.9945).toFixed(4);
+            }
+          }
+
+          return val;
+        });
+
+        values.push(fileId);
+
         await pool.query(insertQuery, values);
-        await pool.query(insertQuery_processed, values);
+        await pool.query(insertProcessedQuery, values);
       }
 
       insertedFiles.push({ file_name: fname, file_id: fileId });
@@ -483,7 +611,7 @@ const addNewRow = async (req, res) => {
 
     res.status(200).json({ message: "Row added successfully" });
   } catch (error) {
-    res.status(500).json({ message: `Error: ${error}` });
+    res.status(500).json({ message: `Error: ${error.message}` });
   }
 };
 

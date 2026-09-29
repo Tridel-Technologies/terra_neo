@@ -178,6 +178,9 @@
           <div style="display: flex; gap: 15px" *ngIf="latlongType === 'dms'">
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               placeholder="Deg"
               min="0"
               max="90"
@@ -185,6 +188,9 @@
             />
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               placeholder="Min"
               min="0"
               max="59"
@@ -192,6 +198,9 @@
             />
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               placeholder="Sec"
               min="0"
               max="59.999"
@@ -210,6 +219,9 @@
           <div style="display: flex; gap: 15px" *ngIf="latlongType === 'dms'">
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               placeholder="Deg"
               min="0"
               max="180"
@@ -217,6 +229,9 @@
             />
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               placeholder="Min"
               min="0"
               max="59"
@@ -224,6 +239,9 @@
             />
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               placeholder="Sec"
               min="0"
               max="59.999"
@@ -246,6 +264,9 @@
             <h4 *ngIf="latlongType === 'dd'">Lat (DD)</h4>
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               step="any"
               min="-90"
               max="90"
@@ -260,6 +281,9 @@
             <h4 *ngIf="latlongType === 'dd'">Long (DD)</h4>
             <input
               type="number"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               step="any"
               min="-180"
               max="180"
@@ -276,6 +300,9 @@
             <h4 *ngIf="!isMulti">Select High Water Time</h4>
             <input
               type="text"
+              autocomplete="off"
+              data-1p-ignore="true"
+              data-lpignore="true"
               [value]="
                 high_water_level | date : 'dd-MM-yyyy HH:mm:ss' : timezone
               "
@@ -298,7 +325,7 @@
           </div>
         </div>
 
-        <div class="table-view">
+        <div class="table-view" style="margin-top: 2%;">
           <table class="styled-table">
             <thead>
               <tr>
@@ -310,18 +337,28 @@
             </thead>
             <tbody>
               <tr
-                *ngFor="let row of main_table; let i = index"
+                *ngFor="
+                  let row of main_table;
+                  let i = index
+                "
                 (click)="onRowClick(row, i)"
-                [class.selected]="selectedRowIndex === i"
+                [class.selected]="
+                  selectedRowIndex === i
+                "
                 [attr.id]="'row-' + i"
               >
-                <td>{{ row.station_id }}</td>
-                <td>{{ row.date | date : this.dateFormat : timezone }}</td>
-                <td>{{ row.speed }}</td>
-                <td>{{ row.direction }}</td>
-                <td>{{ row.depth | number : "1.4-4" }}</td>
-                <td>{{ row.pressure }}</td>
-                <td>{{ row.battery }}</td>
+                <td
+                  *ngFor="
+                    let column of active_headers
+                  "
+                >
+                  {{
+                    formatMainCell(
+                      row,
+                      column.name
+                    )
+                  }}
+                </td>
               </tr>
             </tbody>
           </table>
@@ -341,6 +378,9 @@
       <div class="multiDeleteBox" *ngIf="historyData.length > 0">
         <input
           type="checkbox"
+          autocomplete="off"
+          data-1p-ignore="true"
+          data-lpignore="true"
           (change)="isMultiDelete = !isMultiDelete"
           title="Delete"
         />
@@ -359,48 +399,122 @@
           </thead>
           <tbody>
             <tr
-              *ngFor="let row of filterhistorydata; let i = index"
-              [class.selected]="selectedRowIndex === i"
-              [attr.id]="'row-' + i"
+              *ngFor="
+                let row of uploadVisibleRows;
+                let pageIndex = index
+              "
+              [class.selected]="
+                selectedRowIndex ===
+                ((uploadCurrentPage - 1) * uploadPageSize + pageIndex)
+              "
+              [attr.id]="
+                'row-' +
+                ((uploadCurrentPage - 1) * uploadPageSize + pageIndex)
+              "
             >
-              <td>{{ row.station_id }}</td>
-              <td>{{ row.date | date : "yyyy MMM dd HH:mm:ss" : timezone }}</td>
-              <!-- <td>{{ row.Time }}</td> -->
-              <td>{{ row.speed }}</td>
-              <td>{{ row.direction }}</td>
-              <td>{{ row.depth.toFixed(4) }}</td>
-              <td>{{ row.pressure }}</td>
-              <td>{{ row.battery }}</td>
+              <td
+                *ngFor="
+                  let column of upload_active_headers
+                "
+              >
+                <ng-container
+                  *ngIf="
+                    column.name === 'Date';
+                    else normalUploadValue
+                  "
+                >
+                  {{
+                    getUploadCellValue(
+                      row,
+                      column
+                    )
+                    | date
+                      : "yyyy MMM dd HH:mm:ss"
+                      : timezone
+                  }}
+                </ng-container>
+
+                <ng-template
+                  #normalUploadValue
+                >
+                  {{
+                    getUploadCellValue(
+                      row,
+                      column
+                    )
+                  }}
+                </ng-template>
+              </td>
+
               <td>
-                <!-- <button cli>Delete</button>-->
                 @if (!isMultiDelete) {
-                <i
-                  id="trash"
-                  class="fa-solid fa-trash"
-                  title="Delete"
-                  (click)="deleteRow(i)"
-                  style="color: red"
-                ></i>
-
-                }@else{
-                <input
-                  type="checkbox"
-                  (change)="addDeleteRows($event, i)"
-                  title="Delete"
-                />
-
+                  <i
+                    id="trash"
+                    class="fa-solid fa-trash"
+                    title="Delete"
+                    (click)="
+                      deleteRow(
+                        ((uploadCurrentPage - 1) * uploadPageSize) +
+                        pageIndex
+                      )
+                    "
+                    style="color: red"
+                  ></i>
+                } @else {
+                  <input
+                    type="checkbox"
+                    autocomplete="off"
+                    data-1p-ignore="true"
+                    data-lpignore="true"
+                    (change)="
+                      addDeleteRows(
+                        $event,
+                        ((uploadCurrentPage - 1) * uploadPageSize) +
+                        pageIndex
+                      )
+                    "
+                    title="Delete"
+                  />
                 }
               </td>
             </tr>
           </tbody>
         </table>
       </div>
+      <div
+        class="upload-pagination"
+        *ngIf="filterhistorydata.length > uploadPageSize"
+      >
+        <button
+          type="button"
+          class="page-btn"
+          (click)="previousUploadPage()"
+          [disabled]="uploadCurrentPage === 1"
+        >
+          ‹ Previous
+        </button>
+
+        <span class="page-info">
+          Page <strong>{{ uploadCurrentPage }}</strong> of <strong>{{ uploadTotalPages }}</strong>
+          <span class="page-divider">•</span>
+          Showing <strong>{{ ((uploadCurrentPage - 1) * uploadPageSize) + 1 }}–{{ Math.min(uploadCurrentPage * uploadPageSize, filterhistorydata.length) }}</strong> of <strong>{{ filterhistorydata.length }}</strong> rows
+        </span>
+
+        <button
+          type="button"
+          class="page-btn"
+          (click)="nextUploadPage()"
+          [disabled]="uploadCurrentPage === uploadTotalPages"
+        >
+          Next ›
+        </button>
+      </div>
       <button
         *ngIf="selectedRowsforDelete.length !== 0"
         class="DeleteButton"
         (click)="deleteMulti()"
       >
-        Delete
+        Delete Selected ({{ selectedRowsforDelete.length }})
       </button>
     </div>
     <div class="file_upload_container">
@@ -418,7 +532,7 @@
         *ngIf="uploaded_files.length === 0"
       >
         <label class="lab">
-          <input type="checkbox" [(ngModel)]="allowFolderUpload" />
+          <input type="checkbox" autocomplete="off" data-1p-ignore="true" data-lpignore="true" [(ngModel)]="allowFolderUpload" />
           Allow Folder Upload
         </label>
       </div>
@@ -426,12 +540,15 @@
       <div class="file-upload" *ngIf="uploaded_files.length === 0">
         <input
           type="file"
+          autocomplete="off"
+          data-1p-ignore="true"
+          data-lpignore="true"
           style="
             background-color: var(--button-bg);
             color: var(--button-text-color);
           "
           id="fileUpload"
-          accept=".xlsx, .csv"
+          accept=".xlsx, .xls, .csv"
           (change)="onFilesSelected($event)"
           multiple
           [attr.webkitdirectory]="allowFolderUpload ? '' : null"
@@ -443,7 +560,7 @@
       <span
         *ngIf="uploaded_files.length === 0"
         style="color: red; font-size: 12px; margin: -10px"
-        >Upload only .xlsx, .csv file format</span
+        >Upload only .xlsx, .xls, .csv file format</span
       >
       <div class="uploaded_files" style="margin-left: 40px">
         <p
@@ -461,6 +578,9 @@
       <input
         class="nameField"
         type="text"
+        autocomplete="off"
+        data-1p-ignore="true"
+        data-lpignore="true"
         placeholder="Folder Name"
         [(ngModel)]="FileName"
       />
